@@ -333,7 +333,7 @@ spec:
             - name: FAUCET_MEMO
               value: "faucet txn"
             - name: FAUCET_GAS_PRICE
-              value: "0.025{{ $chain.denom }}"
+              value: "1.25{{ $chain.denom }}"
             - name: FAUCET_GAS_LIMIT
               value: "2000000"
             - name: FAUCET_ADDRESS_PREFIX

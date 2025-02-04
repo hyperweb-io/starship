@@ -22,7 +22,8 @@
     "format": "lerna run format",
     "postinstall": "yarn symlink",
     "publish": "yarn build; yarn lerna publish --no-private",
-    "publish:minor": "yarn build; yarn lerna publish minor --no-private"
+    "publish:minor": "yarn build; yarn lerna publish minor --no-private",
+    "publish:major": "yarn build; yarn lerna publish major --no-private"
   },
   "devDependencies": {
     "@types/jest": "^29.5.11",

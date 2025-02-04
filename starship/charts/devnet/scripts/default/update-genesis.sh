@@ -39,6 +39,12 @@ function gov_overrides_sdk_v47() {
   jq -r '.app_state.gov.params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
 }
 
+if [ "$(jq -r '.app_state.feemarket.params' $CHAIN_DIR/config/genesis.json)" != "null" ]; then
+  jq -r '.app_state.feemarket.params.min_base_gas_price |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
+  jq -r '.app_state.feemarket.params.beta |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
+  jq -r '.app_state.feemarket.state.base_gas_price |= "0.0025"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
+fi
+
 if [ "$(jq -r '.app_state.gov.params' $CHAIN_DIR/config/genesis.json)" == "null" ]; then
   gov_overrides_sdk_v46
 else

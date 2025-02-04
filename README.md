@@ -41,7 +41,7 @@ Here’s a sample configuration:
 
 ```yaml
 name: starship-localnet
-version: 0.2.20
+version: 1.0.0
 
 chains:
 - id: osmosis-1

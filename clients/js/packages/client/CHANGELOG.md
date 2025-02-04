@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.2.0](https://github.com/hyperweb-io/starship/compare/v3.1.0...v3.2.0) (2025-02-03)
+
+**Note:** Version bump only for package @starship-ci/client
+
+# [3.1.0](https://github.com/hyperweb-io/starship/compare/v3.0.0...v3.1.0) (2025-02-01)
+
+**Note:** Version bump only for package @starship-ci/client
+
+# 3.0.0 (2025-01-30)
+
+### Features
+
+- **client:** expose `restartThreshold` via `StarshipContext` ([#577](https://github.com/hyperweb-io/starship/issues/577)) ([afaef4e](https://github.com/hyperweb-io/starship/commit/afaef4e8a1a9bfb1856831a0b036aaa003944e34))
+
 ## [2.13.1](https://github.com/hyperweb-io/starship/compare/@starship-ci/client@2.13.0...@starship-ci/client@2.13.1) (2025-01-28)
 
 **Note:** Version bump only for package @starship-ci/client

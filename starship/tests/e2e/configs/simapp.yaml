@@ -1,5 +1,5 @@
 name: starship-e2e-tests
-version: 0.2.20
+version: 1.0.0
 
 images:
   ## Explicitly set image pull policy to always, since we are using the latest tag of the imgaes (which might be cached)
