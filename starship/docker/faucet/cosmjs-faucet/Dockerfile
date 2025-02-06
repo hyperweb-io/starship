@@ -18,7 +18,7 @@ RUN rm -rf cosmjs.tar.gz
 RUN apk add --update --no-cache alpine-sdk linux-headers build-base gcc libusb-dev python3 py3-pip eudev-dev nodejs yarn
 RUN ln -sf python3 /usr/bin/python
 
-RUN yarn cache clean --all && rm yarn.lock && yarn install --network-timeout 100000
+RUN yarn cache clean --all && rm yarn.lock && yarn && yarn install --network-timeout 100000
 RUN yarn run build
 RUN (cd packages/faucet && SKIP_BUILD=1 yarn pack-node)
 
