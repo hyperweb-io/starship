@@ -42,7 +42,7 @@ sleep 2
 kubectl get pods --no-headers -o custom-columns=:metadata.name
 helm delete osmojs
 kubectl get pods --no-headers -o custom-columns=:metadata.name
-Log: All pods have been sucessfully terminated!"
+Log: All pods have been successfully terminated!"
 `;
 
 exports[`StarshipClient setup 2`] = `
