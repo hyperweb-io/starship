@@ -40,7 +40,7 @@ type Feature struct {
 
 // Config is the struct for the config.yaml setup file
 // todo: move this to a more common place, outside of just tests
-// todo: can be moved to proto defination
+// todo: can be moved to proto definition
 type Config struct {
 	Chains   []*Chain   `name:"chains" json:"chains" yaml:"chains"`
 	Relayers []*Relayer `name:"relayers" json:"relayers" yaml:"relayers"`
