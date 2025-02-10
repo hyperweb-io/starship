@@ -200,7 +200,7 @@ func (c *Client) CheckKubectl() error {
 	return nil
 }
 
-// CheckPortForward verfify if all pods are in running state, and ready to be port-forwarded
+// CheckPortForward verify if all pods are in running state, and ready to be port-forwarded
 // * perform kubectl get pods
 // * check status of pods to be running based on the config
 // * return error if port-forwarding is not ready
