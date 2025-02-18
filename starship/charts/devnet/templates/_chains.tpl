@@ -49,7 +49,7 @@ Usage:
 {{- $toBuild := or $chain.build.enabled $chain.upgrade.enabled -}}
 {{- $_ = set $chain "toBuild" $toBuild -}}
 {{- if $toBuild -}}
-{{- $_ = set $chain "image" "ghcr.io/cosmology-tech/starship/runner:latest" -}}
+{{- $_ = set $chain "image" "ghcr.io/hyperweb-io/starship/runner:latest" -}}
 {{- end }}
 
 {{- $defaultScripts := $defaultFile.defaultScripts }}
