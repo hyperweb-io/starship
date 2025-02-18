@@ -1,6 +1,6 @@
 {{ $portMap := dict "p2p" 26656 "address" 26658 "grpc" 9090 "grpc-web" 9091 "rest" 1317 }}
 {{- range $chain := .Values.chains }}
-{{- if ne $chain.name "virtual" }}
+{{- if not (hasPrefix "ethereum" $chain.name) }}
 {{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
 
 {{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}

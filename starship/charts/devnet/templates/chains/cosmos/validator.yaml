@@ -1,5 +1,5 @@
 {{- range $chain := .Values.chains }}
-{{- if ne $chain.name "virtual" }}
+{{- if not (hasPrefix "ethereum" $chain.name) }}
 {{- if gt $chain.numValidators 1.0 }}
 {{ $dataExposer := dict "chain" $chain.id "port" ($.Values.exposer.ports.rest | quote | default "8081") }}
 {{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}

@@ -20,15 +20,15 @@ ps -ef | grep -i 'kubectl port-forward' | grep -v 'grep' | awk '{print $2}'
 sleep 2
 Log: Starting new port forwarding...
 kubectl port-forward pods/osmosis-1-genesis-0 1317:6767676 > /dev/null 2>&1 &
-Log: Forwarded osmosis-1: local 1317 -> target (host) 6767676
+Log: Forwarded osmosis-1-genesis-0: local 1317 -> target (host) 6767676
 kubectl port-forward pods/osmosis-1-genesis-0 8007:1000000 > /dev/null 2>&1 &
-Log: Forwarded osmosis-1: local 8007 -> target (host) 1000000
+Log: Forwarded osmosis-1-genesis-0: local 8007 -> target (host) 1000000
 kubectl port-forward pods/cosmos-2-genesis-0 26653:26657 > /dev/null 2>&1 &
-Log: Forwarded cosmos-2: local 26653 -> target (host) 26657
+Log: Forwarded cosmos-2-genesis-0: local 26653 -> target (host) 26657
 kubectl port-forward pods/cosmos-2-genesis-0 1313:1317 > /dev/null 2>&1 &
-Log: Forwarded cosmos-2: local 1313 -> target (host) 1317
+Log: Forwarded cosmos-2-genesis-0: local 1313 -> target (host) 1317
 kubectl port-forward pods/cosmos-2-genesis-0 8003:8000 > /dev/null 2>&1 &
-Log: Forwarded cosmos-2: local 8003 -> target (host) 8000
+Log: Forwarded cosmos-2-genesis-0: local 8003 -> target (host) 8000
 kubectl port-forward service/registry 8081:8080 > /dev/null 2>&1 &
 Log: Forwarded registry on port 8081 to target port 8080
 kubectl port-forward service/registry 9091:9090 > /dev/null 2>&1 &

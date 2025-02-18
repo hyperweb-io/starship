@@ -112,7 +112,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": ["string", "integer"]
           },
           "name": {
             "type": "string",
@@ -146,7 +146,8 @@
               "agoric",
               "kujira",
               "hyperweb",
-              "noble"
+              "noble",
+              "ethereum"
             ]
           },
           "numValidators": {
@@ -560,6 +561,9 @@
             }
           },
           "readinessProbe": {
+            "type": "object"
+          },
+          "config": {
             "type": "object"
           }
         },

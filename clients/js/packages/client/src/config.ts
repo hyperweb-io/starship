@@ -33,7 +33,7 @@ export interface FaucetConfig {
 }
 
 export interface Chain {
-  id: string;
+  id: string | number;
   name: string;
   numValidators: number;
   image?: string;

@@ -2,5 +2,6 @@
   "index": "Introduction",
   "chains": "Chains Directive Syntax",
   "relayers": "Relayers Directive Syntax",
-  "features": "Feature Toggles"
+  "features": "Feature Toggles",
+  "ethereum": "Ethereum"
 }

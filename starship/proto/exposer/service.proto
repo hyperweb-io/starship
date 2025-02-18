@@ -26,6 +26,14 @@ service Exposer {
   rpc GetGenesisFile(google.protobuf.Empty) returns (google.protobuf.Struct) {
     option (google.api.http) = { get: "/genesis" };
   }
+  // GetGenesisSSZ returns the genesis file of the node
+  rpc GetGenesisSSZ(google.protobuf.Empty) returns (ResponseFileData) {
+    option (google.api.http) = { get: "/genesis_ssz" };
+  }
+  // GetConfigFile returns the config file of the node
+  rpc GetConfigFile(google.protobuf.Empty) returns (ResponseFileData) {
+    option (google.api.http) = { get: "/config" };
+  }
   // GetKeysFile returns the keys of the node
   rpc GetKeys(google.protobuf.Empty) returns (Keys) {
     option (google.api.http) = { get: "/keys" };

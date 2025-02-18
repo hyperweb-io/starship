@@ -68,7 +68,7 @@ jobs:
         with:
           registry: ghcr.io
           username: hyperweb-io
-          password: ${{ secrets.HYPERWEB_PAT }}
+          password: ${{ secrets.GH_HYPERWEB_PAT }}
 
       - name: Determine tag
         if: steps.changes.outputs.src == 'true' || github.event_name == 'workflow_dispatch'

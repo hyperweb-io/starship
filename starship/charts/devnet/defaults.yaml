@@ -720,16 +720,16 @@ defaultChains:
         coingecko_id: kujira
         keywords: [ "kujira" ]
   hyperweb:
-    image: ghcr.io/cosmology-tech/jsd:0.1.1
-    home: /root/.jsd
-    binary: jsdd
+    image: ghcr.io/hyperweb-io/hyperweb:latest
+    home: /root/.hyperd
+    binary: hyperd
     prefix: hyper
     denom: uhyper
     prettyName: Hyperweb
     coins: 100000000000000uhyper
     hdPath: m/44'/118'/0'/0/0
     coinType: 118
-    repo: https://github.com/hyperweb-io/jsd
+    repo: https://github.com/hyperweb-io/hyperweb
     assets:
       - base: uhyper
         description: "The meme coin for Hyperweb chain."
@@ -793,6 +793,47 @@ defaultChains:
             exponent: 6
         coingecko_id: stake
         keywords: [ "stake" ]
+  ethereum:
+    image: ghcr.io/hyperweb-io/starship/ethereum/client-go:latest
+    home: /ethereum
+    binary: geth
+    prefix: eth
+    denom: wei
+    prettyName: Ethereum Execution Chain
+    coins: 100000000000000wei
+    hdPath: m/44'/60'/0'/0/0
+    coinType: 60
+    repo: https://github.com/ethereum/go-ethereum
+    assets:
+      - base: wei
+        name: "Ether"
+        description: "The native token of Ethereum"
+        display: "eth"
+        symbol: "ETH"
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/eth-white.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/eth-white.svg"
+        denom_units:
+          - denom: wei
+            exponent: 0
+          - denom: gwei
+            exponent: 9
+          - denom: ether
+            exponent: 18
+            aliases:
+              - "ether"
+        coingecko_id: "ethereum"
+    config:
+      beacon:
+        enabled: true
+        image: "ghcr.io/hyperweb-io/starship/prysm/beacon-chain:v5.2.0"
+        numValidator: 1
+      validator:
+        enabled: true
+        image: "ghcr.io/hyperweb-io/starship/prysm/validator:v5.2.0"
+        numValidator: 1
+      prysmctl:
+        image: "ghcr.io/hyperweb-io/starship/prysm/cmd/prysmctl:v5.2.0"
   eth:
     storageClassName: hostpath
     genesisStateUrl: https://github.com/eth-clients/merge-testnets/blob/main/sepolia/genesis.ssz
@@ -952,7 +993,7 @@ defaultFaucet:
     image: ghcr.io/hyperweb-io/starship/cosmjs-faucet:v0.31.1
     concurrency: 5
   starship:
-    image: ghcr.io/hyperweb-io/starship/faucet:20241017-a4579e1
+    image: ghcr.io/hyperweb-io/starship/faucet:20250205-544757d
     concurrency: 5
 
 defaultCometmock:

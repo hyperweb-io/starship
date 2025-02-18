@@ -30,6 +30,9 @@ func (s *TestSuite) TestExposer_GetNodeID() {
 	s.T().Log("running test for /node_id endpoint for exposer")
 
 	chain := s.config.Chains[0]
+	if chain.Ports.Exposer == 0 {
+		s.T().Skip("skipping /node_id test since no exposer")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/node_id", nil)
 	s.Require().NoError(err)
@@ -45,6 +48,9 @@ func (s *TestSuite) TestExposer_GetGenesisFile() {
 	s.T().Log("running test for /genesis endpoint for exposer")
 
 	chain := s.config.Chains[0]
+	if chain.Ports.Exposer == 0 {
+		s.T().Skip("skipping /node_id test since no exposer")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/genesis", nil)
 	s.Require().NoError(err)
@@ -62,6 +68,9 @@ func (s *TestSuite) TestExposer_GetPubKey() {
 	s.T().Log("running test for /pub_key endpoint for exposer")
 
 	chain := s.config.Chains[0]
+	if chain.Ports.Exposer == 0 {
+		s.T().Skip("skipping /node_id test since no exposer")
+	}
 	if chain.Cometmock != nil && chain.Cometmock.Enabled {
 		s.T().Skip("skipping tests for cometmock enabled chain")
 	}
@@ -82,6 +91,9 @@ func (s *TestSuite) TestExposer_GetPrivKey() {
 	s.T().Log("running test for /priv_keys endpoint for exposer")
 
 	chain := s.config.Chains[0]
+	if chain.Ports.Exposer == 0 {
+		s.T().Skip("skipping /node_id test since no exposer")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/priv_keys", nil)
 	s.Require().NoError(err)
@@ -99,6 +111,9 @@ func (s *TestSuite) TestExposer_GetPrivValState() {
 	s.T().Log("running test for /priv_validator_state endpoint for exposer")
 
 	chain := s.config.Chains[0]
+	if chain.Ports.Exposer == 0 {
+		s.T().Skip("skipping /node_id test since no exposer")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/priv_validator_state", nil)
 	s.Require().NoError(err)
@@ -115,6 +130,9 @@ func (s *TestSuite) TestExposer_GetNodeKey() {
 	s.T().Log("running test for /node_key endpoint for exposer")
 
 	chain := s.config.Chains[0]
+	if chain.Ports.Exposer == 0 {
+		s.T().Skip("skipping /node_id test since no exposer")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/node_key", nil)
 	s.Require().NoError(err)
@@ -131,6 +149,9 @@ func (s *TestSuite) TestExposer_GetKeys() {
 	s.T().Log("running test for /keys endpoint for exposer")
 
 	chain := s.config.Chains[0]
+	if chain.Ports.Exposer == 0 {
+		s.T().Skip("skipping /node_id test since no exposer")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/keys", nil)
 	s.Require().NoError(err)

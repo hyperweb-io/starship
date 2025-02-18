@@ -1,5 +1,5 @@
 name: starship-e2e-tests
-version: 1.0.0
+version: 1.3.0
 
 chains:
   - id: neutron-1

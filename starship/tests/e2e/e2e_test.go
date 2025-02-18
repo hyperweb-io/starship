@@ -64,7 +64,7 @@ func (s *TestSuite) TestChains_Status() {
 	s.T().Log("running test for /status endpoint for each chain")
 
 	for _, chain := range s.config.Chains {
-		if chain.Name == "neutron" {
+		if chain.Name == "neutron" || chain.Name == "ethereum" {
 			s.T().Skip("skip tests for neutron")
 		}
 		url := fmt.Sprintf("http://0.0.0.0:%d/status", chain.Ports.Rpc)
@@ -86,7 +86,7 @@ func (s *TestSuite) TestChains_StakingParams() {
 		s.T().Skip("skip staking params test for non rest endpoint")
 	}
 	s.T().Log("running test for /staking/parameters endpoint for each chain")
-	if s.config.Chains[0].Name == "neutron" {
+	if s.config.Chains[0].Name == "neutron" || s.config.Chains[0].Name == "ethereum" {
 		s.T().Skip("skip tests for neutron")
 	}
 

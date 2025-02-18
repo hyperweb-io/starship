@@ -10,6 +10,7 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -25,466 +26,351 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_Registry_ListChainIDs_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.ListChainIDs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_ListChainIDs_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ListChainIDs(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_ListChains_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.ListChains(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_ListChains_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ListChains(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_GetChain_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := client.GetChain(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_GetChain_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := server.GetChain(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_GetChainKeys_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := client.GetChainKeys(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_GetChainKeys_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := server.GetChainKeys(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_ListChainPeers_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := client.ListChainPeers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_ListChainPeers_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := server.ListChainPeers(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_ListChainAPIs_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := client.ListChainAPIs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_ListChainAPIs_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := server.ListChainAPIs(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_GetChainAssets_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := client.GetChainAssets(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_GetChainAssets_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := server.GetChainAssets(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_ListIBC_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := client.ListIBC(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_ListIBC_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq emptypb.Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq emptypb.Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ListIBC(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_ListChainIBC_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := client.ListChainIBC(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_ListChainIBC_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestChain
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestChain
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain"]
+	val, ok := pathParams["chain"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain")
 	}
-
 	protoReq.Chain, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain", err)
 	}
-
 	msg, err := server.ListChainIBC(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_Registry_GetIBCInfo_0(ctx context.Context, marshaler runtime.Marshaler, client RegistryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestIBCInfo
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestIBCInfo
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain_1"]
+	val, ok := pathParams["chain_1"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain_1")
 	}
-
 	protoReq.Chain_1, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain_1", err)
 	}
-
 	val, ok = pathParams["chain_2"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain_2")
 	}
-
 	protoReq.Chain_2, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain_2", err)
 	}
-
 	msg, err := client.GetIBCInfo(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_Registry_GetIBCInfo_0(ctx context.Context, marshaler runtime.Marshaler, server RegistryServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RequestIBCInfo
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RequestIBCInfo
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["chain_1"]
+	val, ok := pathParams["chain_1"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain_1")
 	}
-
 	protoReq.Chain_1, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain_1", err)
 	}
-
 	val, ok = pathParams["chain_2"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "chain_2")
 	}
-
 	protoReq.Chain_2, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "chain_2", err)
 	}
-
 	msg, err := server.GetIBCInfo(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterRegistryHandlerServer registers the http handlers for service Registry to "mux".
 // UnaryRPC     :call RegistryServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterRegistryHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, server RegistryServer) error {
-
-	mux.Handle("GET", pattern_Registry_ListChainIDs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainIDs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainIDs", runtime.WithHTTPPathPattern("/chain_ids"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainIDs", runtime.WithHTTPPathPattern("/chain_ids"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -496,20 +382,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainIDs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChains_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChains_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChains", runtime.WithHTTPPathPattern("/chains"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChains", runtime.WithHTTPPathPattern("/chains"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -521,20 +402,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChains_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetChain_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetChain_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetChain", runtime.WithHTTPPathPattern("/chains/{chain}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetChain", runtime.WithHTTPPathPattern("/chains/{chain}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -546,20 +422,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetChain_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetChainKeys_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetChainKeys_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetChainKeys", runtime.WithHTTPPathPattern("/chains/{chain}/keys"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetChainKeys", runtime.WithHTTPPathPattern("/chains/{chain}/keys"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -571,20 +442,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetChainKeys_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChainPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainPeers", runtime.WithHTTPPathPattern("/chains/{chain}/peers"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainPeers", runtime.WithHTTPPathPattern("/chains/{chain}/peers"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -596,20 +462,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainPeers_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChainAPIs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainAPIs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainAPIs", runtime.WithHTTPPathPattern("/chains/{chain}/apis"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainAPIs", runtime.WithHTTPPathPattern("/chains/{chain}/apis"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -621,20 +482,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainAPIs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetChainAssets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetChainAssets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetChainAssets", runtime.WithHTTPPathPattern("/chains/{chain}/assets"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetChainAssets", runtime.WithHTTPPathPattern("/chains/{chain}/assets"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -646,20 +502,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetChainAssets_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListIBC", runtime.WithHTTPPathPattern("/ibc"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListIBC", runtime.WithHTTPPathPattern("/ibc"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -671,20 +522,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListIBC_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChainIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainIBC", runtime.WithHTTPPathPattern("/ibc/{chain}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/ListChainIBC", runtime.WithHTTPPathPattern("/ibc/{chain}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -696,20 +542,15 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainIBC_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetIBCInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetIBCInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetIBCInfo", runtime.WithHTTPPathPattern("/ibc/{chain_1}/{chain_2}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/registry.Registry/GetIBCInfo", runtime.WithHTTPPathPattern("/ibc/{chain_1}/{chain_2}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -721,9 +562,7 @@ func RegisterRegistryHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetIBCInfo_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -750,7 +589,6 @@ func RegisterRegistryHandlerFromEndpoint(ctx context.Context, mux *runtime.Serve
 			}
 		}()
 	}()
-
 	return RegisterRegistryHandler(ctx, mux, conn)
 }
 
@@ -764,16 +602,13 @@ func RegisterRegistryHandler(ctx context.Context, mux *runtime.ServeMux, conn *g
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "RegistryClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "RegistryClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "RegistryClient" to call the correct interceptors.
+// "RegistryClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, client RegistryClient) error {
-
-	mux.Handle("GET", pattern_Registry_ListChainIDs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainIDs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainIDs", runtime.WithHTTPPathPattern("/chain_ids"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainIDs", runtime.WithHTTPPathPattern("/chain_ids"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -784,18 +619,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainIDs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChains_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChains_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChains", runtime.WithHTTPPathPattern("/chains"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChains", runtime.WithHTTPPathPattern("/chains"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -806,18 +636,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChains_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetChain_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetChain_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetChain", runtime.WithHTTPPathPattern("/chains/{chain}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetChain", runtime.WithHTTPPathPattern("/chains/{chain}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -828,18 +653,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetChain_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetChainKeys_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetChainKeys_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetChainKeys", runtime.WithHTTPPathPattern("/chains/{chain}/keys"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetChainKeys", runtime.WithHTTPPathPattern("/chains/{chain}/keys"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -850,18 +670,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetChainKeys_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChainPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainPeers", runtime.WithHTTPPathPattern("/chains/{chain}/peers"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainPeers", runtime.WithHTTPPathPattern("/chains/{chain}/peers"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -872,18 +687,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainPeers_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChainAPIs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainAPIs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainAPIs", runtime.WithHTTPPathPattern("/chains/{chain}/apis"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainAPIs", runtime.WithHTTPPathPattern("/chains/{chain}/apis"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -894,18 +704,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainAPIs_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetChainAssets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetChainAssets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetChainAssets", runtime.WithHTTPPathPattern("/chains/{chain}/assets"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetChainAssets", runtime.WithHTTPPathPattern("/chains/{chain}/assets"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -916,18 +721,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetChainAssets_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListIBC", runtime.WithHTTPPathPattern("/ibc"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListIBC", runtime.WithHTTPPathPattern("/ibc"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -938,18 +738,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListIBC_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_ListChainIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_ListChainIBC_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainIBC", runtime.WithHTTPPathPattern("/ibc/{chain}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/ListChainIBC", runtime.WithHTTPPathPattern("/ibc/{chain}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -960,18 +755,13 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_ListChainIBC_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_Registry_GetIBCInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_Registry_GetIBCInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetIBCInfo", runtime.WithHTTPPathPattern("/ibc/{chain_1}/{chain_2}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/registry.Registry/GetIBCInfo", runtime.WithHTTPPathPattern("/ibc/{chain_1}/{chain_2}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -982,54 +772,33 @@ func RegisterRegistryHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_Registry_GetIBCInfo_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_Registry_ListChainIDs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"chain_ids"}, ""))
-
-	pattern_Registry_ListChains_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"chains"}, ""))
-
-	pattern_Registry_GetChain_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"chains", "chain"}, ""))
-
-	pattern_Registry_GetChainKeys_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"chains", "chain", "keys"}, ""))
-
+	pattern_Registry_ListChainIDs_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"chain_ids"}, ""))
+	pattern_Registry_ListChains_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"chains"}, ""))
+	pattern_Registry_GetChain_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"chains", "chain"}, ""))
+	pattern_Registry_GetChainKeys_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"chains", "chain", "keys"}, ""))
 	pattern_Registry_ListChainPeers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"chains", "chain", "peers"}, ""))
-
-	pattern_Registry_ListChainAPIs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"chains", "chain", "apis"}, ""))
-
+	pattern_Registry_ListChainAPIs_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"chains", "chain", "apis"}, ""))
 	pattern_Registry_GetChainAssets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"chains", "chain", "assets"}, ""))
-
-	pattern_Registry_ListIBC_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"ibc"}, ""))
-
-	pattern_Registry_ListChainIBC_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"ibc", "chain"}, ""))
-
-	pattern_Registry_GetIBCInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2}, []string{"ibc", "chain_1", "chain_2"}, ""))
+	pattern_Registry_ListIBC_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"ibc"}, ""))
+	pattern_Registry_ListChainIBC_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"ibc", "chain"}, ""))
+	pattern_Registry_GetIBCInfo_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 1, 0, 4, 1, 5, 2}, []string{"ibc", "chain_1", "chain_2"}, ""))
 )
 
 var (
-	forward_Registry_ListChainIDs_0 = runtime.ForwardResponseMessage
-
-	forward_Registry_ListChains_0 = runtime.ForwardResponseMessage
-
-	forward_Registry_GetChain_0 = runtime.ForwardResponseMessage
-
-	forward_Registry_GetChainKeys_0 = runtime.ForwardResponseMessage
-
+	forward_Registry_ListChainIDs_0   = runtime.ForwardResponseMessage
+	forward_Registry_ListChains_0     = runtime.ForwardResponseMessage
+	forward_Registry_GetChain_0       = runtime.ForwardResponseMessage
+	forward_Registry_GetChainKeys_0   = runtime.ForwardResponseMessage
 	forward_Registry_ListChainPeers_0 = runtime.ForwardResponseMessage
-
-	forward_Registry_ListChainAPIs_0 = runtime.ForwardResponseMessage
-
+	forward_Registry_ListChainAPIs_0  = runtime.ForwardResponseMessage
 	forward_Registry_GetChainAssets_0 = runtime.ForwardResponseMessage
-
-	forward_Registry_ListIBC_0 = runtime.ForwardResponseMessage
-
-	forward_Registry_ListChainIBC_0 = runtime.ForwardResponseMessage
-
-	forward_Registry_GetIBCInfo_0 = runtime.ForwardResponseMessage
+	forward_Registry_ListIBC_0        = runtime.ForwardResponseMessage
+	forward_Registry_ListChainIBC_0   = runtime.ForwardResponseMessage
+	forward_Registry_GetIBCInfo_0     = runtime.ForwardResponseMessage
 )

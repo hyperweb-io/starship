@@ -1,0 +1,42 @@
+# Ethereum Chain Configuration in Starship
+
+Ethereum support in Starship allows users to deploy Ethereum execution and consensus (beacon) nodes using simple configurations.
+This section details how to configure Ethereum-based chains within Starship.
+
+## Ethereum Execution Chain
+
+The Ethereum Execution Chain, or Ethereum client, runs the execution layer of the Ethereum network, handling smart contract execution and maintaining state.
+
+### Config
+```yaml
+chains:
+  - id: 1337
+    name: ethereum
+    numValidators: 1
+    ports:
+      rest: 8545
+      rpc: 8551
+```
+
+### Optional Configs
+```yaml
+chains:
+  - id: 1337
+    name: ethereum
+    numValidators: 1
+    ports:
+      rest: 8545
+      rpc: 8551
+    image: ghcr.io/hyperweb-io/starship/ethereum/client-go:latest
+    config:
+      beacon:
+        enabled: true
+        image: "ghcr.io/hyperweb-io/starship/prysm/beacon-chain:v5.2.0"
+        numValidator: 1
+      validator:
+        enabled: true
+        image: "ghcr.io/hyperweb-io/starship/prysm/validator:v5.2.0"
+        numValidator: 1
+      prysmctl:
+        image: "ghcr.io/hyperweb-io/starship/prysm/cmd/prysmctl:v5.2.0"
+```

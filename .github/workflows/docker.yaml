@@ -72,7 +72,7 @@ jobs:
         with:
           registry: ghcr.io
           username: hyperweb-io
-          password: ${{ secrets.HYPERWEB_PAT }}
+          password: ${{ secrets.GH_HYPERWEB_PAT }}
 
       - name: Build
         if: github.event_name == 'pull_request'
@@ -118,7 +118,7 @@ jobs:
         with:
           registry: ghcr.io
           username: hyperweb-io
-          password: ${{ secrets.HYPERWEB_PAT }}
+          password: ${{ secrets.GH_HYPERWEB_PAT }}
 
       - name: Build chains
         if: github.event_name == 'pull_request'

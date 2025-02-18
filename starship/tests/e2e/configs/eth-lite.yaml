@@ -1,0 +1,10 @@
+chains:
+  - id: 1337
+    name: ethereum
+    numValidators: 1
+    ports:
+      rest: 8545
+      rpc: 8551
+    resources:
+      cpu: "200m"
+      memory: "200Mi"

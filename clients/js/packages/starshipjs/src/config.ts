@@ -96,7 +96,7 @@ export interface ChainConfig {
     };
   };
   chains: Array<{
-    id: string;
+    id: string | number;
     name: string;
     ports: {
       rpc: number;

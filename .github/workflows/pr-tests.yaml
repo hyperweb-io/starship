@@ -44,6 +44,7 @@ jobs:
           - "multi-validator-starship-faucet.yaml"
           - "one-chain-cometmock.yaml"
           - "one-cosmoshub-starship-faucet.yaml"
+          - "eth-lite.yaml"
       fail-fast: true
       max-parallel: 3
 

@@ -28,6 +28,10 @@ type Config struct {
 	NodeIDFile string `name:"node-id-file" json:"node_id_file" env:"NODE_ID_FILE" usage:"Path of node-id json file"`
 	// GenesisFile is full path to the genesis file
 	GenesisFile string `name:"genesis-file" json:"genesis_file" env:"GENESIS_FILE" usage:"Path of genesis file"`
+	// GenesisSSZ is full path to the genesis ssz file
+	GenesisSSZ string `name:"genesis-ssz" json:"genesis_ssz" env:"GENESIS_SSZ" usage:"Path of genesis ssz file"`
+	// ConfigFile is full path to the config file
+	ConfigFile string `name:"config-file" json:"config_file" env:"CONFIG_FILE" usage:"Path of config file"`
 	// MnemonicFile is full path to the keys file
 	MnemonicFile string `name:"mnemonic-file" json:"mnemonic_file" env:"MNEMONIC_FILE" usage:"Path of mnemonic file"`
 	// PrivValFile is full path of the node validator private key file

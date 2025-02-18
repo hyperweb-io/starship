@@ -1,5 +1,5 @@
 {{- range $chain := .Values.chains }}
-{{- if ne $chain.name "virtual" }}
+{{- if not (hasPrefix "ethereum" $chain.name) }}
 {{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
 {{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
 ---

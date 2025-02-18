@@ -41,7 +41,7 @@ Here’s a sample configuration:
 
 ```yaml
 name: starship-localnet
-version: 1.0.0
+version: 1.3.0
 
 chains:
 - id: osmosis-1
@@ -79,6 +79,27 @@ registry:
 ```
 
 For more details on the configuration options and directives available, refer to the [Starship Config](https://docs.cosmology.zone/starship/config).
+
+## Versions & Compatibility
+
+### Current Versions
+| Component	           | Version | Link                                                                                |
+|------------------------|---------|-------------------------------------------------------------------------------------|
+| Helm Chart             | 	1.3.0  | 	-                                                                                  |
+| Starship NPM CLI       | 	3.3.0  | [NPM](https://www.npmjs.com/package/@starship-ci/client/v/3.2.0)                |
+| NPM Client             | 3.3.0   | [NPM](https://www.npmjs.com/package/@starship-ci/cli/v/3.2.0)                       |
+| NPM StarshipJS         | 	3.3.0  | 	[NPM](https://www.npmjs.com/package/starshipjs/v/3.0.0)                            |
+| Starship GitHub Action | 	0.5.9  | 	[Github Action](https://github.com/hyperweb-io/starship-action/releases/tag/0.5.8) |
+
+### Compatibility Matrix
+| Starship Version | 	Helm Chart         | 	NPM CLI    | 	NPM Client | 	StarshipJS | 	GitHub Action |
+|------------------|---------------------|-------------|-------------|-------------|----------------|
+| 1.3.0 | 	✅ 1.3.0 | 	✅ 3.3.0 | 	✅ 3.3.0    | 	✅ 3.3.0    | 	✅ 0.5.9       |
+| 1.2.0 | 	✅ 1.2.0 | 	✅ 3.2.0 | 	✅ 3.2.0    | 	✅ 3.0.0    | 	✅ 0.5.8       |
+| 1.1.0 |	✅ 1.1.0 |	✅ 3.1.0 | 	✅ 3.1.0    | 	✅ 3.0.0    | 	✅ 0.5.6       |
+| 1.0.0 |	✅ 1.0.0 |	✅ 3.0.0 | 	✅ 3.0.0    | 	✅ 3.0.0    | 	✅ 0.5.5       | 
+
+> Note: Starship version 1.2.0+ requires Helm 1.2.0+ and NPM CLI 3.2.0+ for full functionality.
 
 ## Running Starship
 
