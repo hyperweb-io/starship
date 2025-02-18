@@ -51,7 +51,7 @@ export interface PodPorts {
 }
 
 const defaultName: string = 'starship';
-const defaultVersion: string = 'v1.2.0';
+const defaultVersion: string = 'v1.3.0';
 
 // TODO talk to Anmol about moving these into yaml, if not already possible?
 const defaultPorts: PodPorts = {

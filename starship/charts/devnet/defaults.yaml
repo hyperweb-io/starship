@@ -720,16 +720,16 @@ defaultChains:
         coingecko_id: kujira
         keywords: [ "kujira" ]
   hyperweb:
-    image: ghcr.io/cosmology-tech/jsd:0.1.1
-    home: /root/.jsd
-    binary: jsdd
+    image: ghcr.io/hyperweb-io/hyperweb:latest
+    home: /root/.hyperd
+    binary: hyperd
     prefix: hyper
     denom: uhyper
     prettyName: Hyperweb
     coins: 100000000000000uhyper
     hdPath: m/44'/118'/0'/0/0
     coinType: 118
-    repo: https://github.com/hyperweb-io/jsd
+    repo: https://github.com/hyperweb-io/hyperweb
     assets:
       - base: uhyper
         description: "The meme coin for Hyperweb chain."

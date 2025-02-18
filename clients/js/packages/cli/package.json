@@ -1,6 +1,6 @@
 {
   "name": "@starship-ci/cli",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "description": "Starship CLI",
   "main": "index.js",
@@ -55,7 +55,7 @@
     "@types/js-yaml": "^4.0.9"
   },
   "dependencies": {
-    "@starship-ci/client": "^3.2.0",
+    "@starship-ci/client": "^3.3.0",
     "chalk": "^4.1.0",
     "deepmerge": "^4.3.1",
     "inquirerer": "^1.9.0",
