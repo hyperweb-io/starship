@@ -1,0 +1,42 @@
+name: starship-e2e-tests
+version: 1.3.0
+
+chains:
+  - id: elys-1
+    name: elys
+    numValidators: 1  # only support for single validator node for ics
+    faucet:
+      enabled: false
+    ics:
+      enabled: true
+      provider: cosmoshub-4
+    ports:
+      rest: 1317
+      rpc: 26657
+  - id: cosmoshub-4
+    name: cosmoshub
+    numValidators: 1  # only support for single validator node for ics
+    ports:
+      rest: 1315
+      rpc: 26655
+      exposer: 38087
+      faucet: 8007
+
+relayers:
+  - name: elys-cosmos
+    type: hermes
+    image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
+    replicas: 1
+    chains:
+      - elys-1
+      - cosmoshub-4
+    ics:
+      enabled: true
+      consumer: elys-1
+      provider: cosmoshub-4
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
