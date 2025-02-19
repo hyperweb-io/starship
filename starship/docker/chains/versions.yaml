@@ -164,3 +164,8 @@ chains:
     file: Dockerfile.eth-prysmctl
     tags:
       - v5.2.0
+  - name: elys
+    base: golang:1.21-bullseye
+    file: Dockerfile.elys
+    tags:
+      - v2.0.0
