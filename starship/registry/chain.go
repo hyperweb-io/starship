@@ -279,7 +279,7 @@ func (c *ChainClient) getConnectionClient(connectionId string) (*ConnectionInfo,
 	}, nil
 }
 
-// GetIBCClients will fetch all the IBC channels for the chain
+// getChainIdFromClient retrieves the chain ID from an IBC client ID
 func (c *ChainClient) getChainIdFromClient(clientId string) (string, error) {
 	querier := query.Query{Client: c.client, Options: query.DefaultOptions()}
 
