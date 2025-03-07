@@ -905,6 +905,32 @@ defaultChains:
         - --force-clear-db
         - --chain-config-file=/etc/config/config.yml
         - --suggested-fee-recipient=0x0C46c2cAFE097b4f7e1BB868B89e5697eE65f934
+  elys:
+    image: ghcr.io/cosmology-tech/starship/elys:v2.0.0
+    home: /root/.elys
+    binary: elysd
+    prefix: elys
+    denom: uelys
+    prettyName: Elys
+    coins: 200000000000000uelys
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/elys-network/elys
+    assets:
+      - base: uelys
+        description: "The native token of Elys Network."
+        name: Elys
+        display: elys
+        symbol: ELYS
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/elys/images/elys.png"
+        denom_units:
+          - denom: uelys
+            exponent: 0
+          - denom: elys
+            exponent: 6
+        coingecko_id: elys-network
+        keywords: [ "elys-network" ]
 
 defaultRelayers:
   ts-relayer:
