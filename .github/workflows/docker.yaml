@@ -123,7 +123,7 @@ jobs:
           password: ${{ secrets.GH_HYPERWEB_PAT }}
 
       - name: Build chains
-        if: github.event_name != 'push'
+        if: github.event_name == 'pull_request'
         run: |
           cd docker/chains && ./build-docker-chains.sh --chain all --tag all
 
