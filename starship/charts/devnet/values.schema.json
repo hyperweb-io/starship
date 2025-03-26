@@ -147,7 +147,8 @@
               "kujira",
               "hyperweb",
               "noble",
-              "ethereum"
+              "ethereum",
+              "elys"
             ]
           },
           "numValidators": {
