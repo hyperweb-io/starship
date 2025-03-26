@@ -76,7 +76,7 @@ jobs:
           password: ${{ secrets.GH_HYPERWEB_PAT }}
 
       - name: Build
-        if: github.event_name != 'push'
+        if: github.event_name == 'pull_request'
         run: |
           ./starship/scripts/build-docker.sh --type ${{ matrix.build-type }} --process all --version all
 
