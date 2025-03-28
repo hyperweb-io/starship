@@ -22,7 +22,7 @@ chains:
 relayers:
   - name: osmos-cosmos
     type: go-relayer
-    image: ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1
+    image: ghcr.io/hyperweb-io/starship/go-relayer:v2.4.1
     replicas: 1
     chains:
       - osmosis-1
