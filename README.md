@@ -41,7 +41,7 @@ Here’s a sample configuration:
 
 ```yaml
 name: starship-localnet
-version: 1.5.0
+version: 1.6.0
 
 chains:
 - id: osmosis-1
@@ -85,15 +85,16 @@ For more details on the configuration options and directives available, refer to
 ### Current Versions
 | Component	           | Version | Link                                                                                |
 |------------------------|---------|-------------------------------------------------------------------------------------|
-| Helm Chart             | 	1.5.0  | 	-                                                                                  |
-| Starship NPM CLI       | 	3.5.0  | [NPM](https://www.npmjs.com/package/@starship-ci/client/v/3.5.0)                    |
-| NPM Client             | 3.5.0   | [NPM](https://www.npmjs.com/package/@starship-ci/cli/v/3.5.0)                       |
+| Helm Chart             | 	1.6.0  | 	-                                                                                  |
+| Starship NPM CLI       | 	3.6.0  | [NPM](https://www.npmjs.com/package/@starship-ci/client/v/3.6.0)                    |
+| NPM Client             | 3.6.0   | [NPM](https://www.npmjs.com/package/@starship-ci/cli/v/3.6.0)                       |
 | NPM StarshipJS         | 	3.3.0  | 	[NPM](https://www.npmjs.com/package/starshipjs/v/3.3.0)                            |
 | Starship GitHub Action | 	0.5.9  | 	[Github Action](https://github.com/hyperweb-io/starship-action/releases/tag/0.5.9) |
 
 ### Compatibility Matrix
 | Starship Version | 	Helm Chart | 	NPM CLI | 	NPM Client | 	StarshipJS | 	GitHub Action |
 |------------------|-------------|----------|-------------|-------------|----------------|
+| 1.6.0            | 	✅ 1.6.0    | 	✅ 3.6.0 | 	✅ 3.6.0    | 	✅ 3.3.0    | 	✅ 0.5.9       |
 | 1.5.0            | 	✅ 1.5.0    | 	✅ 3.5.0 | 	✅ 3.5.0    | 	✅ 3.3.0    | 	✅ 0.5.9       |
 | 1.4.0            | 	✅ 1.4.0    | 	✅ 3.4.0 | 	✅ 3.4.0    | 	✅ 3.3.0    | 	✅ 0.5.9       |
 | 1.3.0            | 	✅ 1.3.0    | 	✅ 3.3.0 | 	✅ 3.3.0    | 	✅ 3.3.0    | 	✅ 0.5.9       |
