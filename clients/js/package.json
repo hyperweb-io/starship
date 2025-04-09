@@ -1,6 +1,6 @@
 {
   "name": "starship-js",
-  "version": "0.0.1",
+  "version": "3.7.0",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "private": true,
   "repository": {
@@ -21,9 +21,11 @@
     "lint": "lerna run lint",
     "format": "lerna run format",
     "postinstall": "yarn symlink",
-    "publish": "yarn build; yarn lerna publish --no-private",
-    "publish:minor": "yarn build; yarn lerna publish minor --no-private",
-    "publish:major": "yarn build; yarn lerna publish major --no-private"
+    "version": "bash ../../scripts/sync-version.sh sync",
+    "prepublishOnly": "yarn build",
+    "publish": "lerna version --conventional-commits --yes && lerna publish from-package --yes",
+    "publish:minor": "lerna version minor --conventional-commits --yes && lerna publish from-package --yes",
+    "publish:major": "lerna version major --conventional-commits --yes && lerna publish from-package --yes"
   },
   "devDependencies": {
     "@types/jest": "^29.5.11",
