@@ -828,6 +828,51 @@
           ]
         }
       }
+    },
+    "frontends": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["custom"]
+          },
+          "image": {
+            "type": "string"
+          },
+          "replicas": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "ports": {
+            "type": "object",
+            "properties": {
+              "rest": {
+                "type": "number"
+              }
+            },
+            "required": ["rest"]
+          },
+          "env": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "resources": { "$ref": "#/$def/resources" }
+        },
+        "required": [
+          "name",
+          "type",
+          "image",
+          "ports"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [

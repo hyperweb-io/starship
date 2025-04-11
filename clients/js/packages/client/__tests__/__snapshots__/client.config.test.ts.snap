@@ -32,9 +32,9 @@ Log: Forwarded cosmos-2-genesis-0: local 26653 -> target (host) 26657
 kubectl port-forward pods/cosmos-2-genesis-0 8003:8000 > /dev/null 2>&1 &
 Log: Forwarded cosmos-2-genesis-0: local 8003 -> target (host) 8000
 kubectl port-forward service/registry 8081:8080 > /dev/null 2>&1 &
-Log: Forwarded registry on port 8081 to target port 8080
+Log: Forwarded registry: local 8081 -> target (host) 8080
 kubectl port-forward service/registry 9091:9090 > /dev/null 2>&1 &
-Log: Forwarded registry on port 9091 to target port 9090
+Log: Forwarded registry: local 9091 -> target (host) 9090
 Call: stop()
 Log: Trying to stop all port-forward, if any....
 ps -ef | grep -i 'kubectl port-forward' | grep -v 'grep' | awk '{print $2}'

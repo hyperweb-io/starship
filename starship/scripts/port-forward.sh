@@ -132,6 +132,20 @@ if [[ $(yq -r ".registry.enabled" $CONFIGFILE) == "true" ]]; then
   color yellow "registry: forwarded registry lcd to http://localhost:${registry_lcd_port}, grpc to http://localhost:${registry_grpc_port}"
 fi
 
+# Port forward frontend services
+num_frontends=$(yq -r ".frontends | length - 1" ${CONFIGFILE})
+if [[ $num_frontends -gt -1 ]]; then
+  for i in $(seq 0 $num_frontends); do
+    frontend_name=$(yq -r ".frontends[$i].name" ${CONFIGFILE})
+    frontend_port=$(yq -r ".frontends[$i].ports.rest" ${CONFIGFILE})
+    color yellow "frontend: forwarded $frontend_name"
+    [[ "$frontend_port" != "null" ]] && color yellow "    rest to http://localhost:$frontend_port" && kubectl port-forward service/$frontend_name $frontend_port:$frontend_port > /dev/null 2>&1 &
+    sleep 1
+  done
+else
+  echo "No frontend services to port-forward: num: $num_frontends"
+fi
+
 if [[ $(yq -r ".explorer.enabled" $CONFIGFILE) == "true" ]]; then
   explorer_port=$(yq -r ".explorer.ports.rest" $CONFIGFILE)
   explorer_port=${explorer_port:-$EXPLORER_LCD_PORT}

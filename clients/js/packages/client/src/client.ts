@@ -821,7 +821,9 @@ export class StarshipClient implements StarshipClientI {
         '&'
       ]);
       this.log(
-        `Forwarded ${serviceName} on port ${localPort} to target port ${externalPort}`
+        chalk.yellow(
+          `Forwarded ${serviceName}: local ${localPort} -> target (host) ${externalPort}`
+        )
       );
     }
   }
@@ -895,6 +897,19 @@ export class StarshipClient implements StarshipClientI {
         this.podPorts.explorer.rest
       );
     }
+
+    // Forward ports for frontend services
+    this.config.frontends?.forEach((frontend) => {
+      if (frontend.ports) {
+        if (frontend.ports.rest) {
+          this.forwardPortService(
+            frontend.name,
+            frontend.ports.rest,
+            frontend.ports.rest
+          );
+        }
+      }
+    });
   }
 
   private getForwardPids(): string[] {

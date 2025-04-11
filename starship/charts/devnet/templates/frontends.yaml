@@ -1,0 +1,88 @@
+{{- range $frontend := .Values.frontends }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $frontend.name }}
+  labels:
+    app.kubernetes.io/name: {{ $frontend.name }}
+spec:
+  clusterIP: None
+  ports:
+    {{- if $frontend.ports }}
+      {{- if $frontend.ports.rest }}
+    - name: http
+      port: {{ $frontend.ports.rest }}
+      protocol: TCP
+      targetPort: http
+      {{- end }}
+    {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ $frontend.name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $frontend.name }}
+spec:
+  replicas: {{ $frontend.replicas | default 1 }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $frontend.name }}
+      app.kubernetes.io/name: {{ $frontend.name }}
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: frontend
+        sla: high
+        tier: frontend
+      labels:
+        app.kubernetes.io/instance: {{ $frontend.name }}
+        app.kubernetes.io/type: {{ $frontend.type }}
+        app.kubernetes.io/name: {{ $frontend.name }}
+        app.kubernetes.io/rawname: {{ $frontend.name }}
+        app.kubernetes.io/version: {{ $.Chart.AppVersion }}
+    spec:
+      {{- include "imagePullSecrets" $frontend | indent 6 }}
+      containers:
+        - name: {{ $frontend.name }}
+          image: {{ $frontend.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if $frontend.env }}
+              {{- range $key, $value := $frontend.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+              {{- end }}
+            {{- end }}
+          {{- if $frontend.ports }}
+          ports:
+            {{- if $frontend.ports.rest }}
+            - name: http
+              containerPort: {{ $frontend.ports.rest }}
+              protocol: TCP
+            {{- end }}
+          {{- end }}
+          resources:
+{{- include "getResourceObject" $frontend.resources | indent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+{{- end }}

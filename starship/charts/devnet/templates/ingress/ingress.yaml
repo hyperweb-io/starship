@@ -32,6 +32,11 @@ spec:
         - "rpc.{{ $chain.id }}-genesis.{{ $host }}"
       secretName: rpc.{{ $chain.id }}-genesis.{{ $.Values.ingress.type }}-ingress-tls
     {{- end }}
+    {{- range $ui := $.Values.ui }}
+    - hosts:
+        - "{{ $ui.name }}.{{ $host }}"
+      secretName: {{ $ui.name }}.{{ $.Values.ingress.type }}-ingress-tls
+    {{- end }}
   rules:
     {{- if $.Values.explorer.enabled }}
     - host: "explorer.{{ $host }}"
@@ -113,6 +118,18 @@ spec:
                 port:
                   name: exposer
     {{- end }}
+    {{- end }}
+    {{- range $ui := $.Values.ui }}
+    - host: "{{ $ui.name }}.{{ $host }}"
+      http:
+        paths:
+          - pathType: ImplementationSpecific
+            path: "/(.*)"
+            backend:
+              service:
+                name: {{ $ui.name }}
+                port:
+                  name: http
     {{- end }}
 ---
 {{- end }}

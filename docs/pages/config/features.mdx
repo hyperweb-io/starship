@@ -105,3 +105,35 @@ Above will create following endpoints with the domain, and valid certs:
   * Rest endpoint: `https://rest.<relayer-type>-<relayer-name>.<host>`
   * Exposer endpoint: `https://rest.<relayer-type>-<relayer-name>.<host>/exposer`
 
+## Frontends
+Starship provides flexible frontend services that can be configured to run alongside your infrastructure.
+Frontend services can be customized with different images, ports, and resource allocations.
+
+### Syntax
+
+```yaml
+frontends:
+  - name: my-frontend
+    type: custom
+    image: ghcr.io/hyperweb-io/starship/frontend:latest
+    replicas: 1
+    ports:
+      rest: 3000
+    env:
+      API_URL: http://localhost:8080
+    resources:  # optional, defaults will be used
+      cpu: 0.5
+      memory: 512Mi
+```
+
+### Configuration Options
+
+| Field | Type | Description | Default |
+|-------|------|-------------|---------|
+| `name` | string | Name of the frontend service | Required |
+| `type` | string | Type of frontend service (e.g., custom) | Required |
+| `image` | string | Docker image for the frontend service | Required |
+| `replicas` | integer | Number of frontend service replicas | Required |
+| `ports.rest` | integer | Port for HTTP/REST traffic | Required |
+| `env` | object | Environment variables for the frontend service | {} |
+| `resources` | object | Resource limits and requests | Not required |
