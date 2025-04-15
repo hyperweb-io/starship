@@ -63,7 +63,7 @@ function set_helm_args() {
     chain=$(yq -r ".chains[$i].id" ${CONFIGFILE})
     scripts=$(yq -r ".chains[$i].scripts" ${CONFIGFILE})
     if [[ "$scripts" == "null" ]]; then
-      return 0
+      continue
     fi
     datadir="$(cd "$(dirname -- "${CONFIGFILE}")" >/dev/null; pwd -P)"
     for script in $(yq -r ".chains[$i].scripts | keys | .[]" ${CONFIGFILE}); do
