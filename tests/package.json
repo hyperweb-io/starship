@@ -13,13 +13,16 @@
   "dependencies": {
     "@cosmjs/stargate": "^0.31.0",
     "@cosmjs/proto-signing": "^0.31.0",
-    "axios": "^1.6.0",
+    "@hyperweb-io/starshipjs": "workspace:*",
+    "axios": "^1.6.7",
     "jest": "^29.7.0",
+    "js-yaml": "^4.1.0",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
-    "@types/node": "^20.0.0",
+    "@types/jest": "^29.5.12",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.19",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
@@ -27,7 +30,7 @@
     "eslint-plugin-simple-import-sort": "^12.0.0",
     "eslint-plugin-unused-imports": "^3.0.0",
     "prettier": "^3.0.0",
-    "ts-jest": "^29.1.0",
-    "typescript": "^5.0.0"
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
   }
 } 

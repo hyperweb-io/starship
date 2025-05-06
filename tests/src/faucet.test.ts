@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ChainConfig } from '@hyperweb-io/starshipjs';
 import { config } from './setup';
 import { getAddressFromType } from './utils';
 
@@ -33,19 +34,19 @@ interface IBCData {
   channel2: string;
 }
 
-async function makeFaucetRequest(chain: any, endpoint: string): Promise<any> {
+async function makeFaucetRequest(chain: ChainConfig['chains'][0], endpoint: string): Promise<any> {
   const host = `http://0.0.0.0:${chain.ports.faucet}${endpoint}`;
   const response = await axios.get(host);
   return response.data;
 }
 
-async function makeChainGetRequest(chain: any, endpoint: string): Promise<any> {
+async function makeChainGetRequest(chain: ChainConfig['chains'][0], endpoint: string): Promise<any> {
   const url = `http://0.0.0.0:${chain.ports.rest}${endpoint}`;
   const response = await axios.get(url);
   return response.data;
 }
 
-async function getChainAccounts(chain: any): Promise<string[]> {
+async function getChainAccounts(chain: ChainConfig['chains'][0]): Promise<string[]> {
   const data = await makeChainGetRequest(chain, '/cosmos/auth/v1beta1/accounts');
   const accounts: string[] = [];
 
@@ -59,9 +60,9 @@ async function getChainAccounts(chain: any): Promise<string[]> {
   return accounts;
 }
 
-async function getChainDenoms(chain: any): Promise<string> {
+async function getChainDenoms(chain: ChainConfig['chains'][0]): Promise<string> {
   const response = await axios.get(`/chains/${chain.id}`);
-  const chainData: ChainRegistry = response.data;
+  const chainData = response.data;
   expect(chainData.chainId).toBe(chain.id);
   expect(chainData.fees.feeTokens[0].denom).toBeTruthy();
   return chainData.fees.feeTokens[0].denom;
@@ -72,13 +73,13 @@ async function getIBCData(aChain: string, bChain: string): Promise<IBCData> {
   return response.data;
 }
 
-async function getAccountBalance(chain: any, address: string, denom: string): Promise<number> {
+async function getAccountBalance(chain: ChainConfig['chains'][0], address: string, denom: string): Promise<number> {
   const data = await makeChainGetRequest(chain, `/cosmos/bank/v1beta1/balances/${address}`);
   const balance = data.balances.find((b: any) => b.denom === denom);
   return balance ? parseFloat(balance.amount) : 0;
 }
 
-async function creditAccount(chain: any, addr: string, denom: string): Promise<void> {
+async function creditAccount(chain: ChainConfig['chains'][0], addr: string, denom: string): Promise<void> {
   const response = await axios.post(
     `http://0.0.0.0:${chain.ports.faucet}/credit`,
     {
