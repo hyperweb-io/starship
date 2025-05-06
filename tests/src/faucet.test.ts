@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ChainConfig } from '@hyperweb-io/starshipjs';
+import { ChainConfig } from 'starshipjs';
 import { config } from './setup';
 import { getAddressFromType } from './utils';
 
@@ -154,10 +154,10 @@ describe('Faucet Tests', () => {
 
         const expectedIncrease = expectedCreditAmount * numRequests;
         const actualIncrease = afterBalance - beforeBalance;
-        expect(actualIncrease).toBeGreaterThanOrEqual(
-          expectedIncrease,
-          `Balance didn't increase as expected. Actual increase: ${actualIncrease}, Expected increase: ${expectedIncrease}`
-        );
+        expect(actualIncrease).toBeGreaterThanOrEqual(expectedIncrease);
+        if (actualIncrease < expectedIncrease) {
+          console.log(`Balance didn't increase as expected. Actual increase: ${actualIncrease}, Expected increase: ${expectedIncrease}`);
+        }
       }
     });
   });

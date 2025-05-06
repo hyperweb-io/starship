@@ -1,4 +1,4 @@
-import { ChainConfig } from '@hyperweb-io/starshipjs';
+import { ChainConfig } from 'starshipjs';
 
 export function getAddressFromType(chainName: string): string {
   // This is a simplified version - in reality, we should get this from the chain's genesis accounts

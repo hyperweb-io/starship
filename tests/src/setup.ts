@@ -1,4 +1,4 @@
-import { ChainConfig } from '@hyperweb-io/starshipjs';
+import { ChainConfig } from 'starshipjs';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 
