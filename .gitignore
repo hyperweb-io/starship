@@ -41,3 +41,5 @@ Session.vim
 
 # Ignore docs site created
 **/site/
+
+node_modules/
