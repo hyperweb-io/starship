@@ -1,0 +1,38 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: test-hyperweb-1
+    name: hyperweb
+    numValidators: 2
+    image: ghcr.io/hyperweb-io/hyperweb:latest
+    coins: 100000000000000uhyper,100000000000000uhypweb,100000000000000uatom,100000000000000uusdc
+    ports:
+      rest: 1317
+      rpc: 26657
+      faucet: 8000
+      exposer: 8001
+    faucet:
+      enabled: true
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+
+images:
+  imagePullPolicy: Always
+
+frontends:
+  - name: playground
+    type: custom
+    replicas: 1
+    image: ghcr.io/hyperweb-io/hyperweb-playground:latest
+    ports:
+      rest: 3000
+    env:
+      CHAIN_RPC_URL: http://localhost:26657
+      CHAIN_FAUCET_URL: http://localhost:8000
+      REGISTRY_REST_URL: http://localhost:8081
+      S3_BUCKET_URL: https://hyperweb-playground.s3.amazonaws.com/create-hyperweb-app
+      S3_TARBALL_NAME: latest.tar.gz

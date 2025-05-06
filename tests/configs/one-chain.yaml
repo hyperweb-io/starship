@@ -1,0 +1,48 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: osmosis-1
+    name: osmosis
+    numValidators: 1
+    metrics: true
+    ports:
+      rest: 1313
+      rpc: 26653
+      exposer: 38083
+      faucet: 8003
+      grpc-web: 9091
+    resources:
+      cpu: "0.5"
+      memory: 500M
+    faucet:
+      concurrency: 2
+    balances:
+    - address: osmo1e9ucjn5fjmetky5wezzcsccp7hqcwzrrhthpf5
+      amount: "2000000000000uosmo"
+    - address: osmo10eykchznjdn8jdlwaj5v9wvlmdsp6kxx7u0hv9
+      amount: "2000000000000uosmo"
+    genesis:
+      app_state:
+        staking:
+          params:
+            unbonding_time: "5s"
+        gamm:
+          params:
+            pool_creation_fee:
+              - amount: "500000"
+                denom: uosmo
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
+  resources:
+    cpu: "0.1"
+    memory: 100M
+
+resources:
+  wait:
+    cpu: "0.1"
+    memory: 100M

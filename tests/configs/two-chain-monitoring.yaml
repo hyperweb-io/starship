@@ -1,0 +1,49 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: osmosis-1
+    name: osmosis
+    numValidators: 2
+    metrics: true
+    faucet:
+      enabled: false
+    ports:
+      rest: 1313
+      rpc: 26653
+      exposer: 38083
+      faucet: 8001
+  - id: cosmoshub-4
+    name: cosmoshub
+    image: ghcr.io/cosmology-tech/starship/gaia:v10.0.1
+    numValidators: 2
+    metrics: true
+    faucet:
+      enabled: false
+    ports:
+      rest: 1317
+      rpc: 26657
+      exposer: 38087
+
+relayers:
+  - name: osmos-cosmos
+    type: hermes
+    replicas: 1
+    chains:
+      - osmosis-1
+      - cosmoshub-4
+    config:
+      telemetry:
+        enabled: true
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
+
+monitoring:
+  enabled: true
+  ports:
+    grafana: 8082
+    prometheus: 8083
