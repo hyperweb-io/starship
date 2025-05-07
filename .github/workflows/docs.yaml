@@ -14,6 +14,7 @@ env:
   REPO_NAME: starship
   DOCS_DEST_PATH: pages/starship
   LEARN_DEST_PATH: src/data/learn/starship
+  BRANCH_PREFIX: auto-docs
 
 jobs:
   docs-deploy:
@@ -24,22 +25,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Git
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+
+      - name: Set branch name
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "BRANCH_NAME=${{ env.BRANCH_PREFIX }}/${{ env.REPO_NAME }}/docs/$SHORT_SHA" >> $GITHUB_ENV
+
       - name: Clone docs repository
         run: git clone https://x-access-token:${{ secrets.GH_HYPERWEB_PAT }}@github.com/hyperweb-io/docs.hyperweb.io.git external-docs
 
-      - name: Sync the docs
+      - name: Create and push docs branch
         run: |
-          rsync -av --delete ./docs/ ./external-docs/${{ env.DOCS_DEST_PATH }}/
           cd external-docs
-          git config user.name 'GitHub Action'
-          git config user.email 'action@github.com'
+          git checkout -b ${{ env.BRANCH_NAME }}
+          rsync -av --delete ../docs/ ./${{ env.DOCS_DEST_PATH }}/
           git add .
-          if git diff --cached --quiet; then
-              echo "No changes to commit."
-          else
-              git commit -m "Automated: Update ${{ env.REPO_NAME }} documentation"
-              git push
-          fi
+          git commit -m "Update ${{ env.REPO_NAME }} documentation"
+          git push origin ${{ env.BRANCH_NAME }}
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GH_HYPERWEB_PAT }}
+          path: external-docs
+          commit-message: "Update ${{ env.REPO_NAME }} documentation"
+          title: "automated: Update ${{ env.REPO_NAME }} documentation"
+          body: "Automated update of ${{ env.REPO_NAME }} documentation"
+          branch: ${{ env.BRANCH_NAME }}
+          base: main
+          labels: automated-pr
+
+      - name: Wait for PR checks
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+          repo: hyperweb-io/docs.hyperweb.io
+          token: ${{ secrets.GH_HYPERWEB_PAT }}
+          check-interval: 10
+
+      - name: Merge PR
+        uses: peter-evans/merge-pull-request@v2
+        with:
+          token: ${{ secrets.GH_HYPERWEB_PAT }}
+          repository: hyperweb-io/docs.hyperweb.io
+          pull-request-number: ${{ steps.create-pr.outputs.pull-request-number }}
+          merge-method: squash
 
   learn-deploy:
     runs-on: ubuntu-latest
@@ -49,23 +83,53 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Git
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+
+      - name: Set branch name
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "BRANCH_NAME=${{ env.BRANCH_PREFIX }}/${{ env.REPO_NAME }}/learn/$SHORT_SHA" >> $GITHUB_ENV
+
       - name: Clone learn repository
         run: git clone https://x-access-token:${{ secrets.GH_HYPERWEB_PAT }}@github.com/hyperweb-io/hyperweb.io.git learn-site
 
-      - name: Create destination directory
+      - name: Create and push learn branch
         run: |
-          mkdir -p ./learn-site/${{ env.LEARN_DEST_PATH }}
-
-      - name: Sync the learn content
-        run: |
-          rsync -av --delete ./learn/ ./learn-site/${{ env.LEARN_DEST_PATH }}/
           cd learn-site
-          git config user.name 'GitHub Action'
-          git config user.email 'action@github.com'
+          git checkout -b ${{ env.BRANCH_NAME }}
+          mkdir -p ./${{ env.LEARN_DEST_PATH }}
+          rsync -av --delete ../learn/ ./${{ env.LEARN_DEST_PATH }}/
           git add .
-          if git diff --cached --quiet; then
-              echo "No changes to commit."
-          else
-              git commit -m "Automated: Update ${{ env.REPO_NAME }} learn content"
-              git push
-          fi
+          git commit -m "Update ${{ env.REPO_NAME }} learn content"
+          git push origin ${{ env.BRANCH_NAME }}
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GH_HYPERWEB_PAT }}
+          path: learn-site
+          commit-message: "Update ${{ env.REPO_NAME }} learn content"
+          title: "automated: Update ${{ env.REPO_NAME }} learn content"
+          body: "Automated update of ${{ env.REPO_NAME }} learn content"
+          branch: ${{ env.BRANCH_NAME }}
+          base: main
+          labels: automated-pr
+
+      - name: Wait for PR checks
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+          repo: hyperweb-io/hyperweb.io
+          token: ${{ secrets.GH_HYPERWEB_PAT }}
+          check-interval: 10
+
+      - name: Merge PR
+        uses: peter-evans/merge-pull-request@v2
+        with:
+          token: ${{ secrets.GH_HYPERWEB_PAT }}
+          repository: hyperweb-io/hyperweb.io
+          pull-request-number: ${{ steps.create-pr.outputs.pull-request-number }}
+          merge-method: squash
