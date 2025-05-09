@@ -37,6 +37,11 @@ var addresses = map[string][]string{
 		"inj1hsxaln75wjs033t3spd8a0gawl4jvxawyuez5p",
 		"inj1lsuqpgm8kgwpq96ewyew26xnfwyn3lh3y7knzj",
 	},
+	"xpla": {
+		"xpla1sp9frqwep52chwavv3xd776myy8gyyvkau6xqe",
+		"xpla1zwr06uz8vrwkcnd05e5yddamvghn93a4xczm7m",
+		"xpla1f35jtt5m68zlxkpxn75403vv82cchahqapkpv8",
+	},
 }
 
 func getAddressFromType(chainType string) string {

@@ -799,7 +799,7 @@ defaultChains:
     binary: xplad
     prefix: xpla
     denom: axpla
-    prettyName: XPLA CHain
+    prettyName: XPLA Chain
     coins: 100000000000000000000000000axpla
     hdPath: m/44'/60'/0'/0/0
     coinType: 60

@@ -1,0 +1,42 @@
+name: xpla
+version: 1.7.0
+
+chains:
+  - id: xpla_1-1
+    name: xpla
+    image: ghcr.io/hyperweb-io/starship/xpla:main
+    numValidators: 1
+    metrics: true
+    ports:
+      rest: 1317
+      rpc: 26657
+      exposer: 8081
+      faucet: 8000
+      grpc-web: 9091
+    resources:
+      cpu: "0.5"
+      memory: 500M
+    faucet:
+      concurrency: 2
+    balances:
+    - address: xpla1cmywl3ff3vfsdp2s87v25v75qjxs4up35tk45g
+      amount: "100000000000000000000000axpla"
+    genesis:
+      app_state:
+        staking:
+          params:
+            unbonding_time: "300s"
+
+registry:
+  enabled: true
+  ports:
+    rest: 8080
+    grpc: 9091
+  resources:
+    cpu: "0.1"
+    memory: 100M
+
+resources:
+  wait:
+    cpu: "0.1"
+    memory: 100M

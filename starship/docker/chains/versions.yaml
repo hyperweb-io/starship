@@ -148,6 +148,7 @@ chains:
       - v7.0.0
   - name: xpla
     base: ghcr.io/xpladev/xpla
+    file: Dockerfile.xpla
     tags:
       - main
   - name: ethereum/client-go
