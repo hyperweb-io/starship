@@ -21,7 +21,7 @@ The Docker image must include:
 You can either use Starship's Docker build system or maintain your own.
 
 #### ✨ Option A: Use the Starship Docker System
-Update [`starship/docker/chains/version.yaml`](https://github.com/hyperweb-io/starship/blob/main/starship/docker/chains/versions.yaml) with your chain:
+Update [`starship/docker/chains/versions.yaml`](https://github.com/hyperweb-io/starship/blob/main/starship/docker/chains/versions.yaml) with your chain:
 ```yaml
 - name: mychain
   base: <base docker image>  # Used as base image from which chain binary are installed from `/bin` and `/lib` dir
@@ -34,7 +34,7 @@ Want to use a custom Dockerfile? Add the file field:
 ```yaml
 - name: mychain
   base: <base-docker-image>
-  file: starship/docker/chains/mychain.Dockerfile
+  file: starship/docker/chains/Dockerfile.mychain
   tags:
   - v1.0.0
 ```
