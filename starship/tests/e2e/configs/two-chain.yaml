@@ -23,13 +23,14 @@ chains:
 relayers:
   - name: osmos-cosmos
     type: hermes
+    image: ghcr.io/hyperweb-io/starship/hermes:1.12.0
     replicas: 1
     chains:
       - osmosis-1
       - cosmoshub-4
     config:
       global:
-        log_level: "error"
+        log_level: "info"
       rest:
         enabled: true
       telemetry:

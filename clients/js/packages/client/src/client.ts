@@ -11,6 +11,7 @@ import { Chain, Relayer, StarshipConfig } from './config';
 import { Ports } from './config';
 import { dependencies as defaultDependencies, Dependency } from './deps';
 import { readAndParsePackageJson } from './package';
+import { verify } from './verifiers';
 
 export interface StarshipContext {
   name?: string;
@@ -952,5 +953,46 @@ export class StarshipClient implements StarshipClientI {
     pids.forEach((pid) => {
       console.log(pid);
     });
+  }
+
+  public async verify(): Promise<void> {
+    this.log(chalk.blue('Verifying services...'));
+    const results = await verify(this.config);
+
+    let allSuccess = true;
+    for (const result of results) {
+      const statusColor =
+        result.status === 'success'
+          ? 'green'
+          : result.status === 'skipped'
+            ? 'yellow'
+            : 'red';
+      const status = chalk[statusColor](result.status.toUpperCase());
+      const message = result.message || result.error || '';
+      const details = result.details
+        ? JSON.stringify(result.details, null, 2)
+        : '';
+
+      this.log(`${status} ${result.service} (${result.endpoint}): ${message}`);
+      if (details && result.status === 'failure') {
+        this.log(chalk.gray(`Details: ${details}`));
+      }
+
+      if (result.status === 'failure') {
+        allSuccess = false;
+      }
+    }
+
+    if (!allSuccess) {
+      this.log(
+        chalk.red(
+          '\nSome services failed verification. Please check the logs above.'
+        )
+      );
+      this.exit(1);
+    } else {
+      this.log(chalk.green('\nAll services verified successfully!'));
+      this.exit(0);
+    }
   }
 }

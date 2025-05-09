@@ -112,6 +112,12 @@ async function main() {
     case 'undeploy':
       client.deleteHelm();
       break;
+    case 'verify':
+      client.verify().catch((err: any) => {
+        console.error('An error occurred during verification:', err);
+        process.exit(1);
+      });
+      break;
     default:
       console.log(`Unknown command: ${command}`);
       displayUsage();
