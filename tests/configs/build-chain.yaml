@@ -1,0 +1,41 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: cosmoshub-4
+    name: cosmoshub
+    numValidators: 2
+    ports:
+      rest: 1317
+      rpc: 26657
+      exposer: 38087
+  - id: core-1
+    name: persistencecore
+    numValidators: 2
+    build:
+      enabled: true
+      source: v7.0.0
+    ports:
+      rest: 1318
+      rpc: 26658
+      exposer: 38088
+    # For building binary on the fly, resources need to be increased
+    # Minimum resources required is 1 CPU and 1 GB Ram, if resources are not
+    # increased, pods will crash. Takes around 8 mins to spin up
+    resources:
+      cpu: "2"
+      memory: "2Gi"
+
+relayers:
+  - name: persistence-cosmos
+    type: hermes
+    replicas: 1
+    chains:
+      - core-1
+      - cosmoshub-4
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
