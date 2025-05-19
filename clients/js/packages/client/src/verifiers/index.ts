@@ -2,6 +2,7 @@ import { chainVerifiers } from './chain';
 import { verifyExplorerRest } from './explorer';
 import { verifyRegistryRest } from './registry';
 import { relayerVerifiers } from './relayer';
+import { verifyIngress } from './ingress';
 import { VerificationFunction, VerificationResult } from './types';
 
 export const verifyChains: VerificationFunction = async (config) => {
@@ -14,7 +15,7 @@ export const verifyChains: VerificationFunction = async (config) => {
   for (const chain of config.chains) {
     const verifierSet = chainVerifiers[chain.name] || chainVerifiers.default;
     for (const [, verifier] of Object.entries(verifierSet)) {
-      const result = await verifier(chain);
+      const result = await verifier(chain, config);
       results.push(result);
     }
   }
@@ -31,7 +32,7 @@ export const verifyRelayers: VerificationFunction = async (config) => {
 
   for (const relayer of config.relayers) {
     for (const [, verifier] of Object.entries(relayerVerifiers)) {
-      const result = await verifier(relayer);
+      const result = await verifier(relayer, config);
       results.push(result);
     }
   }
@@ -47,7 +48,7 @@ export const verifyRegistry: VerificationFunction = async (config) => {
   }
 
   const registryResults = await Promise.all([
-    verifyRegistryRest(config.registry)
+    verifyRegistryRest(config.registry, config)
   ]);
 
   results.push(...registryResults);
@@ -61,7 +62,7 @@ export const verifyExplorer: VerificationFunction = async (config) => {
     return results;
   }
 
-  const explorerResult = await verifyExplorerRest(config.explorer);
+  const explorerResult = await verifyExplorerRest(config.explorer, config);
   results.push(explorerResult);
   return results;
 };
@@ -71,12 +72,14 @@ export const verify: VerificationFunction = async (config) => {
   const relayerResults = await verifyRelayers(config);
   const registryResults = await verifyRegistry(config);
   const explorerResults = await verifyExplorer(config);
+  const ingressResults = await verifyIngress(config);
 
   return [
     ...chainResults,
     ...relayerResults,
     ...registryResults,
-    ...explorerResults
+    ...explorerResults,
+    ...ingressResults
   ];
 };
 

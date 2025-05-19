@@ -14,9 +14,19 @@ export type VerificationFunction = (
 ) => Promise<VerificationResult[]>;
 
 export type ChainVerifierSet = {
-  [K in keyof Ports]?: (chain: Chain) => Promise<VerificationResult>;
+  [K in keyof Ports]?: (chain: Chain, config: StarshipConfig) => Promise<VerificationResult>;
 };
 
 export type RelayerVerifierSet = {
-  [K in keyof Ports]?: (relayer: Relayer) => Promise<VerificationResult>;
+  [K in keyof Ports]?: (relayer: Relayer, config: StarshipConfig) => Promise<VerificationResult>;
+};
+
+export const handleAxiosError = (error: any): string => {
+  if (error.response) {
+    return `HTTP ${error.response.status}: ${error.response.data?.message || error.message}`;
+  }
+  if (error.request) {
+    return `No response received: ${error.message}`;
+  }
+  return error.message || 'Unknown error occurred';
 };

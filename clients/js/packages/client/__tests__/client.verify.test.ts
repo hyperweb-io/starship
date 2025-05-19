@@ -221,4 +221,124 @@ describe('StarshipClient verify', () => {
     await client.verify();
     expectClient(ctx, 0);
   });
+
+  it('should handle ingress verification', async () => {
+    const { client, ctx } = createClient();
+    client.dependencies.forEach((dep) => (dep.installed = true));
+    
+    const configWithIngress = {
+      ...config.config,
+      ingress: {
+        enabled: true,
+        host: 'test.example.com',
+        type: 'nginx'
+      }
+    };
+    
+    client.setConfig(configWithIngress);
+
+    // Mock ingress endpoints
+    mockedAxios.get.mockImplementation((url) => {
+      // Chain REST endpoints
+      if (url.includes('rest.osmosis-1-genesis.test.example.com')) {
+        return Promise.resolve({
+          status: 200,
+          data: { supply: [] }
+        });
+      }
+      if (url.includes('rest.cosmos-2-genesis.test.example.com')) {
+        return Promise.resolve({
+          status: 200,
+          data: { supply: [] }
+        });
+      }
+
+      // Chain RPC endpoints
+      if (url.includes('rpc.osmosis-1-genesis.test.example.com')) {
+        return Promise.resolve({
+          status: 200,
+          data: { result: { node_info: {} } }
+        });
+      }
+      if (url.includes('rpc.cosmos-2-genesis.test.example.com')) {
+        return Promise.resolve({
+          status: 200,
+          data: { result: { node_info: {} } }
+        });
+      }
+
+      // Registry endpoint
+      if (url.includes('registry.test.example.com')) {
+        return Promise.resolve({
+          status: 200,
+          data: { chains: [] }
+        });
+      }
+
+      // Explorer endpoint
+      if (url.includes('explorer.test.example.com')) {
+        return Promise.resolve({
+          status: 200,
+          data: '<html><body>Ping Dashboard</body></html>'
+        });
+      }
+
+      // Throw error for unhandled URLs
+      throw new Error(`Unhandled URL in mock: ${url}`);
+    });
+
+    await client.verify();
+    expectClient(ctx, 0);
+  });
+
+  it('should handle ingress verification failure', async () => {
+    const { client, ctx } = createClient();
+    client.dependencies.forEach((dep) => (dep.installed = true));
+    
+    const configWithIngress = {
+      ...config.config,
+      ingress: {
+        enabled: true,
+        host: 'test.example.com',
+        type: 'nginx'
+      }
+    };
+    
+    client.setConfig(configWithIngress);
+
+    // Mock ingress endpoints with failures
+    mockedAxios.get.mockImplementation((url) => {
+      // Chain REST endpoints
+      if (url.includes('rest.osmosis-1-genesis.test.example.com')) {
+        return Promise.reject(new Error('Connection refused'));
+      }
+      if (url.includes('rest.cosmos-2-genesis.test.example.com')) {
+        return Promise.reject(new Error('Connection refused'));
+      }
+
+      // Chain RPC endpoints
+      if (url.includes('rpc.osmosis-1-genesis.test.example.com')) {
+        return Promise.reject(new Error('Connection refused'));
+      }
+      if (url.includes('rpc.cosmos-2-genesis.test.example.com')) {
+        return Promise.reject(new Error('Connection refused'));
+      }
+
+      // Registry endpoint
+      if (url.includes('registry.test.example.com')) {
+        return Promise.reject(new Error('Connection refused'));
+      }
+
+      // Explorer endpoint
+      if (url.includes('explorer.test.example.com')) {
+        return Promise.reject(new Error('Connection refused'));
+      }
+
+      // Throw error for unhandled URLs
+      throw new Error(`Unhandled URL in mock: ${url}`);
+    });
+
+    await client.verify();
+    expectClient(ctx, 1);
+  });
 });

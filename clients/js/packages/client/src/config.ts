@@ -134,12 +134,11 @@ export interface Monitoring {
 
 export interface Ingress {
   enabled: boolean;
+  host: string;
   type: string;
-  host?: string;
   certManager?: {
-    issuer?: string;
+    issuer: string;
   };
-  resources?: Resources;
 }
 
 export interface Images {

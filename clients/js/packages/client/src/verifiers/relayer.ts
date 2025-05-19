@@ -1,19 +1,19 @@
 import axios from 'axios';
-
-import { Relayer } from '../config';
-import { handleAxiosError } from '../utils';
-import { RelayerVerifierSet, VerificationResult } from './types';
+import { Relayer, StarshipConfig } from '../config';
+import { getServiceUrl } from './utils';
+import { RelayerVerifierSet, VerificationResult, handleAxiosError } from './types';
 
 export const verifyRelayerRest = async (
-  relayer: Relayer
+  relayer: Relayer,
+  config: StarshipConfig
 ): Promise<VerificationResult> => {
-  const port = relayer.ports?.rest;
   const result: VerificationResult = {
     service: `relayer-${relayer.name}`,
     endpoint: 'rest',
     status: 'failure'
   };
 
+  const port = relayer.ports?.rest;
   if (!port) {
     result.status = 'skipped';
     result.error = 'Port not found';
@@ -21,28 +21,27 @@ export const verifyRelayerRest = async (
   }
 
   try {
-    const response = await axios.get(`http://localhost:${port}/status`);
+    const { baseUrl, path } = getServiceUrl(config, 'relayer', 'rest', relayer.chains[0]);
+    const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
       result.error = 'Failed to get relayer status';
       return result;
     }
 
-    if (response.data.connections && response.data.connections.length > 0) {
+    if (response.data.status === 'ok') {
       result.status = 'success';
-      result.message = 'Relayer has active connections';
+      result.message = 'Relayer REST is working';
       return result;
     }
 
     result.status = 'failure';
-    result.error = 'No active connections found';
+    result.error = 'Invalid relayer status';
     return result;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 404) {
-        result.error = 'Relayer endpoint not found';
-      } else if (error.code === 'ECONNREFUSED') {
-        result.error = 'Relayer service is not running';
+      if (error.code === 'ECONNREFUSED') {
+        result.error = 'Relayer REST service is not running';
       } else {
         result.error = handleAxiosError(error);
       }
@@ -54,15 +53,16 @@ export const verifyRelayerRest = async (
 };
 
 export const verifyRelayerExposer = async (
-  relayer: Relayer
+  relayer: Relayer,
+  config: StarshipConfig
 ): Promise<VerificationResult> => {
-  const port = relayer.ports?.exposer;
   const result: VerificationResult = {
     service: `relayer-${relayer.name}`,
     endpoint: 'exposer',
     status: 'failure'
   };
 
+  const port = relayer.ports?.exposer;
   if (!port) {
     result.status = 'skipped';
     result.error = 'Port not found';
@@ -70,7 +70,8 @@ export const verifyRelayerExposer = async (
   }
 
   try {
-    const response = await axios.get(`http://localhost:${port}/config`);
+    const { baseUrl, path } = getServiceUrl(config, 'relayer', 'exposer', relayer.chains[0]);
+    const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
       result.error = 'Failed to get relayer config';
@@ -88,11 +89,7 @@ export const verifyRelayerExposer = async (
     return result;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 404) {
-        result.error = 'Relayer exposer endpoint not found';
-      } else if (error.response?.status === 500) {
-        result.error = 'Relayer exposer service error';
-      } else if (error.code === 'ECONNREFUSED') {
+      if (error.code === 'ECONNREFUSED') {
         result.error = 'Relayer exposer service is not running';
       } else {
         result.error = handleAxiosError(error);
