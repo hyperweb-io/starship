@@ -37,7 +37,7 @@ export const verifyChainIngress = async (
 
   // Verify REST endpoint
   if (chain.ports?.rest) {
-    const restUrl = `https://rest.${chain.id}-genesis.${host}/cosmos/bank/v1beta1/supply`;
+    const restUrl = getServiceUrl(chain.id, host, 'rest', '/cosmos/bank/v1beta1/supply');
     results.push(
       await verifyIngressEndpoint(restUrl, `chain-${chain.id}`, 'rest')
     );
