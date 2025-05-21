@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import { Chain, Relayer, StarshipConfig } from '../config';
 import { handleAxiosError, VerificationResult } from './types';
+import { getServiceUrl } from './utils';
 
 const verifyIngressEndpoint = async (
   url: string,
@@ -32,44 +33,39 @@ const verifyIngressEndpoint = async (
 
 export const verifyChainIngress = async (
   chain: Chain,
-  host: string
+  config: StarshipConfig
 ): Promise<VerificationResult[]> => {
   const results: VerificationResult[] = [];
 
   // Verify REST endpoint
   if (chain.ports?.rest) {
-    const restUrl = getServiceUrl(
-      chain.id,
-      host,
-      'rest',
-      '/cosmos/bank/v1beta1/supply'
-    );
+    const { baseUrl, path } = getServiceUrl(config, 'chain', 'rest', String(chain.id));
     results.push(
-      await verifyIngressEndpoint(restUrl, `chain-${chain.id}`, 'rest')
+      await verifyIngressEndpoint(`${baseUrl}${path}`, `chain-${chain.id}`, 'rest')
     );
   }
 
   // Verify RPC endpoint
   if (chain.ports?.rpc) {
-    const rpcUrl = `https://rpc.${chain.id}-genesis.${host}/status`;
+    const { baseUrl, path } = getServiceUrl(config, 'chain', 'rpc', String(chain.id));
     results.push(
-      await verifyIngressEndpoint(rpcUrl, `chain-${chain.id}`, 'rpc')
+      await verifyIngressEndpoint(`${baseUrl}${path}`, `chain-${chain.id}`, 'rpc')
     );
   }
 
   // Verify Faucet endpoint
   if (chain.ports?.faucet) {
-    const faucetUrl = `https://rest.${chain.id}-genesis.${host}/faucet/status`;
+    const { baseUrl, path } = getServiceUrl(config, 'chain', 'faucet', String(chain.id));
     results.push(
-      await verifyIngressEndpoint(faucetUrl, `chain-${chain.id}`, 'faucet')
+      await verifyIngressEndpoint(`${baseUrl}${path}`, `chain-${chain.id}`, 'faucet')
     );
   }
 
   // Verify Exposer endpoint
   if (chain.ports?.exposer) {
-    const exposerUrl = `https://rest.${chain.id}-genesis.${host}/exposer/node_id`;
+    const { baseUrl, path } = getServiceUrl(config, 'chain', 'exposer', String(chain.id));
     results.push(
-      await verifyIngressEndpoint(exposerUrl, `chain-${chain.id}`, 'exposer')
+      await verifyIngressEndpoint(`${baseUrl}${path}`, `chain-${chain.id}`, 'exposer')
     );
   }
 
@@ -78,28 +74,24 @@ export const verifyChainIngress = async (
 
 export const verifyRelayerIngress = async (
   relayer: Relayer,
-  host: string
+  config: StarshipConfig
 ): Promise<VerificationResult[]> => {
   const results: VerificationResult[] = [];
 
   if (relayer.type === 'hermes') {
     // Verify REST endpoint
     if (relayer.ports?.rest) {
-      const restUrl = `https://rest.hermes-${relayer.name}.${host}/status`;
+      const { baseUrl, path } = getServiceUrl(config, 'relayer', 'rest', relayer.chains[0]);
       results.push(
-        await verifyIngressEndpoint(restUrl, `relayer-${relayer.name}`, 'rest')
+        await verifyIngressEndpoint(`${baseUrl}${path}`, `relayer-${relayer.name}`, 'rest')
       );
     }
 
     // Verify Exposer endpoint
     if (relayer.ports?.exposer) {
-      const exposerUrl = `https://rest.hermes-${relayer.name}.${host}/exposer/config`;
+      const { baseUrl, path } = getServiceUrl(config, 'relayer', 'exposer', relayer.chains[0]);
       results.push(
-        await verifyIngressEndpoint(
-          exposerUrl,
-          `relayer-${relayer.name}`,
-          'exposer'
-        )
+        await verifyIngressEndpoint(`${baseUrl}${path}`, `relayer-${relayer.name}`, 'exposer')
       );
     }
   }
@@ -108,28 +100,26 @@ export const verifyRelayerIngress = async (
 };
 
 export const verifyRegistryIngress = async (
-  config: StarshipConfig,
-  host: string
+  config: StarshipConfig
 ): Promise<VerificationResult[]> => {
   const results: VerificationResult[] = [];
 
   if (config.registry?.enabled) {
-    const registryUrl = `https://registry.${host}/chains`;
-    results.push(await verifyIngressEndpoint(registryUrl, 'registry', 'rest'));
+    const { baseUrl, path } = getServiceUrl(config, 'registry', 'rest');
+    results.push(await verifyIngressEndpoint(`${baseUrl}${path}`, 'registry', 'rest'));
   }
 
   return results;
 };
 
 export const verifyExplorerIngress = async (
-  config: StarshipConfig,
-  host: string
+  config: StarshipConfig
 ): Promise<VerificationResult[]> => {
   const results: VerificationResult[] = [];
 
   if (config.explorer?.enabled) {
-    const explorerUrl = `https://explorer.${host}`;
-    results.push(await verifyIngressEndpoint(explorerUrl, 'explorer', 'http'));
+    const { baseUrl, path } = getServiceUrl(config, 'explorer', 'http');
+    results.push(await verifyIngressEndpoint(`${baseUrl}${path}`, 'explorer', 'http'));
   }
 
   return results;
@@ -144,23 +134,21 @@ export const verifyIngress = async (
     return results;
   }
 
-  const host = config.ingress.host.replace('*.', '');
-
   // Verify chain ingress endpoints
   for (const chain of config.chains) {
-    results.push(...(await verifyChainIngress(chain, host)));
+    results.push(...(await verifyChainIngress(chain, config)));
   }
 
   // Verify relayer ingress endpoints
   for (const relayer of config.relayers || []) {
-    results.push(...(await verifyRelayerIngress(relayer, host)));
+    results.push(...(await verifyRelayerIngress(relayer, config)));
   }
 
   // Verify registry ingress endpoint
-  results.push(...(await verifyRegistryIngress(config, host)));
+  results.push(...(await verifyRegistryIngress(config)));
 
   // Verify explorer ingress endpoint
-  results.push(...(await verifyExplorerIngress(config, host)));
+  results.push(...(await verifyExplorerIngress(config)));
 
   return results;
 };
