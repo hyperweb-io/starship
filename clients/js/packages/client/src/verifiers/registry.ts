@@ -1,19 +1,20 @@
 import axios from 'axios';
 
-import { Registry } from '../config';
-import { handleAxiosError } from '../utils';
-import { VerificationResult } from './types';
+import { Registry, StarshipConfig } from '../config';
+import { handleAxiosError, VerificationResult } from './types';
+import { getServiceUrl } from './utils';
 
 export const verifyRegistryRest = async (
-  registry: Registry
+  registry: Registry,
+  config: StarshipConfig
 ): Promise<VerificationResult> => {
-  const port = registry.ports?.rest;
   const result: VerificationResult = {
     service: 'registry',
     endpoint: 'rest',
     status: 'failure'
   };
 
+  const port = registry.ports?.rest;
   if (!port) {
     result.status = 'skipped';
     result.error = 'Port not found';
@@ -21,7 +22,8 @@ export const verifyRegistryRest = async (
   }
 
   try {
-    const response = await axios.get(`http://localhost:${port}/chains`);
+    const { baseUrl, path } = getServiceUrl(config, 'registry', 'rest');
+    const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
       result.error = 'Failed to get registry chains';
@@ -38,7 +40,15 @@ export const verifyRegistryRest = async (
     result.error = 'Registry is not working';
     return result;
   } catch (error) {
-    result.error = handleAxiosError(error);
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        result.error = 'Registry service is not running';
+      } else {
+        result.error = handleAxiosError(error);
+      }
+    } else {
+      result.error = 'Unknown error occurred';
+    }
     return result;
   }
 };

@@ -9,6 +9,8 @@ export interface Ports {
   grafana?: number;
   cometmock?: number;
   ws?: number;
+  http?: number;
+  [key: string]: number | undefined;
 }
 
 export interface Resources {
@@ -134,12 +136,11 @@ export interface Monitoring {
 
 export interface Ingress {
   enabled: boolean;
+  host: string;
   type: string;
-  host?: string;
   certManager?: {
-    issuer?: string;
+    issuer: string;
   };
-  resources?: Resources;
 }
 
 export interface Images {

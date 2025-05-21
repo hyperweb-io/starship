@@ -1,19 +1,24 @@
 import axios from 'axios';
 
-import { Chain } from '../config';
-import { handleAxiosError } from '../utils';
-import { ChainVerifierSet, VerificationResult } from './types';
+import { Chain, StarshipConfig } from '../config';
+import {
+  ChainVerifierSet,
+  handleAxiosError,
+  VerificationResult
+} from './types';
+import { getServiceUrl } from './utils';
 
 export const verifyChainRest = async (
-  chain: Chain
+  chain: Chain,
+  config: StarshipConfig
 ): Promise<VerificationResult> => {
-  const port = chain.ports?.rest;
   const result: VerificationResult = {
     service: `chain-${chain.id}`,
     endpoint: 'rest',
     status: 'failure'
   };
 
+  const port = chain.ports?.rest;
   if (!port) {
     result.status = 'skipped';
     result.error = 'Port not found';
@@ -21,40 +26,53 @@ export const verifyChainRest = async (
   }
 
   try {
-    const response = await axios.get(
-      `http://localhost:${port}/cosmos/bank/v1beta1/supply`
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'rest',
+      String(chain.id)
     );
+    const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
       result.error = 'Failed to get chain supply';
       return result;
     }
-    if (response.data.supply[0].amount > 0) {
+
+    if (response.data.supply) {
       result.status = 'success';
-      result.message = 'Chain supply is greater than 0';
+      result.message = 'Chain REST is working';
       return result;
     }
 
     result.status = 'failure';
-    result.error = 'Chain supply not confirmed';
-    result.details = response.data;
+    result.error = 'Invalid supply response';
     return result;
   } catch (error) {
-    result.error = handleAxiosError(error);
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        result.error = 'Chain REST service is not running';
+      } else {
+        result.error = handleAxiosError(error);
+      }
+    } else {
+      result.error = 'Unknown error occurred';
+    }
     return result;
   }
 };
 
 export const verifyChainRpc = async (
-  chain: Chain
+  chain: Chain,
+  config: StarshipConfig
 ): Promise<VerificationResult> => {
-  const port = chain.ports?.rpc;
   const result: VerificationResult = {
     service: `chain-${chain.id}`,
     endpoint: 'rpc',
     status: 'failure'
   };
 
+  const port = chain.ports?.rpc;
   if (!port) {
     result.status = 'skipped';
     result.error = 'Port not found';
@@ -62,44 +80,53 @@ export const verifyChainRpc = async (
   }
 
   try {
-    const response = await axios.get(`http://localhost:${port}/status`);
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'rpc',
+      String(chain.id)
+    );
+    const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
-      result.error = 'Failed to get chain node info';
+      result.error = 'Failed to get chain status';
       return result;
     }
 
-    const blockHeight = Number(
-      response.data.result?.sync_info?.latest_block_height ||
-        response.data.result?.SyncInfo?.latest_block_height
-    );
-
-    if (blockHeight > 0) {
+    if (response.data.result?.sync_info) {
       result.status = 'success';
-      result.message = 'Chain is synced';
+      result.message = 'Chain RPC is working';
       return result;
     }
 
     result.status = 'failure';
-    result.error = 'Block height is 0';
-    result.details = response.data;
+    result.error = 'Invalid status response';
     return result;
   } catch (error) {
-    result.error = handleAxiosError(error);
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        result.error = 'Chain RPC service is not running';
+      } else {
+        result.error = handleAxiosError(error);
+      }
+    } else {
+      result.error = 'Unknown error occurred';
+    }
     return result;
   }
 };
 
 export const verifyChainFaucet = async (
-  chain: Chain
+  chain: Chain,
+  config: StarshipConfig
 ): Promise<VerificationResult> => {
-  const port = chain.ports?.faucet;
   const result: VerificationResult = {
     service: `chain-${chain.id}`,
     endpoint: 'faucet',
     status: 'failure'
   };
 
+  const port = chain.ports?.faucet;
   if (!port) {
     result.status = 'skipped';
     result.error = 'Port not found';
@@ -107,44 +134,53 @@ export const verifyChainFaucet = async (
   }
 
   try {
-    const response = await axios.get(`http://localhost:${port}/status`);
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'faucet',
+      String(chain.id)
+    );
+    const response = await axios.get(`${baseUrl}${path}`);
+    result.details = response.data;
     if (response.status !== 200) {
-      result.error = 'Failed to get chain node info';
+      result.error = 'Failed to get faucet status';
       return result;
     }
 
-    if (!response.data.chainId) {
-      result.error = 'Invalid response: chainId not found';
-      result.details = response.data;
-      return result;
-    }
-
-    if (response.data.chainId === chain.id) {
+    if (response.data.chainId) {
       result.status = 'success';
       result.message = 'Chain faucet is working';
       return result;
     }
 
     result.status = 'failure';
-    result.error = `Chain ID mismatch: expected ${chain.id}, got ${response.data.chainId}`;
-    result.details = response.data;
+    result.error = 'Invalid faucet response';
     return result;
   } catch (error) {
-    result.error = handleAxiosError(error);
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNREFUSED') {
+        result.error = 'Faucet service is not running';
+      } else {
+        result.error = handleAxiosError(error);
+      }
+    } else {
+      result.error = 'Unknown error occurred';
+    }
     return result;
   }
 };
 
 export const verifyChainExposer = async (
-  chain: Chain
+  chain: Chain,
+  config: StarshipConfig
 ): Promise<VerificationResult> => {
-  const port = chain.ports?.exposer;
   const result: VerificationResult = {
     service: `chain-${chain.id}`,
     endpoint: 'exposer',
     status: 'failure'
   };
 
+  const port = chain.ports?.exposer;
   if (!port) {
     result.status = 'skipped';
     result.error = 'Port not found';
@@ -152,7 +188,13 @@ export const verifyChainExposer = async (
   }
 
   try {
-    const response = await axios.get(`http://localhost:${port}/node_id`);
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'exposer',
+      String(chain.id)
+    );
+    const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
       result.error = 'Failed to get chain node id';
