@@ -9,6 +9,8 @@ export interface Ports {
   grafana?: number;
   cometmock?: number;
   ws?: number;
+  http?: number;
+  [key: string]: number | undefined;
 }
 
 export interface Resources {
