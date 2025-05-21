@@ -1,7 +1,12 @@
 import axios from 'axios';
+
 import { Chain, StarshipConfig } from '../config';
+import {
+  ChainVerifierSet,
+  handleAxiosError,
+  VerificationResult
+} from './types';
 import { getServiceUrl } from './utils';
-import { ChainVerifierSet, VerificationResult, handleAxiosError } from './types';
 
 export const verifyChainRest = async (
   chain: Chain,
@@ -21,7 +26,12 @@ export const verifyChainRest = async (
   }
 
   try {
-    const { baseUrl, path } = getServiceUrl(config, 'chain', 'rest', String(chain.id));
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'rest',
+      String(chain.id)
+    );
     const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
@@ -70,7 +80,12 @@ export const verifyChainRpc = async (
   }
 
   try {
-    const { baseUrl, path } = getServiceUrl(config, 'chain', 'rpc', String(chain.id));
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'rpc',
+      String(chain.id)
+    );
     const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
@@ -119,7 +134,12 @@ export const verifyChainFaucet = async (
   }
 
   try {
-    const { baseUrl, path } = getServiceUrl(config, 'chain', 'faucet', String(chain.id));
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'faucet',
+      String(chain.id)
+    );
     const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
@@ -168,7 +188,12 @@ export const verifyChainExposer = async (
   }
 
   try {
-    const { baseUrl, path } = getServiceUrl(config, 'chain', 'exposer', String(chain.id));
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'chain',
+      'exposer',
+      String(chain.id)
+    );
     const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {

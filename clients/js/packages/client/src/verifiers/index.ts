@@ -1,8 +1,8 @@
 import { chainVerifiers } from './chain';
 import { verifyExplorerRest } from './explorer';
+import { verifyIngress } from './ingress';
 import { verifyRegistryRest } from './registry';
 import { relayerVerifiers } from './relayer';
-import { verifyIngress } from './ingress';
 import { VerificationFunction, VerificationResult } from './types';
 
 export const verifyChains: VerificationFunction = async (config) => {

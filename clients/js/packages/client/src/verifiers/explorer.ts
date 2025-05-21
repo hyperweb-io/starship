@@ -1,7 +1,8 @@
 import axios from 'axios';
+
 import { Explorer, StarshipConfig } from '../config';
+import { handleAxiosError, VerificationResult } from './types';
 import { getServiceUrl } from './utils';
-import { VerificationResult, handleAxiosError } from './types';
 
 export const verifyExplorerRest = async (
   explorer: Explorer,

@@ -1,6 +1,7 @@
 import axios from 'axios';
+
 import { Chain, Relayer, StarshipConfig } from '../config';
-import { VerificationResult, handleAxiosError } from './types';
+import { handleAxiosError, VerificationResult } from './types';
 
 const verifyIngressEndpoint = async (
   url: string,
@@ -37,7 +38,12 @@ export const verifyChainIngress = async (
 
   // Verify REST endpoint
   if (chain.ports?.rest) {
-    const restUrl = getServiceUrl(chain.id, host, 'rest', '/cosmos/bank/v1beta1/supply');
+    const restUrl = getServiceUrl(
+      chain.id,
+      host,
+      'rest',
+      '/cosmos/bank/v1beta1/supply'
+    );
     results.push(
       await verifyIngressEndpoint(restUrl, `chain-${chain.id}`, 'rest')
     );
@@ -81,11 +87,7 @@ export const verifyRelayerIngress = async (
     if (relayer.ports?.rest) {
       const restUrl = `https://rest.hermes-${relayer.name}.${host}/status`;
       results.push(
-        await verifyIngressEndpoint(
-          restUrl,
-          `relayer-${relayer.name}`,
-          'rest'
-        )
+        await verifyIngressEndpoint(restUrl, `relayer-${relayer.name}`, 'rest')
       );
     }
 
@@ -113,9 +115,7 @@ export const verifyRegistryIngress = async (
 
   if (config.registry?.enabled) {
     const registryUrl = `https://registry.${host}/chains`;
-    results.push(
-      await verifyIngressEndpoint(registryUrl, 'registry', 'rest')
-    );
+    results.push(await verifyIngressEndpoint(registryUrl, 'registry', 'rest'));
   }
 
   return results;
@@ -129,9 +129,7 @@ export const verifyExplorerIngress = async (
 
   if (config.explorer?.enabled) {
     const explorerUrl = `https://explorer.${host}`;
-    results.push(
-      await verifyIngressEndpoint(explorerUrl, 'explorer', 'http')
-    );
+    results.push(await verifyIngressEndpoint(explorerUrl, 'explorer', 'http'));
   }
 
   return results;

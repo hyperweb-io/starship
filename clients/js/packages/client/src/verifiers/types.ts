@@ -14,11 +14,17 @@ export type VerificationFunction = (
 ) => Promise<VerificationResult[]>;
 
 export type ChainVerifierSet = {
-  [K in keyof Ports]?: (chain: Chain, config: StarshipConfig) => Promise<VerificationResult>;
+  [K in keyof Ports]?: (
+    chain: Chain,
+    config: StarshipConfig
+  ) => Promise<VerificationResult>;
 };
 
 export type RelayerVerifierSet = {
-  [K in keyof Ports]?: (relayer: Relayer, config: StarshipConfig) => Promise<VerificationResult>;
+  [K in keyof Ports]?: (
+    relayer: Relayer,
+    config: StarshipConfig
+  ) => Promise<VerificationResult>;
 };
 
 export const handleAxiosError = (error: any): string => {

@@ -1,4 +1,4 @@
-import { Chain, Relayer, StarshipConfig } from '../config';
+import { StarshipConfig } from '../config';
 
 export interface ServiceUrl {
   baseUrl: string;
@@ -20,7 +20,7 @@ export const getServiceUrl = (
   switch (service) {
     case 'chain': {
       if (!chainId) throw new Error('Chain ID is required for chain service');
-      const chain = config.chains.find(c => c.id === chainId);
+      const chain = config.chains.find((c) => c.id === chainId);
       if (!chain) throw new Error(`Chain ${chainId} not found`);
 
       const port = chain.ports?.[endpoint];
@@ -55,16 +55,22 @@ export const getServiceUrl = (
 
       return {
         baseUrl: `http://localhost:${port}`,
-        path: endpoint === 'rest' ? '/cosmos/bank/v1beta1/supply' :
-              endpoint === 'rpc' ? '/status' :
-              endpoint === 'faucet' ? '/status' :
-              endpoint === 'exposer' ? '/node_id' : ''
+        path:
+          endpoint === 'rest'
+            ? '/cosmos/bank/v1beta1/supply'
+            : endpoint === 'rpc'
+              ? '/status'
+              : endpoint === 'faucet'
+                ? '/status'
+                : endpoint === 'exposer'
+                  ? '/node_id'
+                  : ''
       };
     }
 
     case 'relayer': {
       if (!chainId) throw new Error('Chain ID is required for relayer service');
-      const relayer = config.relayers?.find(r => r.chains.includes(chainId));
+      const relayer = config.relayers?.find((r) => r.chains.includes(chainId));
       if (!relayer) throw new Error(`Relayer for chain ${chainId} not found`);
 
       const port = relayer.ports?.[endpoint];
@@ -89,8 +95,12 @@ export const getServiceUrl = (
 
       return {
         baseUrl: `http://localhost:${port}`,
-        path: endpoint === 'rest' ? '/status' :
-              endpoint === 'exposer' ? '/config' : ''
+        path:
+          endpoint === 'rest'
+            ? '/status'
+            : endpoint === 'exposer'
+              ? '/config'
+              : ''
       };
     }
 
@@ -131,4 +141,4 @@ export const getServiceUrl = (
     default:
       throw new Error(`Unknown service ${service}`);
   }
-}; 
+};

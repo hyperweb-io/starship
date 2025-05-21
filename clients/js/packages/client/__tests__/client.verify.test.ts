@@ -225,7 +225,7 @@ describe('StarshipClient verify', () => {
   it('should handle ingress verification', async () => {
     const { client, ctx } = createClient();
     client.dependencies.forEach((dep) => (dep.installed = true));
-    
+
     const configWithIngress = {
       ...config.config,
       ingress: {
@@ -234,7 +234,7 @@ describe('StarshipClient verify', () => {
         type: 'nginx'
       }
     };
-    
+
     client.setConfig(configWithIngress);
 
     // Mock ingress endpoints
@@ -294,7 +294,7 @@ describe('StarshipClient verify', () => {
   it('should handle ingress verification failure', async () => {
     const { client, ctx } = createClient();
     client.dependencies.forEach((dep) => (dep.installed = true));
-    
+
     const configWithIngress = {
       ...config.config,
       ingress: {
@@ -303,7 +303,7 @@ describe('StarshipClient verify', () => {
         type: 'nginx'
       }
     };
-    
+
     client.setConfig(configWithIngress);
 
     // Mock ingress endpoints with failures

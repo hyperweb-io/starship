@@ -1,7 +1,12 @@
 import axios from 'axios';
+
 import { Relayer, StarshipConfig } from '../config';
+import {
+  handleAxiosError,
+  RelayerVerifierSet,
+  VerificationResult
+} from './types';
 import { getServiceUrl } from './utils';
-import { RelayerVerifierSet, VerificationResult, handleAxiosError } from './types';
 
 export const verifyRelayerRest = async (
   relayer: Relayer,
@@ -21,7 +26,12 @@ export const verifyRelayerRest = async (
   }
 
   try {
-    const { baseUrl, path } = getServiceUrl(config, 'relayer', 'rest', relayer.chains[0]);
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'relayer',
+      'rest',
+      relayer.chains[0]
+    );
     const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
@@ -75,7 +85,12 @@ export const verifyRelayerExposer = async (
     return result;
   }
   try {
-    const { baseUrl, path } = getServiceUrl(config, 'relayer', 'exposer', relayer.chains[0]);
+    const { baseUrl, path } = getServiceUrl(
+      config,
+      'relayer',
+      'exposer',
+      relayer.chains[0]
+    );
     const response = await axios.get(`${baseUrl}${path}`);
     result.details = response.data;
     if (response.status !== 200) {
