@@ -69,6 +69,11 @@ export const verifyRelayerExposer = async (
     return result;
   }
 
+  if (!relayer.chains || relayer.chains.length === 0) {
+    result.status = 'skipped';
+    result.error = 'No chains configured for relayer';
+    return result;
+  }
   try {
     const { baseUrl, path } = getServiceUrl(config, 'relayer', 'exposer', relayer.chains[0]);
     const response = await axios.get(`${baseUrl}${path}`);
