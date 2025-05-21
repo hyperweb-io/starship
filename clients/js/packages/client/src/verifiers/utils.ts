@@ -12,7 +12,10 @@ export const getServiceUrl = (
   chainId?: string
 ): ServiceUrl => {
   const useIngress = config.ingress?.enabled && config.ingress?.host;
-  const host = useIngress ? config.ingress!.host.replace('*.', '') : 'localhost';
+  let host = 'localhost';
+  if (useIngress && config.ingress) {
+    host = config.ingress.host.replace('*.', '');
+  }
 
   switch (service) {
     case 'chain': {
