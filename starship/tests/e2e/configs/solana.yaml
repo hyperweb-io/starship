@@ -1,0 +1,33 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: solana-1
+    name: solana
+    numValidators: 1
+    metrics: true
+    ports:
+      rest: 8899
+      rpc: 8900
+      exposer: 38083
+      faucet: 8003
+      gossip: 8001
+    resources:
+      cpu: "0.5"
+      memory: 500M
+    genesis:
+      app_state: {}
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
+  resources:
+    cpu: "0.1"
+    memory: 100M
+
+resources:
+  wait:
+    cpu: "0.1"
+    memory: 100M

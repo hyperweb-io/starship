@@ -1,0 +1,18 @@
+ARG BASE_IMAGE=alpine:3.17
+FROM ${BASE_IMAGE}
+
+LABEL org.opencontainers.image.source="https://github.com/hyperweb-io/starship"
+
+# Set up dependencies
+ENV PACKAGES curl make bash jq sed
+
+# Install minimum necessary dependencies and Solana requirements
+RUN apk add --no-cache $PACKAGES libgcc libstdc++
+
+# Download and install Solana binaries
+RUN curl -sSfL https://release.solana.com/v1.17.17/solana-release-x86_64-unknown-linux-gnu.tar.bz2 | \
+    tar -xj -C /tmp && \
+    mv /tmp/solana-release/bin/solana* /usr/bin/ && \
+    rm -rf /tmp/solana-release
+
+WORKDIR /opt

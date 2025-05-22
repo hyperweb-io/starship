@@ -148,7 +148,8 @@
               "hyperweb",
               "noble",
               "xpla",
-              "ethereum"
+              "ethereum",
+              "solana"
             ]
           },
           "numValidators": {
