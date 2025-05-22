@@ -1,0 +1,27 @@
+{{- range $chain := .Values.chains }}
+{{- if hasPrefix "bitcoin" $chain.name }}
+{{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
+{{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $chain.name }}-{{ $chain.id }}
+  labels:
+    app.kubernetes.io/name: {{ $chain.name }}-{{ $chain.id }}
+spec:
+  clusterIP: None
+  ports:
+    - name: rpc
+      port: {{ $chain.ports.rpc | default 18443 }}
+      protocol: TCP
+      targetPort: {{ $chain.ports.rpc | default 18443 }}
+    - name: p2p
+      port: {{ $chain.ports.p2p | default 18444 }}
+      protocol: TCP
+      targetPort: {{ $chain.ports.p2p | default 18444 }}
+  selector:
+    app.kubernetes.io/name: {{ $chain.name }}-{{ $chain.id }}
+---
+{{- end }}
+{{- end }}

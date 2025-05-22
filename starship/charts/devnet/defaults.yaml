@@ -916,6 +916,18 @@ defaultChains:
         - --chain-config-file=/etc/config/config.yml
         - --suggested-fee-recipient=0x0C46c2cAFE097b4f7e1BB868B89e5697eE65f934
 
+  bitcoin:
+    image: ruimarinho/bitcoin-core:latest
+    home: /bitcoin
+    binary: bitcoind
+    prefix: btc
+    denom: satoshi
+    prettyName: Bitcoin
+    coins: 2100000000000000satoshi
+    hdPath: m/44'/0'/0'/0/0
+    coinType: 0
+    repo: https://github.com/bitcoin/bitcoin
+
 defaultRelayers:
   ts-relayer:
     image: ghcr.io/cosmology-tech/starship/ts-relayer:0.9.0

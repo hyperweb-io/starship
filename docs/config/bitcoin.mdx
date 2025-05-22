@@ -1,0 +1,19 @@
+# Bitcoin Chain Configuration in Starship
+
+Starship now supports running a local Bitcoin network alongside Cosmos and Ethereum chains.
+The configuration mirrors other chains and can be added in the `chains` section of your
+Starship config file.
+
+## Example Configuration
+```yaml
+chains:
+  - id: bitcoin-local
+    name: bitcoin
+    numValidators: 1
+    ports:
+      rpc: 18443
+      p2p: 18444
+```
+
+This will start a single `bitcoind` node in regtest mode exposing RPC on `18443` and
+P2P on `18444` which you can port-forward to localhost.
