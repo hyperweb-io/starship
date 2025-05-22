@@ -3,7 +3,7 @@ chains:
     base: alpine:3.17
     file: Dockerfile.solana
     tags:
-      - v1.17.17
+      - v1.18.26
   - name: osmosis
     base: ghcr.io/strangelove-ventures/heighliner/osmosis
     tags:
