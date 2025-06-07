@@ -1,0 +1,40 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: agoric-3
+    name: agoric
+    image: ghcr.io/agoric/agoric-3-proposals:main
+    numValidators: 1
+    faucet:
+      enabled: true
+      type: starship
+    ports:
+      rest: 1313
+      rpc: 26653
+      exposer: 38083
+    resources:
+      cpu: 1
+      memory: 2Gi
+  - id: cosmoshub-4
+    name: cosmoshub
+    numValidators: 1
+    ports:
+      rest: 1317
+      rpc: 26657
+      exposer: 38087
+      faucet: 8007
+
+relayers:
+  - name: agoric-cosmos
+    type: hermes
+    replicas: 1
+    chains:
+      - agoric-3
+      - cosmoshub-4
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
