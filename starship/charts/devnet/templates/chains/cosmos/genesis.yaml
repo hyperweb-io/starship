@@ -284,9 +284,12 @@ spec:
             {{- if hasKey $chain "readinessProbe" }}
             {{- $chain.readinessProbe | toYaml | nindent 12 }}
             {{- else }}
-            httpGet:
-              path: /status
-              port: 26657
+            exec:
+              command:
+                - bash
+                - -e
+                - /scripts/chain-rpc-ready.sh
+                - http://localhost:26657
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 15
@@ -377,18 +380,16 @@ spec:
 
               export | grep "FAUCET"
 
-              while [ $(curl -sw '%{http_code}' http://localhost:26657/status -o /dev/null) -ne 200 ]; do
-                echo "Validator node does not seem to be ready. Waiting for it to start..."
-                echo "Checking: http://localhost:26657/status"
+              until bash -e /scripts/chain-rpc-ready.sh http://localhost:26657; do
                 sleep 10;
               done
-
-              curl http://localhost:26657/status
 
               /app/packages/faucet/bin/cosmos-faucet-dist start "http://localhost:26657"
           volumeMounts:
             - mountPath: /configs
               name: addresses
+            - mountPath: /scripts
+              name: scripts
           resources: {{- include "getResourceObject" $chain.faucet.resources | trim | nindent 12 }}
           readinessProbe:
             httpGet:
@@ -444,12 +445,9 @@ spec:
 
               export | grep "FAUCET"
 
-              until [[ $(curl -s --connect-timeout 2 http://localhost:26657/status | jq -r '.result.sync_info.latest_block_height // "0"' | grep -E '^[1-9][0-9]*$') ]]; do
-                echo "Validator node not ready or block height is still 0. Retrying in 5s..."
-                sleep 5
+              until bash -e /scripts/chain-rpc-ready.sh http://localhost:26657; do
+                sleep 10
               done
-
-              curl http://localhost:26657/status
 
               /faucet/faucet --credit-coins="$CREDIT_COINS" --chain-fees="$FEES"
           volumeMounts:
@@ -457,6 +455,8 @@ spec:
               name: addresses
             - mountPath: /faucet
               name: faucet
+            - mountPath: /scripts
+              name: scripts
           resources: {{- include "getResourceObject" $chain.faucet.resources | trim | nindent 12 }}
           readinessProbe:
             httpGet:

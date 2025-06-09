@@ -13,6 +13,8 @@ chains:
       exposer: 8081
       faucet: 8000
       grpc-web: 9091
+      grpc: 9090
+      evm-http-jsonrpc: 8545
     resources:
       cpu: "0.5"
       memory: 500M

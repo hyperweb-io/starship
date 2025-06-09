@@ -673,25 +673,6 @@ defaultChains:
             exponent: 6
         coingecko_id: inter-stable-token
         keywords: [ "inter-stable-token" ]
-    readinessProbe:
-      exec:
-        command:
-          - bash
-          - -c
-          - |
-            # Try to see if the node is still catching up.
-            ([[ $($CHAIN_BIN status 2>&1 | jq -r .SyncInfo.catching_up) == false ]]) &
-            tester=$!
-            # Kill the test if it takes longer than we expect.
-            (sleep 5; kill $tester 2>/dev/null) &
-            killer=$!
-            # Kill the killer before exiting.
-            trap 'kill $killer 2>/dev/null' EXIT
-            # Return the test's exit code, whether it succeeded, failed, or was killed.
-            wait $tester
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      timeoutSeconds: 15
   kujira:
     image: ghcr.io/cosmology-tech/starship/kujira:v1.1.0
     home: /root/.kujira
@@ -1010,6 +991,9 @@ defaultScripts:
   buildChain:
     name: build-chain.sh
     file: scripts/default/build-chain.sh
+  chainRpcReady:
+    name: chain-rpc-ready.sh
+    file: scripts/default/chain-rpc-ready.sh
   ibcConnection:
     name: ibc-connection.sh
     file: scripts/default/ibc-connection.sh

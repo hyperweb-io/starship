@@ -253,10 +253,8 @@ spec:
                   - "-c"
                   - "-e"
                   - |
-                    while [ $(curl -sw '%{http_code}' http://localhost:26657/status -o /dev/null) -ne 200 ]; do
-                      echo "Validator node does not seem to be ready. Waiting for it to start..."
-                      echo "Checking: http://localhost:26657/status"
-                      sleep 10;
+                    until bash -e /scripts/chain-rpc-ready.sh http://localhost:26657; do
+                      sleep 10
                     done
 
                     set -eux
@@ -289,9 +287,12 @@ spec:
             {{- if hasKey $chain "readinessProbe" }}
             {{- $chain.readinessProbe | toYaml | nindent 12 }}
             {{- else }}
-            httpGet:
-              path: /status
-              port: 26657
+            exec:
+              command:
+                - bash
+                - -e
+                - /scripts/chain-rpc-ready.sh
+                - http://localhost:26657
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 15

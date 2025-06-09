@@ -146,6 +146,10 @@ chains: []
   #     buildChain:
   #       file: local/scripts/build-chain.sh
   #       data: |- # data is a multiline string injected from --set-file in helm
+  #     ## chainRpcReady script that checks if RPC services are ready
+  #     chainRpcReady:
+  #       file: local/scripts/chain-rpc-ready.sh
+  #       data: |- # data is a multiline string injected from --set-file in helm
   #   # set custom environment variables for the `validator` container
   #   env:
   #     - name: DEBUG

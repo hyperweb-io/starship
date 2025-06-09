@@ -20,6 +20,8 @@ Universal interchain development environment in k8s. The vision of this project
 is to have a single easy to use developer environment with full testing support
 for multichain use cases
 
+> Automated docs: https://deepwiki.com/hyperweb-io/starship
+
 ## Prerequisites
 To get started, you'll need:
 

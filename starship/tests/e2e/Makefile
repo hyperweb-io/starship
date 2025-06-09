@@ -9,7 +9,10 @@ HELM_CHART ?= devnet
 ###############################################################################
 
 .PHONY: start
-start: install port-forward
+start: install
+	@echo "Waiting for all pods to be ready..."
+	@kubectl wait --for=condition=ready pod --all --timeout=300s
+	@make port-forward
 
 .PHONY: stop
 stop: stop-forward delete
@@ -42,7 +45,7 @@ test:
 ###                              Port forward                              ###
 ###############################################################################
 
-.PHOY: port-forward
+.PHONY: port-forward
 port-forward:
 	$(CURDIR)/../../scripts/port-forward.sh --config=$(HELM_FILE)
 

@@ -242,6 +242,7 @@ Types of scripts that are allowed inside the `scripts` dir are:
 * `createValidator`: Script to run the `create-validator` txn on the validator nodes after spinup. Note this script is run as part of the `PostStartHook` of the validator pods. Default: [`create-validator.sh`](https://github.com/hyperweb-io/starship/blob/main/starship/charts/devnet/scripts/default/create-validator.sh)
 * `transferTokens`: Script run as part of the Starship glue code. This script is related to the faucet that we run. Default: [`transfer-tokens.sh`](https://github.com/hyperweb-io/starship/blob/main/charts/starship/devnet/scripts/default/transfer-tokens.sh)
 * `buildChain`: Script that builds chain binaries, based on the `build` directive. Default: [`build-chain.sh`](https://github.com/hyperweb-io/starship/blob/main/starship/charts/devnet/scripts/default/build-chain.sh)
+* `chainRpcReady`: Script that checks if the chain is ready to accept RPC calls. Default: [`chain-rpc-ready.sh`](https://github.com/hyperweb-io/starship/blob/main/starship/charts/devnet/scripts/default/chain-rpc-ready.sh)
 
 One can choose the sub-scripts that need to be overwritten, default scripts will be used instead.
 

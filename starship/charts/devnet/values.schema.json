@@ -477,6 +477,22 @@
                   "data"
                 ]
               },
+              "chainRpcReady": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "file",
+                  "data"
+                ]
+              },
               "ibcConnection": {
                 "type": "object",
                 "properties": {

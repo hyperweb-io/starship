@@ -80,6 +80,7 @@ if [[ $num_chains -gt -1 ]]; then
       locallcd=$(yq -r ".chains[$i].ports.rest" ${CONFIGFILE} )
       localexp=$(yq -r ".chains[$i].ports.exposer" ${CONFIGFILE})
       localfaucet=$(yq -r ".chains[$i].ports.faucet" ${CONFIGFILE})
+      localethereumrest=$(yq -r ".chains[$i].ports.evm-http-jsonrpc" ${CONFIGFILE})
       color yellow "chains: forwarded $chain"
       if [[ $(yq -r ".chains[$i].cometmock.enabled" $CONFIGFILE) == "true" ]];
       then
@@ -92,6 +93,7 @@ if [[ $num_chains -gt -1 ]]; then
       [[ "$locallcd" != "null" ]] && color yellow "    lcd to http://localhost:$locallcd" && kubectl port-forward pods/$chain-genesis-0 $locallcd:$CHAIN_LCD_PORT > /dev/null 2>&1 &
       [[ "$localexp" != "null" ]] && color yellow "    exposer to http://localhost:$localexp" && kubectl port-forward pods/$chain-genesis-0 $localexp:$CHAIN_EXPOSER_PORT > /dev/null 2>&1 &
       [[ "$localfaucet" != "null" ]] && color yellow "    faucet to http://localhost:$localfaucet" && kubectl port-forward pods/$chain-genesis-0 $localfaucet:$CHAIN_FAUCET_PORT > /dev/null 2>&1 &
+      [[ "$localethereumrest" != "null" ]] && color yellow "    ethereum rest to http://localhost:$localethereumrest" && kubectl port-forward pods/$chain-genesis-0 $localethereumrest:$ETHEREUM_REST_PORT > /dev/null 2>&1 &
       sleep 1
     fi
   done
