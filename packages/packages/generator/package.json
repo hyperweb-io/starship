@@ -2,7 +2,7 @@
   "name": "@starship-ci/generator",
   "version": "3.14.0",
   "author": "Anmol1696 <anmol1696@gmail.com>",
-  "description": "Starship CI Generator",
+  "description": "Kubernetes manifest generator for Starship deployments",
   "main": "index.js",
   "module": "esm/index.js",
   "types": "index.d.ts",
@@ -24,34 +24,26 @@
     "clean": "del dist/**",
     "prepare": "npm run build",
     "build": "npm run clean; tsc; tsc -p tsconfig.esm.json; npm run copy",
+    "dev": "ts-node src/index",
     "lint": "eslint .",
     "format": "eslint . --fix",
     "test": "jest",
     "test:watch": "jest --watch"
   },
   "keywords": [
-    "blockchain",
-    "blockchain-simulation",
-    "blockchain-testing",
-    "TDD",
-    "multi-chain",
-    "crypto",
-    "cryptocurrency",
-    "ethereum",
-    "bitcoin",
+    "kubernetes",
+    "k8s",
+    "typescript",
+    "starship",
+    "generator",
+    "manifests",
     "cosmos",
-    "smart-contracts",
-    "decentralized",
-    "DApps",
-    "web3",
-    "interchain"
+    "blockchain"
   ],
   "dependencies": {
-    "chalk": "^4.1.0",
-    "deepmerge": "^4.3.1",
-    "js-yaml": "^4.1.0",
+    "@starship-ci/types": "^3.14.0",
     "kubernetesjs": "^0.7.0",
-    "mkdirp": "3.0.1"
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9"

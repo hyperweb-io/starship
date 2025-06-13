@@ -1,0 +1,1013 @@
+# API for interacting with the charts for devnet
+# TODO: need a way to create state reaching jobs, those will run user bash scripts
+# after the chain has been initialized, get the chain to a state and then complete
+# Note: Order of `coins` matters, since we take the first one as part of gentx
+defaultChains:
+  osmosis:
+    image: ghcr.io/cosmology-tech/starship/osmosis:v25.0.0
+    home: /root/.osmosisd
+    binary: osmosisd
+    prefix: osmo
+    denom: uosmo
+    prettyName: Osmosis
+    coins: 100000000000000uosmo,100000000000000uion
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/osmosis-labs/osmosis
+    assets:
+      - base: uosmo
+        description: "The native token of Osmosis"
+        name: Osmosis
+        display: osmo
+        symbol: OSMO
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.svg"
+        denom_units:
+          - denom: uosmo
+            exponent: 0
+          - denom: osmo
+            exponent: 6
+        coingecko_id: osmosis
+        keywords: ["staking", "dex"]
+      - base: uion
+        name: Ion
+        display: ion
+        symbol: ION
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/ion.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/ion.svg"
+        denom_units:
+          - denom: uion
+            exponent: 0
+          - denom: ion
+            exponent: 6
+        coingecko_id: ion
+        keywords: ["memecoin"]
+  juno:
+    image: ghcr.io/cosmology-tech/starship/juno:v18.0.0
+    home: /root/.juno
+    binary: junod
+    prefix: juno
+    denom: ujuno
+    prettyName: Juno
+    coins: 100000000000000ujuno
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/CosmosContracts/juno
+    assets:
+      - base: ujuno
+        description: "The native token of JUNO Chain"
+        name: Juno
+        display: juno
+        symbol: JUNO
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/juno/images/juno.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/juno/images/juno.svg"
+        denom_units:
+          - denom: ujuno
+            exponent: 0
+          - denom: juno
+            exponent: 6
+        coingecko_id: juno-network
+  wasmd:
+    image: anmol1696/wasmd:latest
+    home: /root/.wasmd
+    binary: wasmd
+    prefix: wasm
+    denom: stake
+    prettyName: Wasm
+    coins: 100000000000000stake,100000000000000ucosm
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/CosmWasm/wasmd
+  cosmoshub:
+    image: ghcr.io/cosmology-tech/starship/gaia:v18.0.0
+    home: /root/.gaia
+    binary: gaiad
+    prefix: cosmos
+    denom: uatom
+    prettyName: Cosmos Hub
+    coins: 100000000000000uatom
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/cosmos/gaia
+    assets:
+      - base: uatom
+        description: "The native staking and governance token of the Cosmos Hub."
+        name: Cosmos Hub Atom
+        display: atom
+        symbol: ATOM
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.svg"
+        denom_units:
+          - denom: uatom
+            exponent: 0
+          - denom: atom
+            exponent: 6
+        coingecko_id: atom
+  simapp:
+    image: ghcr.io/cosmology-tech/starship/simapp:v0.47.3
+    home: /root/.simapp
+    binary: simd
+    prefix: cosmos
+    denom: stake
+    prettyName: Sim App
+    coins: 100000000000000stake
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/cosmos/cosmos-sdk/tree/main/simapp
+  persistencecore:
+    image: anmol1696/persistencecore:latest
+    home: /root/.persistenceCore
+    binary: persistenceCore
+    prefix: persistence
+    denom: uxprt
+    prettyName: Persistence
+    coins: 100000000000000uxprt
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/persistenceOne/persistenceCore
+  stride:
+    image: ghcr.io/cosmology-tech/starship/stride:v9.2.1
+    home: /root/.stride
+    binary: strided
+    prefix: stride
+    denom: ustrd
+    prettyName: Stride
+    coins: 100000000000000ustrd
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/Stride-Labs/stride
+    assets:
+      - base: ustrd
+        description: The native token of Stride
+        denom_units:
+          - denom: ustrd
+            exponent: 0
+          - denom: strd
+            exponent: 6
+        name: Stride
+        display: strd
+        symbol: STRD
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/stride/images/strd.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/stride/images/strd.svg
+        coingecko_id: stride
+      - base: stuatom
+        denom_units:
+          - denom: stuatom
+            exponent: 0
+          - denom: statom
+            exponent: 6
+        name: stATOM
+        display: statom
+        symbol: stATOM
+        traces:
+          - type: liquid-stake
+            counterparty:
+              chain_name: cosmoshub
+              base_denom: uatom
+            provider: Stride
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/stride/images/statom.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/stride/images/statom.svg
+        coingecko_id: stride-staked-atom
+  injective:
+    image: ghcr.io/cosmology-tech/starship/injective:v1.11.6
+    home: /root/.injectived
+    binary: injectived
+    prefix: inj
+    denom: inj
+    prettyName: Injective
+    coins: 100000000000000000000000000inj
+    hdPath: m/44'/60'/0'/0/0
+    coinType: 60
+    repo: https://github.com/InjectiveLabs/injective-chain-releases
+    faucet:
+      type: starship
+    scripts:
+      createGenesis:
+        file: scripts/injective/create-genesis.sh
+      updateGenesis:
+        file: scripts/injective/update-genesis.sh
+      createValidator:
+        file: scripts/injective/create-validator.sh
+    assets:
+      - base: inj
+        description: The INJ token is the native governance token for the Injective chain.
+        denom_units:
+          - denom: inj
+            exponent: 0
+          - denom: INJ
+            exponent: 18
+        name: Injective
+        display: INJ
+        symbol: INJ
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/injective/images/inj.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/injective/images/inj.svg
+        coingecko_id: injective-protocol
+  ics:
+    image: ghcr.io/cosmology-tech/starship/ics:v0.1.0
+    home: /root/.ics
+    binary: interchain-security-pd
+    prefix: cosmos
+    denom: uatom
+    prettyName: ICS
+    coins: 100000000000000uatom,100000000000000stake
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/cosmos/interchain-security
+  cronos:
+    image: ghcr.io/cosmology-tech/starship/cronos:v1.0.4
+    home: /root/.cronos
+    binary: cronosd
+    prefix: crc
+    denom: basecro
+    prettyName: Cronos
+    coins: 100000000000000basecro
+    hdPath: m/44'/60'/0'/0/0
+    coinType: 60
+    repo: https://github.com/crypto-org-chain/cronos
+    assets:
+      - base: basecro
+        description: Cronos Chain - Get Instant DApp Portability with EVM Support
+        denom_units:
+          - denom: basecro
+            exponent: 0
+          - denom: cro
+            exponent: 18
+        name: Cronos
+        display: cro
+        symbol: CRO
+        logo_URIs:
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/cronos/images/cro.svg
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/cronos/images/cronos.png
+        coingecko_id: crypto-com-chain
+  cryptoorgchain:
+    image: ghcr.io/cosmology-tech/starship/cryptoorgchain:v4.1.2
+    home: /root/.cryptoorgchain
+    binary: chain-maind
+    prefix: cro
+    denom: basecro
+    prettyName: Crypto.org Chain
+    coins: 100000000000000basecro
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/crypto-org-chain/chain-main
+    assets:
+      - base: basecro
+        description: CRO is the native token of the Crypto.org Chain, referred to as Native CRO.
+        denom_units:
+          - denom: basecro
+            exponent: 0
+          - denom: cro
+            exponent: 8
+        name: Cronos
+        display: cro
+        symbol: CRO
+        logo_URIs:
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/cronos/images/cro.svg
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/cronos/images/cronos.png
+        coingecko_id: crypto-com-chain
+  evmos:
+    image: ghcr.io/cosmology-tech/starship/evmos:v13.0.1
+    home: /root/.evmosd
+    binary: evmosd
+    prefix: evmos
+    denom: aevmos
+    prettyName: Evmos
+    coins: 100000000000000000000000000aevmos
+    hdPath: m/44'/60'/0'/0/0
+    coinType: 60
+    repo: https://github.com/evmos/evmos
+    faucet:
+      type: starship
+    assets:
+      - base: aevmos
+        description: The native EVM, governance and staking token of the Evmos Hub
+        denom_units:
+          - denom: aevmos
+            exponent: 0
+          - denom: evmos
+            exponent: 18
+        name: Evmos
+        display: evmos
+        symbol: EVMOS
+        logo_URIs:
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/evmos/images/evmos.svg
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/evmos/images/evmos.png
+        coingecko_id: evmos
+  regen:
+    image: ghcr.io/cosmology-tech/starship/regen:v5.0.0
+    home: /root/.regen
+    binary: regen
+    prefix: regen
+    denom: uregen
+    prettyName: Regen
+    coins: 100000000000000uregen
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/regen-network/regen-ledger
+    assets:
+      - base: uregen
+        description: REGEN coin is the token for the Regen Network Platform
+        denom_units:
+          - denom: uregen
+            exponent: 0
+          - denom: regen
+            exponent: 6
+        name: Regen Network
+        display: regen
+        symbol: REGEN
+        logo_URIs:
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/regen/images/regen.svg
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/regen/images/regen.png
+        coingecko_id: regen
+      - base: eco.uC.NCT
+        description: Nature Carbon Ton (NCT) is a carbon token standard backed 1:1 by carbon
+          credits issued by Verra, a global leader in the voluntary carbon market. NCT credits
+          on Regen Network have been tokenized by Toucan.earth.
+        denom_units:
+          - denom: eco.uC.NCT
+            exponent: 0
+          - denom: nct
+            exponent: 6
+        name: Nature Carbon Ton
+        display: nct
+        symbol: NCT
+        logo_URIs:
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/regen/images/nct.svg
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/regen/images/nct.png
+        coingecko_id: toucan-protocol-nature-carbon-tonne
+  quasar:
+    image: ghcr.io/cosmology-tech/starship/quasar:v0.1.1
+    home: /root/.quasarnode
+    binary: quasarnoded
+    prefix: quasar
+    denom: uqsr
+    prettyName: Quasar
+    coins: 100000000000000uqsr
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/quasar-finance/quasar-preview
+    assets:
+      - base: uqsr
+        description: The native token of Quasar
+        denom_units:
+          - denom: uqsr
+            exponent: 0
+          - denom: qsr
+            exponent: 6
+        name: Quasar
+        display: qsr
+        symbol: QSR
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/quasar/images/quasar.png
+  quicksilver:
+    image: ghcr.io/cosmology-tech/starship/quicksilver:v0.6.6
+    home: /root/.quicksilverd
+    binary: quicksilverd
+    prefix: quick
+    denom: uqck
+    prettyName: Quicksilver
+    coins: 100000000000000uqck
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/ingenuity-build/quicksilver
+    assets:
+      - description: QCK - native token of Quicksilver
+        denom_units:
+          - denom: uqck
+            exponent: 0
+            aliases: [ ]
+          - denom: qck
+            exponent: 6
+            aliases: [ ]
+        base: uqck
+        name: Quicksilver
+        display: qck
+        symbol: QCK
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/quicksilver/images/qck.png
+        coingecko_id: quicksilver
+      - description: Quicksilver Liquid Staked STARS
+        denom_units:
+          - denom: uqstars
+            exponent: 0
+            aliases: [ ]
+          - denom: qstars
+            exponent: 6
+            aliases: [ ]
+        base: uqstars
+        name: Quicksilver Liquid Staked STARS
+        display: qstars
+        symbol: qSTARS
+        traces:
+          - type: liquid-stake
+            counterparty:
+              chain_name: stargaze
+              base_denom: ustars
+            provider: Quicksilver
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/quicksilver/images/qstars.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/quicksilver/images/qstars.svg
+      - description: Quicksilver Liquid Staked ATOM
+        denom_units:
+          - denom: uqatom
+            exponent: 0
+            aliases: [ ]
+          - denom: qatom
+            exponent: 6
+            aliases: [ ]
+        base: uqatom
+        name: Quicksilver Liquid Staked ATOM
+        display: qatom
+        symbol: qATOM
+        traces:
+          - type: liquid-stake
+            counterparty:
+              chain_name: cosmoshub
+              base_denom: uatom
+            provider: Quicksilver
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/quicksilver/images/qatom.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/quicksilver/images/qatom.svg
+  sei:
+    image: ghcr.io/cosmology-tech/starship/sei:2.0.46beta
+    home: /root/.seid
+    binary: seid
+    prefix: sei
+    denom: usei
+    prettyName: Sei
+    coins: 100000000000000usei
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/sei-protocol/sei-chain
+    assets:
+      - description: The native staking token of Sei.
+        denom_units:
+          - denom: usei
+            exponent: 0
+          - denom: sei
+            exponent: 6
+        base: usei
+        name: Sei
+        display: sei
+        symbol: SEI
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/sei/images/sei.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/sei/images/sei.svg
+        coingecko_id: sei-network
+  sommelier:
+    image: ghcr.io/cosmology-tech/starship/sommelier:v6.0.0
+    home: /root/.sommelier
+    binary: sommelier
+    prefix: somm
+    denom: usomm
+    prettyName: Sommelier
+    coins: 100000000000000usomm
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/PeggyJV/sommelier
+    assets:
+      - description: Somm Token (SOMM) is the native staking token of the Sommelier Chain
+        denom_units:
+          - denom: usomm
+            exponent: 0
+            aliases:
+              - microsomm
+          - denom: msomm
+            exponent: 3
+            aliases:
+              - millisomm
+          - denom: somm
+            exponent: 6
+        base: usomm
+        name: Somm
+        display: somm
+        symbol: SOMM
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/sommelier/images/somm.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/sommelier/images/somm.svg
+        coingecko_id: sommelier
+  stargaze:
+    image: ghcr.io/cosmology-tech/starship/stargaze:v10.0.1
+    home: /root/.starsd
+    binary: starsd
+    prefix: stars
+    denom: ustars
+    prettyName: Stargaze
+    coins: 100000000000000ustars
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/public-awesome/stargaze
+    assets:
+      - description: The native token of Stargaze
+        denom_units:
+          - denom: ustars
+            exponent: 0
+          - denom: stars
+            exponent: 6
+        base: ustars
+        name: Stargaze
+        display: stars
+        symbol: STARS
+        logo_URIs:
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/stargaze/images/stars.svg
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/stargaze/images/stars.png
+        coingecko_id: stargaze
+  umee:
+    image: ghcr.io/cosmology-tech/starship/umee:v3.1.0
+    home: /root/.umee
+    binary: umeed
+    prefix: umee
+    denom: uumee
+    prettyName: Umee
+    coins: 100000000000000uumee
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/umee-network/umee
+    assets:
+      - description: The native token of Umee
+        denom_units:
+          - denom: uumee
+            exponent: 0
+          - denom: umee
+            exponent: 6
+        base: uumee
+        name: Umee
+        display: umee
+        symbol: UMEE
+        logo_URIs:
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/umee/images/umee.svg
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/umee/images/umee.png
+        coingecko_id: umee
+  cheqd:
+    image: ghcr.io/cosmology-tech/starship/cheqd:v1.4.4
+    home: /root/.cheqdnode
+    binary: cheqd-noded
+    prefix: cheqd
+    denom: ncheq
+    prettyName: Cheqd
+    coins: 100000000000000ncheq
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/cheqd/cheqd-node
+    assets:
+      - description: Native token for the cheqd network
+        denom_units:
+          - denom: ncheq
+            exponent: 0
+          - denom: cheq
+            exponent: 9
+        base: ncheq
+        display: cheq
+        name: cheqd
+        symbol: CHEQ
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/cheqd/images/cheq.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/cheqd/images/cheq.svg
+        coingecko_id: cheqd-network
+  neutron:
+    image: ghcr.io/cosmology-tech/starship/neutron:v3.0.5
+    home: /root/.neutrond
+    binary: neutrond
+    prefix: neutron
+    denom: untrn
+    prettyName: Neutron
+    coins: 100000000000000untrn
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/neutron-org/neutron
+    scripts:
+      createGenesis:
+        file: scripts/neutron/create-neutron-genesis.sh
+      updateGenesis:
+        file: scripts/neutron/update-genesis.sh
+      updateConfig:
+        file: scripts/neutron/update-config.sh
+    assets:
+      - description: The native token of Neutron chain.
+        denom_units:
+          - denom: untrn
+            exponent: 0
+          - denom: ntrn
+            exponent: 6
+        base: untrn
+        name: Neutron
+        display: ntrn
+        symbol: NTRN
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/neutron/images/ntrn.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/neutron/images/ntrn.svg
+        coingecko_id: neutron
+  akash:
+    image: ghcr.io/osmosis-labs/mesh-security-infra/akash:latest # temp image. todo: add actual image
+    home: /root/.akashd
+    binary: akash
+    prefix: akash
+    denom: uakt
+    prettyName: Akash
+    coins: 100000000000000uakt
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/akash-network/node
+    assets:
+      - base: uakt
+        description: "The native token of Akash"
+        name: Akash
+        display: akt
+        symbol: AKT
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/akash/images/akt.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/akash/images/akt.svg"
+        denom_units:
+          - denom: uakt
+            exponent: 0
+          - denom: akt
+            exponent: 6
+        coingecko_id: akash-network
+        keywords: [ "cloud" ]
+  agoric:
+    image: ghcr.io/agoric/agoric-3-proposals:main
+    home: /root/.agoric
+    binary: agd
+    prefix: agoric
+    denom: ubld
+    prettyName: Agoric
+    coins: 100000000000000ubld,100000000000000uist
+    hdPath: m/44'/564'/0'/0/0
+    coinType: 564
+    repo: https://github.com/Agoric/agoric-sdk
+    assets:
+      - base: ubld
+        description: "The native token of Agoric"
+        name: Agoric
+        display: bld
+        symbol: BLD
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/bld.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/bld.svg"
+        denom_units:
+          - denom: ubld
+            exponent: 0
+          - denom: bld
+            exponent: 6
+        coingecko_id: agoric
+        keywords: [ "agoric" ]
+      - base: uist
+        description: "IST is the stable token used by the Agoric chain for execution fees and commerce."
+        name: Inter Stable Token
+        display: ist
+        symbol: IST
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/ist.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/ist.svg"
+        denom_units:
+          - denom: uist
+            exponent: 0
+          - denom: ist
+            exponent: 6
+        coingecko_id: inter-stable-token
+        keywords: [ "inter-stable-token" ]
+  kujira:
+    image: ghcr.io/cosmology-tech/starship/kujira:v1.1.0
+    home: /root/.kujira
+    binary: kujirad
+    prefix: kujira
+    denom: ukuji
+    prettyName: Kujira
+    coins: 100000000000000ukuji
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/Team-Kujira/core
+    assets:
+      - base: ukuji
+        description: "The native staking and governance token of the Kujira chain."
+        name: Kujira
+        display: kuji
+        symbol: KUJI
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/kujira/images/kuji.svg"
+        denom_units:
+          - denom: ukuji
+            exponent: 0
+          - denom: kuji
+            exponent: 6
+        coingecko_id: kujira
+        keywords: [ "kujira" ]
+  hyperweb:
+    image: ghcr.io/hyperweb-io/hyperweb:latest
+    home: /root/.hyperd
+    binary: hyperd
+    prefix: hyper
+    denom: uhyper
+    prettyName: Hyperweb
+    coins: 100000000000000uhyper
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/hyperweb-io/hyperweb
+    assets:
+      - base: uhyper
+        description: "The meme coin for Hyperweb chain."
+        name: Hyper
+        display: hyper
+        symbol: HYPR
+        logo_URIs:
+          png: "https://gist.githubusercontent.com/Anmol1696/bea1b3835dfb0fce3ab9ed993f5a0792/raw/7065493384a51c888752284be7c1afbf6135b50a/logo-png.png"
+          svg: "https://gist.githubusercontent.com/Anmol1696/bea1b3835dfb0fce3ab9ed993f5a0792/raw/7065493384a51c888752284be7c1afbf6135b50a/logo-svg.svg"
+        denom_units:
+          - denom: uhyper
+            exponent: 0
+          - denom: hyper
+            exponent: 6
+        coingecko_id: hyper
+        keywords: [ "hyper" ]
+  noble:
+    image: ghcr.io/cosmology-tech/starship/noble:v7.0.0
+    home: /root/.noble
+    binary: nobled
+    prefix: noble
+    denom: uusdc
+    prettyName: Noble
+    coins: 100000000000000uusdc,100000000000000ustake
+    hdPath: m/44'/118'/0'/0/0
+    coinType: 118
+    repo: https://github.com/noble-assets/noble
+    scripts:
+      createGenesis:
+        file: scripts/noble/create-genesis.sh
+      updateGenesis:
+        file: scripts/noble/update-genesis.sh
+    assets:
+      - base: uusdc
+        description: "USD Coin"
+        name: USDC
+        display: usdc
+        symbol: USDC
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/noble.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/noble.svg"
+        denom_units:
+          - denom: uusdc
+            exponent: 0
+          - denom: usdc
+            exponent: 6
+        coingecko_id: usdc
+        keywords: [ "usdc" ]
+      - base: ustake
+        description: "Permissioned stake token for noble"
+        name: Stake
+        display: stake
+        symbol: STAKE
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/stake.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/noble/images/stake.svg"
+        denom_units:
+          - denom: ustake
+            exponent: 0
+          - denom: stake
+            exponent: 6
+        coingecko_id: stake
+        keywords: [ "stake" ]
+  xpla:
+    image: ghcr.io/xpladev/xpla:main
+    home: /root/.xpla
+    binary: xplad
+    prefix: xpla
+    denom: axpla
+    prettyName: XPLA Chain
+    coins: 100000000000000000000000000axpla
+    hdPath: m/44'/60'/0'/0/0
+    coinType: 60
+    repo: https://github.com/xpladev/xpla
+    faucet:
+      type: starship
+    scripts:
+      updateGenesis:
+        file: scripts/evm/update-genesis.sh
+    assets:
+      - base: axpla
+        description: The XPLA token is the native governance token for the XPLA chain.
+        denom_units:
+          - denom: axpla
+            exponent: 0
+        name: XPLA
+        display: XPLA
+        symbol: XPLA
+        logo_URIs:
+          png: https://raw.githubusercontent.com/cosmos/chain-registry/master/xpla/images/xpla.png
+          svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/xpla/images/xpla.svg
+        coingecko_id: xpla
+  ethereum:
+    image: ghcr.io/hyperweb-io/starship/ethereum/client-go:v1.14.12
+    home: /ethereum
+    binary: geth
+    prefix: eth
+    denom: wei
+    prettyName: Ethereum Execution Chain
+    coins: 100000000000000wei
+    hdPath: m/44'/60'/0'/0/0
+    coinType: 60
+    repo: https://github.com/ethereum/go-ethereum
+    assets:
+      - base: wei
+        name: "Ether"
+        description: "The native token of Ethereum"
+        display: "eth"
+        symbol: "ETH"
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/eth-white.png"
+          svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/eth-white.svg"
+        denom_units:
+          - denom: wei
+            exponent: 0
+          - denom: gwei
+            exponent: 9
+          - denom: ether
+            exponent: 18
+            aliases:
+              - "ether"
+        coingecko_id: "ethereum"
+    config:
+      beacon:
+        enabled: true
+        image: "ghcr.io/hyperweb-io/starship/prysm/beacon-chain:v5.2.0"
+        numValidator: 1
+      validator:
+        enabled: true
+        image: "ghcr.io/hyperweb-io/starship/prysm/validator:v5.2.0"
+        numValidator: 1
+      prysmctl:
+        image: "ghcr.io/hyperweb-io/starship/prysm/cmd/prysmctl:v5.2.0"
+  eth:
+    storageClassName: hostpath
+    genesisStateUrl: https://github.com/eth-clients/merge-testnets/blob/main/sepolia/genesis.ssz
+    joinNetwork: false
+    prysmCtl:
+      image: gcr.io/prysmaticlabs/prysm/cmd/prysmctl:local-devnet
+      command: ["/app/cmd/prysmctl/prysmctl"]
+      args:
+        - testnet
+        - generate-genesis
+        - --fork=capella
+        - --num-validators=64
+        - --output-ssz=/ethereum/consensus/genesis.ssz
+        - --chain-config-file=/etc/config/config.yml
+        - --geth-genesis-json-in=/etc/config/genesis.json
+        - --geth-genesis-json-out=/ethereum/consensus/genesis.json
+    geth:
+      image: ethereum/client-go:latest
+      args:
+        - --nodiscover
+        - --http
+        - --http.api=eth,net,web3,debug
+        - --http.addr=0.0.0.0
+        - --http.corsdomain=*
+        - --ws
+        - --ws.api=eth,net,web3
+        - --ws.addr=0.0.0.0
+        - --ws.origins=*
+        - --http.vhosts=*
+        - --authrpc.vhosts=*
+        - --authrpc.addr=0.0.0.0
+        - --authrpc.jwtsecret=/etc/secrets/jwt.hex
+        - --datadir=/ethereum/execution
+        - --allow-insecure-unlock
+        - --unlock=0x123463a4B065722E99115D6c222f267d9cABb524
+        - --password=/dev/null
+        - --syncmode=full
+        - --networkid=32382
+    beaconChain:
+      image: gcr.io/prysmaticlabs/prysm/beacon-chain:v4.0.8
+      command: ["/app/cmd/beacon-chain/beacon-chain"]
+      args:
+        - --datadir=/ethereum/consensus/beacon
+        - --min-sync-peers=0
+        - --genesis-state=/ethereum/consensus/genesis.ssz
+        - --bootstrap-node=
+        - --interop-eth1data-votes
+        - --chain-config-file=/etc/config/config.yml
+        - --chain-id=32382
+        - --rpc-host=0.0.0.0
+        - --contract-deployment-block=0
+        - --grpc-gateway-host=0.0.0.0
+        - --execution-endpoint=http://localhost:8551
+        - --accept-terms-of-use
+        - --jwt-secret=/etc/secrets/jwt.hex
+        - --suggested-fee-recipient=0x123463a4B065722E99115D6c222f267d9cABb524
+        - --minimum-peers-per-subnet=0
+        - --enable-debug-rpc-endpoints
+    validator:
+      enabled: false
+      image: gcr.io/prysmaticlabs/prysm/validator:v4.0.8
+      command: ["/app/cmd/validator/validator"]
+      args:
+        - --accept-terms-of-use
+        - --beacon-rpc-provider=localhost:4000
+        - --datadir=/ethereum/consensus/validator
+        - --interop-num-validators=64
+        - --interop-start-index=0
+        - --force-clear-db
+        - --chain-config-file=/etc/config/config.yml
+        - --suggested-fee-recipient=0x0C46c2cAFE097b4f7e1BB868B89e5697eE65f934
+
+defaultRelayers:
+  ts-relayer:
+    image: ghcr.io/cosmology-tech/starship/ts-relayer:0.9.0
+  hermes:
+    image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
+    config:
+      global:
+        log_level: "info"
+      mode:
+        clients:
+          enabled: true
+          refresh: true
+          misbehaviour: true
+        connections:
+          enabled: true
+        channels:
+          enabled: true
+        packets:
+          enabled: true
+          clear_interval: 100
+          clear_on_start: true
+          tx_confirmation: true
+      rest:
+        enabled: true
+        host: "0.0.0.0"
+        port: 3000
+      telemetry:
+        enabled: true
+        host: "0.0.0.0"
+        port: 3001
+      # custom config args
+      event_source:
+        mode: push # allowed values: push, pull. Valid only for 1.6.0+
+  go-relayer:
+    image: ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1
+  neutron-query-relayer:
+    image: ghcr.io/cosmology-tech/starship/neutron-query-relayer:v0.2.0
+    config:
+      RELAYER_NEUTRON_CHAIN_TIMEOUT: 1000s
+      RELAYER_NEUTRON_CHAIN_GAS_PRICES: 0.5untrn
+      RELAYER_NEUTRON_CHAIN_GAS_LIMIT: 200000
+      RELAYER_NEUTRON_CHAIN_GAS_ADJUSTMENT: 2.0
+      RELAYER_NEUTRON_CHAIN_DEBUG: false
+      RELAYER_NEUTRON_CHAIN_KEYRING_BACKEND: test
+      RELAYER_NEUTRON_CHAIN_OUTPUT_FORMAT: json
+      RELAYER_NEUTRON_CHAIN_SIGN_MODE_STR: direct
+      RELAYER_TARGET_CHAIN_TIMEOUT: 1000s
+      RELAYER_TARGET_CHAIN_DEBUG: true
+      RELAYER_REGISTRY_ADDRESS: ""
+      RELAYER_ALLOW_TX_QUERIES: true
+      RELAYER_ALLOW_KV_CALLBACKS: true
+      RELAYER_MIN_KV_UPDATE_PERIOD: 1
+      RELAYER_STORAGE_PATH: "storage/leveldb"
+      RELAYER_CHECK_SUBMITTED_TX_STATUS_DELAY: 10s
+      RELAYER_QUERIES_TASK_QUEUE_CAPACITY: 10000
+
+defaultScripts:
+  createGenesis:
+    name: create-genesis.sh
+    file: scripts/default/create-genesis.sh
+  updateGenesis:
+    name: update-genesis.sh
+    file: scripts/default/update-genesis.sh
+  updateConfig:
+    name: update-config.sh
+    file: scripts/default/update-config.sh
+  createValidator:
+    name: create-validator.sh
+    file: scripts/default/create-validator.sh
+  transferTokens:
+    name: transfer-tokens.sh
+    file: scripts/default/transfer-tokens.sh
+  buildChain:
+    name: build-chain.sh
+    file: scripts/default/build-chain.sh
+  chainRpcReady:
+    name: chain-rpc-ready.sh
+    file: scripts/default/chain-rpc-ready.sh
+  ibcConnection:
+    name: ibc-connection.sh
+    file: scripts/default/ibc-connection.sh
+  createICS:
+    name: create-ics.sh
+    file: scripts/default/create-ics.sh
+
+defaultFaucet:
+  cosmjs:
+    image: ghcr.io/cosmology-tech/starship/cosmjs-faucet:v0.31.1
+    concurrency: 5
+  starship:
+    image: ghcr.io/hyperweb-io/starship/faucet:20250325-2207109
+    concurrency: 5
+
+defaultCometmock:
+  image: ghcr.io/informalsystems/cometmock:v0.37.x
