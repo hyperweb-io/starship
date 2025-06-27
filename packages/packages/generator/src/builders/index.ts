@@ -5,7 +5,7 @@ import * as path from 'path';
 
 import { applyDefaults } from '../defaults';
 import { Manifest } from '../types';
-import { CosmosBuilder } from './cosmos';
+import { CosmosBuilder } from './chains/cosmos';
 import { ExplorerBuilder } from './explorer';
 import { FrontendBuilder } from './frontend';
 import { RegistryBuilder } from './registry';
