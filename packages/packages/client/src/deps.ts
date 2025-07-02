@@ -1,5 +1,5 @@
-import * as shell from 'shelljs';
 import { existsSync } from 'fs';
+import * as shell from 'shelljs';
 
 export type Dependency = {
   name: string;
@@ -14,7 +14,7 @@ function isRunningInDocker(): boolean {
   if (existsSync('/.dockerenv')) {
     return true;
   }
-  
+
   // Check cgroup for docker signatures
   try {
     const cgroup = shell.cat('/proc/1/cgroup');
@@ -24,12 +24,12 @@ function isRunningInDocker(): boolean {
   } catch (e) {
     // Ignore errors when reading cgroup
   }
-  
+
   // Check for KUBERNETES_SERVICE_HOST which indicates we're in a K8s pod
   if (process.env.KUBERNETES_SERVICE_HOST) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -39,13 +39,13 @@ function shouldSkipDocker(): boolean {
   if (process.env.STARSHIP_SKIP_DOCKER_CHECK === 'true') {
     return true;
   }
-  
+
   // Skip if we're running inside a container
   if (isRunningInDocker()) {
     console.log('Running inside a container, skipping Docker dependency check');
     return true;
   }
-  
+
   return false;
 }
 
