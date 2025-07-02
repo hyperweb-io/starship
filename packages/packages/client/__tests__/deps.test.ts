@@ -22,18 +22,18 @@ describe('Docker dependency detection', () => {
   });
 
   test('should detect Docker via .dockerenv file', async () => {
-    const fs = require('fs');
-    const shell = require('shelljs');
-    
+    const fs = await import('fs');
+    const shell = await import('shelljs');
+
     fs.existsSync = jest.fn().mockImplementation((path: string) => {
       return path === '/.dockerenv';
     });
-    
+
     shell.cat = jest.fn().mockReturnValue({
       includes: (_str: string) => false,
       toString: () => ''
     });
-    
+
     shell.which = jest.fn().mockImplementation((cmd: string) => {
       if (cmd === 'kubectl' || cmd === 'helm') return '/usr/bin/' + cmd;
       return null;
@@ -47,19 +47,19 @@ describe('Docker dependency detection', () => {
   });
 
   test('should detect Docker via cgroup', async () => {
-    const fs = require('fs');
-    const shell = require('shelljs');
-    
+    const fs = await import('fs');
+    const shell = await import('shelljs');
+
     fs.existsSync = jest.fn().mockImplementation((path: string) => {
       // /proc/1/cgroup exists but /.dockerenv doesn't
       return path === '/proc/1/cgroup';
     });
-    
+
     shell.cat = jest.fn().mockReturnValue({
       includes: (str: string) => str === 'docker',
       toString: () => '1:name=systemd:/docker/abc123'
     });
-    
+
     shell.which = jest.fn().mockImplementation((cmd: string) => {
       if (cmd === 'kubectl' || cmd === 'helm') return '/usr/bin/' + cmd;
       return null;
@@ -73,18 +73,18 @@ describe('Docker dependency detection', () => {
   });
 
   test('should detect Kubernetes pod environment', async () => {
-    const fs = require('fs');
-    const shell = require('shelljs');
-    
+    const fs = await import('fs');
+    const shell = await import('shelljs');
+
     process.env.KUBERNETES_SERVICE_HOST = '10.0.0.1';
-    
+
     fs.existsSync = jest.fn().mockReturnValue(false);
-    
+
     shell.cat = jest.fn().mockReturnValue({
       includes: (_str: string) => false,
       toString: () => ''
     });
-    
+
     shell.which = jest.fn().mockImplementation((cmd: string) => {
       if (cmd === 'kubectl' || cmd === 'helm') return '/usr/bin/' + cmd;
       return null;
@@ -101,17 +101,17 @@ describe('Docker dependency detection', () => {
   });
 
   test('should require Docker when not in container', async () => {
-    const fs = require('fs');
-    const shell = require('shelljs');
-    
+    const fs = await import('fs');
+    const shell = await import('shelljs');
+
     // Ensure we're not detected as running in a container
     fs.existsSync = jest.fn().mockReturnValue(false); // No .dockerenv file
-    
+
     shell.cat = jest.fn().mockReturnValue({
       includes: (_str: string) => false, // No docker in cgroup
       toString: () => 'some-other-cgroup-content'
     });
-    
+
     delete process.env.KUBERNETES_SERVICE_HOST; // Not in Kubernetes
     delete process.env.STARSHIP_SKIP_DOCKER_CHECK; // Don't skip the check
 
@@ -128,16 +128,16 @@ describe('Docker dependency detection', () => {
   });
 
   test('should detect Docker binary when available', async () => {
-    const fs = require('fs');
-    const shell = require('shelljs');
-    
+    const fs = await import('fs');
+    const shell = await import('shelljs');
+
     fs.existsSync = jest.fn().mockReturnValue(false);
-    
+
     shell.cat = jest.fn().mockReturnValue({
       includes: (_str: string) => false,
       toString: () => ''
     });
-    
+
     shell.which = jest.fn().mockImplementation((cmd: string) => {
       return '/usr/bin/' + cmd; // All binaries available
     });
