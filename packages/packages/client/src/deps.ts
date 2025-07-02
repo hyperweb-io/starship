@@ -15,14 +15,16 @@ function isRunningInDocker(): boolean {
     return true;
   }
 
-  // Check cgroup for docker signatures
-  try {
-    const cgroup = shell.cat('/proc/1/cgroup');
-    if (cgroup && cgroup.includes('docker')) {
-      return true;
+  // Check cgroup for docker signatures (Linux only)
+  if (existsSync('/proc/1/cgroup')) {
+    try {
+      const cgroup = shell.cat('/proc/1/cgroup');
+      if (cgroup && cgroup.includes('docker')) {
+        return true;
+      }
+    } catch (e) {
+      // Ignore errors when reading cgroup
     }
-  } catch (e) {
-    // Ignore errors when reading cgroup
   }
 
   // Check for KUBERNETES_SERVICE_HOST which indicates we're in a K8s pod
