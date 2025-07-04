@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - v1
       - release/*
     paths:
       - "starship/charts/**"
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches:
       - main
+      - v1
     paths:
       - "starship/charts/**"
       - ".github/workflows/lint-check.yaml"

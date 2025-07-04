@@ -54,6 +54,8 @@ spec:
               UPGRADE_NAME=genesis CODE_TAG={{ $chain.build.source }} bash -e /scripts/build-chain.sh
               {{- end }}
           env:
+            {{ include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{ include "devnet.envVars" $chain | indent 12 }}
             - name: CODE_REF
               value: {{ $chain.repo }}
             - name: UPGRADE_DIR
@@ -62,7 +64,6 @@ spec:
               value: /go/bin
             - name: CHAIN_NAME
               value: {{ $chain.id }}
-            {{ include "devnet.defaultEvnVars" $chain | indent 12 }}
           resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
           volumeMounts:
             - mountPath: {{ $chain.home }}
@@ -76,8 +77,8 @@ spec:
           image: {{ $chain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             {{- include "devnet.timeoutVars" $.Values | indent 12 }}
             - name: KEYS_CONFIG
               value: /configs/keys.json
@@ -132,8 +133,8 @@ spec:
           image: {{ $chain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             {{- include "devnet.timeoutVars" $.Values | indent 12 }}
             - name: KEYS_CONFIG
               value: /configs/keys.json
@@ -191,8 +192,8 @@ spec:
           image: {{ $icsChain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -247,16 +248,12 @@ spec:
           image: {{ $chain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             - name: FAUCET_ENABLED
               value: "{{ $chain.faucet.enabled }}"
             - name: SLOGFILE
               value: "slog.slog"
-            {{- range $env := $chain.env }}
-            - name: {{ $env.name }}
-              value: {{ $env.value | quote }}
-            {{- end }}
           command:
             - bash
             - "-c"
@@ -299,6 +296,8 @@ spec:
           image: {{ $.Values.exposer.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
+            {{ include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{ include "devnet.envVars" $chain | indent 12 }}
             {{- include "devnet.genesisVars" $dataExposer | indent 12}}
             - name: EXPOSER_HTTP_PORT
               value: "8081"
@@ -329,6 +328,8 @@ spec:
           image: {{ $chain.faucet.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
+            {{ include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{ include "devnet.envVars" $chain | indent 12 }}
             - name: FAUCET_CONCURRENCY
               value: "{{ $chain.faucet.concurrency }}"
             - name: FAUCET_PORT
@@ -402,6 +403,8 @@ spec:
           image: {{ $chain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
+            {{ include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{ include "devnet.envVars" $chain | indent 12 }}
             - name: FAUCET_CONCURRENCY
               value: "{{ $chain.faucet.concurrency }}"
             - name: FAUCET_HTTP_PORT
