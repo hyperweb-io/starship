@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: go-relayer-osmos-cosmos
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: relayer
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/role: go-relayer
+    app.kubernetes.io/name: go-relayer-osmos-cosmos
+data:
+  path.json: |-
+    {
+      "paths": {
+        "path": {
+          "src": {
+            "chain-id": "osmosis-1",
+            "client-id": "",
+            "connection-id": "",
+            "channel-id": "",
+            "port-id": "transfer"
+          },
+          "dst": {
+            "chain-id": "cosmoshub-4",
+            "client-id": "",
+            "connection-id": "",
+            "channel-id": "",
+            "port-id": "transfer"
+          },
+          "src-channel-filter": {
+            "rule": null,
+            "channel-list": []
+          }
+        }
+      }
+    }
+  osmosis-1.json: |-
+    {
+      "type": "cosmos",
+      "value": {
+        "key": "osmosis-1",
+        "chain-id": "osmosis-1",
+        "rpc-addr": "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
+        "account-prefix": "osmo",
+        "keyring-backend": "test",
+        "gas-adjustment": 1.2,
+        "gas-prices": "0.01uosmo",
+        "min-gas-amount": 0,
+        "debug": false,
+        "timeout": "20s",
+        "block-timeout": "",
+        "output-format": "json",
+        "sign-mode": "direct",
+        "extra-codecs": []
+      }
+    }
+  cosmoshub-4.json: |-
+    {
+      "type": "cosmos",
+      "value": {
+        "key": "cosmoshub-4",
+        "chain-id": "cosmoshub-4",
+        "rpc-addr": "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
+        "account-prefix": "cosmos",
+        "keyring-backend": "test",
+        "gas-adjustment": 1.2,
+        "gas-prices": "0.01uatom",
+        "min-gas-amount": 0,
+        "debug": false,
+        "timeout": "20s",
+        "block-timeout": "",
+        "output-format": "json",
+        "sign-mode": "direct",
+        "extra-codecs": []
+      }
+    }

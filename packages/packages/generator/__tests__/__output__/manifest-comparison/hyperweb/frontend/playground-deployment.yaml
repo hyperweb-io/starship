@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playground
+  labels:
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: playground
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: playground
+      app.kubernetes.io/name: playground
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: frontend
+        sla: high
+        tier: frontend
+      labels:
+        starship.io/name: starship-e2e-tests
+        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/managed-by: starship
+        app.kubernetes.io/instance: playground
+        app.kubernetes.io/type: custom
+        app.kubernetes.io/name: playground
+    spec:
+      containers:
+        - name: playground
+          image: ghcr.io/hyperweb-io/hyperweb-playground:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            CHAIN_RPC_URL: http://localhost:26657
+            CHAIN_FAUCET_URL: http://localhost:8000
+            REGISTRY_REST_URL: http://localhost:8081
+            S3_BUCKET_URL: https://hyperweb-playground.s3.amazonaws.com/create-hyperweb-app
+            S3_TARBALL_NAME: latest.tar.gz
+          resources:
+            limits:
+              cpu: '0.2'
+              memory: 200M
+            requests:
+              cpu: '0.2'
+              memory: 200M

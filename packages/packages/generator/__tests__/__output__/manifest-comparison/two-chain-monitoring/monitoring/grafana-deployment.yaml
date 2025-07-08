@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  template:
+    metadata:
+      name: grafana
+      labels:
+        app.kubernetes.io/instance: monitoring
+        app.kubernetes.io/name: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:latest
+          env:
+            - name: GF_SERVER_HTTP_PORT
+              value: '8080'
+            - name: GF_SERVER_HTTP_ADDR
+              value: 0.0.0.0
+            - name: GF_AUTH_DISABLE_LOGIN_FORM
+              value: 'true'
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: 'true'
+            - name: GF_AUTH_ANONYMOUS_ORG_NAME
+              value: Main Org.
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: Editor
+          ports:
+            - name: grafana
+              containerPort: 3000
+          resources:
+            limits:
+              cpu: '0.2'
+              memory: 400M
+            requests:
+              cpu: '0.2'
+              memory: 400M
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-storage
+            - mountPath: /etc/grafana/provisioning/datasources
+              name: grafana-datasources
+              readOnly: false
+            - mountPath: /etc/grafana/provisioning/dashboards
+              name: grafana-dashboard-providers
+              readOnly: false
+            - mountPath: /var/lib/grafana/dashboards
+              name: grafana-dashboards
+              readOnly: false
+      volumes:
+        - name: grafana-datasources
+          configMap:
+            defaultMode: 420
+            name: grafana-datasources
+        - name: grafana-dashboard-providers
+          configMap:
+            defaultMode: 420
+            name: grafana-dashboard-providers
+        - name: grafana-dashboards
+          configMap:
+            name: grafana-dashboards
+        - name: grafana-storage
+          emptyDir: {}

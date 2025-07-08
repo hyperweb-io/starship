@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: prometheus
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9090'
+spec:
+  clusterIP: None
+  ports:
+    - name: http
+      port: 9090
+      protocol: TCP
+      targetPort: '9090'
+  selector:
+    app.kubernetes.io/name: prometheus

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-config
+data:
+  test-hyperweb-1.json: >-
+    {"chain_name":"hyperweb","assets":[{"base":"uhyper","description":"The meme
+    coin for Hyperweb
+    chain.","name":"Hyper","display":"hyper","symbol":"HYPR","logo_URIs":{"png":"https://gist.githubusercontent.com/Anmol1696/bea1b3835dfb0fce3ab9ed993f5a0792/raw/7065493384a51c888752284be7c1afbf6135b50a/logo-png.png","svg":"https://gist.githubusercontent.com/Anmol1696/bea1b3835dfb0fce3ab9ed993f5a0792/raw/7065493384a51c888752284be7c1afbf6135b50a/logo-svg.svg"},"denom_units":[{"denom":"uhyper","exponent":0},{"denom":"hyper","exponent":6}],"coingecko_id":"hyper","keywords":["hyper"]}]}

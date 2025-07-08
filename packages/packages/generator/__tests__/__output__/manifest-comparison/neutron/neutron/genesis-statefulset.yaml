@@ -1,0 +1,408 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neutron-1-genesis
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/part-of: neutron-1
+    app.kubernetes.io/id: neutron-1
+    app.kubernetes.io/name: neutron-1-genesis
+    app.kubernetes.io/type: neutron-1-statefulset
+    app.kubernetes.io/role: genesis
+    starship.io/chain-name: neutron
+spec:
+  serviceName: neutron-1-genesis
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: starship-e2e-tests
+      app.kubernetes.io/name: neutron-1-genesis
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: starship-e2e-tests
+        app.kubernetes.io/type: neutron-1
+        app.kubernetes.io/name: neutron-1-genesis
+        app.kubernetes.io/rawname: neutron-1
+        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/role: genesis
+    spec:
+      initContainers:
+        - name: init-genesis
+          image: ghcr.io/cosmology-tech/starship/neutron:v3.0.5
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: untrn
+            - name: COINS
+              value: 100000000000000untrn
+            - name: CHAIN_BIN
+              value: neutrond
+            - name: CHAIN_DIR
+              value: /root/.neutrond
+            - name: CODE_REPO
+              value: https://github.com/neutron-org/neutron
+            - name: DAEMON_HOME
+              value: /root/.neutrond
+            - name: DAEMON_NAME
+              value: neutrond
+            - name: CHAIN_ID
+              value: neutron-1
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: FAUCET_ENABLED
+              value: 'false'
+            - name: NUM_VALIDATORS
+              value: '1'
+            - name: NUM_RELAYERS
+              value: '1'
+          command:
+            - bash
+            - '-c'
+            - >-
+              VAL_INDEX=${HOSTNAME##*-}
+
+              echo "Validator Index: $VAL_INDEX"
+
+
+              if [ -f $CHAIN_DIR/config/genesis.json ]; then
+                echo "Genesis file exists, exiting init container"
+                exit 0
+              fi
+
+
+              echo "Running setup genesis script..."
+
+              bash -e /scripts/create-genesis.sh
+
+              bash -e /scripts/update-genesis.sh
+
+
+              echo "Create node id json file"
+
+              NODE_ID=$($CHAIN_BIN tendermint show-node-id)
+
+              echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json
+
+
+              echo "Create consensus key json file"
+
+              $CHAIN_BIN tendermint show-validator >
+              $CHAIN_DIR/config/consensus_key.json
+
+              cat $CHAIN_DIR/config/consensus_key.json
+
+
+              echo "Add custom accounts and balances"
+
+              CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related
+              subcommands" && echo "genesis" || echo "")
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /root/.neutrond
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+        - name: init-config
+          image: ghcr.io/cosmology-tech/starship/neutron:v3.0.5
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: untrn
+            - name: COINS
+              value: 100000000000000untrn
+            - name: CHAIN_BIN
+              value: neutrond
+            - name: CHAIN_DIR
+              value: /root/.neutrond
+            - name: CODE_REPO
+              value: https://github.com/neutron-org/neutron
+            - name: DAEMON_HOME
+              value: /root/.neutrond
+            - name: DAEMON_NAME
+              value: neutrond
+            - name: CHAIN_ID
+              value: neutron-1
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: METRICS
+              value: 'false'
+          command:
+            - bash
+            - '-c'
+            - |-
+              VAL_INDEX=${HOSTNAME##*-}
+              echo "Validator Index: $VAL_INDEX"
+
+              echo "Running setup config script..."
+
+              bash -e /scripts/update-config.sh
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /root/.neutrond
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+        - name: wait-for-chains
+          image: curlimages/curl:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - '-c'
+            - |2-
+
+                    while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                      echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+                      echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                      sleep 10;
+                    done
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 128M
+            requests:
+              cpu: '0.1'
+              memory: 128M
+        - name: init-ics
+          image: ghcr.io/cosmology-tech/starship/gaia:v18.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: untrn
+            - name: COINS
+              value: 100000000000000untrn
+            - name: CHAIN_BIN
+              value: neutrond
+            - name: CHAIN_DIR
+              value: /root/.neutrond
+            - name: CODE_REPO
+              value: https://github.com/neutron-org/neutron
+            - name: DAEMON_HOME
+              value: /root/.neutrond
+            - name: DAEMON_NAME
+              value: neutrond
+            - name: CHAIN_ID
+              value: neutron-1
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+          command:
+            - bash
+            - '-c'
+            - >-
+              export
+
+
+              echo "Fetching priv keys from provider exposer"
+
+              curl -s
+              http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8081/priv_keys
+              | jq > $CHAIN_DIR/config/provider_priv_validator_key.json
+
+              cat $CHAIN_DIR/config/provider_priv_validator_key.json
+
+
+              echo "Replace provider priv validator key with provider keys"
+
+              mv $CHAIN_DIR/config/priv_validator_key.json
+              $CHAIN_DIR/config/previous_priv_validator_key.json
+
+              mv $CHAIN_DIR/config/provider_priv_validator_key.json
+              $CHAIN_DIR/config/priv_validator_key.json
+
+
+              echo "Create consumer addition proposal"
+
+              DENOM=uatom \
+                CHAIN_ID=cosmoshub-4 \
+                CHAIN_BIN=gaiad \
+                NODE_URL=http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657 \
+                PROPOSAL_FILE=/proposal/proposal.json \
+                bash -e /scripts/create-ics.sh
+
+              echo "create ccv state file"
+
+              gaiad query provider consumer-genesis neutron-1 \
+                --node http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657 \
+                -o json > $CHAIN_DIR/config/ccv-state.json
+              cat $CHAIN_DIR/config/ccv-state.json | jq
+
+
+              echo "Update genesis file with ccv state"
+
+              jq -s '.[0].app_state.ccvconsumer = .[1] | .[0]'
+              $CHAIN_DIR/config/genesis.json $CHAIN_DIR/config/ccv-state.json >
+              $CHAIN_DIR/config/genesis-ccv.json
+
+              mv $CHAIN_DIR/config/genesis.json
+              $CHAIN_DIR/config/genesis-no-ccv.json
+
+              mv $CHAIN_DIR/config/genesis-ccv.json
+              $CHAIN_DIR/config/genesis.json
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /proposal
+              name: proposal
+            - mountPath: /root/.neutrond
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+      containers:
+        - name: validator
+          image: ghcr.io/cosmology-tech/starship/neutron:v3.0.5
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: untrn
+            - name: COINS
+              value: 100000000000000untrn
+            - name: CHAIN_BIN
+              value: neutrond
+            - name: CHAIN_DIR
+              value: /root/.neutrond
+            - name: CODE_REPO
+              value: https://github.com/neutron-org/neutron
+            - name: DAEMON_HOME
+              value: /root/.neutrond
+            - name: DAEMON_NAME
+              value: neutrond
+            - name: CHAIN_ID
+              value: neutron-1
+            - name: FAUCET_ENABLED
+              value: 'false'
+            - name: SLOGFILE
+              value: slog.slog
+          command:
+            - bash
+            - '-c'
+            - |-
+              #!/bin/bash
+              set -euo pipefail
+
+              START_ARGS=""
+
+
+              $CHAIN_BIN start $START_ARGS
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /root/.neutrond
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - '-e'
+                - /scripts/chain-rpc-ready.sh
+                - http://localhost:26657
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+        - name: exposer
+          image: ghcr.io/cosmology-tech/starship/exposer:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GENESIS_HOST
+              value: neutron-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: EXPOSER_HTTP_PORT
+              value: '8081'
+            - name: EXPOSER_GRPC_PORT
+              value: '9099'
+            - name: EXPOSER_GENESIS_FILE
+              value: /root/.neutrond/config/genesis.json
+            - name: EXPOSER_MNEMONIC_FILE
+              value: /configs/keys.json
+            - name: EXPOSER_PRIV_VAL_FILE
+              value: /root/.neutrond/config/priv_validator_key.json
+            - name: EXPOSER_NODE_KEY_FILE
+              value: /root/.neutrond/config/node_key.json
+            - name: EXPOSER_NODE_ID_FILE
+              value: /root/.neutrond/config/node_id.json
+            - name: EXPOSER_PRIV_VAL_STATE_FILE
+              value: /root/.neutrond/data/priv_validator_state.json
+          command:
+            - exposer
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 128M
+            requests:
+              cpu: '0.1'
+              memory: 128M
+          volumeMounts:
+            - mountPath: /root/.neutrond
+              name: node
+            - mountPath: /configs
+              name: addresses
+      volumes:
+        - name: node
+          emptyDir: {}
+        - name: addresses
+          configMap:
+            name: keys
+        - name: scripts
+          configMap:
+            name: setup-scripts-neutron-1
+        - name: proposal
+          configMap:
+            name: consumer-proposal-neutron-1

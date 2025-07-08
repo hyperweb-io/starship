@@ -40,11 +40,17 @@ class ManifestComparator {
   private parseManifestFile(content: string): NormalizedResource[] {
     const documents = content.split(/^---$/m)
       .map(doc => doc.trim())
-      .filter(doc => doc.length > 0 && !doc.startsWith('#'));
+      .filter(doc => doc.length > 0);
     
     return documents.map(doc => {
       try {
-        const parsed = yaml.load(doc) as any;
+        // Remove leading comments to find the actual YAML content
+        const yamlContent = doc.replace(/^#.*$/gm, '').trim();
+        if (yamlContent.length === 0) {
+          return null;
+        }
+        
+        const parsed = yaml.load(yamlContent) as any;
         return this.normalizeResource(parsed);
       } catch (error) {
         throw new Error(`Failed to parse YAML document: ${error}`);

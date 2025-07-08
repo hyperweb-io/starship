@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-config
+data:
+  osmosis-1.json: >-
+    {"chain_name":"osmosis","assets":[{"base":"uosmo","description":"The native
+    token of
+    Osmosis","name":"Osmosis","display":"osmo","symbol":"OSMO","logo_URIs":{"png":"https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.png","svg":"https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.svg"},"denom_units":[{"denom":"uosmo","exponent":0},{"denom":"osmo","exponent":6}],"coingecko_id":"osmosis","keywords":["staking","dex"]},{"base":"uion","name":"Ion","display":"ion","symbol":"ION","logo_URIs":{"png":"https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/ion.png","svg":"https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/ion.svg"},"denom_units":[{"denom":"uion","exponent":0},{"denom":"ion","exponent":6}],"coingecko_id":"ion","keywords":["memecoin"]}]}
+  cosmoshub-4.json: >-
+    {"chain_name":"cosmoshub","assets":[{"base":"uatom","description":"The
+    native staking and governance token of the Cosmos Hub.","name":"Cosmos Hub
+    Atom","display":"atom","symbol":"ATOM","logo_URIs":{"png":"https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.png","svg":"https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.svg"},"denom_units":[{"denom":"uatom","exponent":0},{"denom":"atom","exponent":6}],"coingecko_id":"atom"}]}
+  juno-2.json: >-
+    {"chain_name":"juno","assets":[{"base":"ujuno","description":"The native
+    token of JUNO
+    Chain","name":"Juno","display":"juno","symbol":"JUNO","logo_URIs":{"png":"https://raw.githubusercontent.com/cosmos/chain-registry/master/juno/images/juno.png","svg":"https://raw.githubusercontent.com/cosmos/chain-registry/master/juno/images/juno.svg"},"denom_units":[{"denom":"ujuno","exponent":0},{"denom":"juno","exponent":6}],"coingecko_id":"juno-network"}]}

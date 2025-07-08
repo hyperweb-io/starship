@@ -1,0 +1,1020 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: setup-scripts-injective-1
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/name: setup-scripts-injective-1
+    app.kubernetes.io/part-of: injective-1
+    app.kubernetes.io/role: setup-scripts
+    starship.io/chain-name: injective
+    starship.io/chain-id: injective-1
+data:
+  createGenesis.sh: >
+    #!/bin/bash
+
+
+    DENOM="${DENOM:=uosmo}"
+
+    COINS="${COINS:=100000000000000000inj}"
+
+    CHAIN_ID="${CHAIN_ID:=injective}"
+
+    CHAIN_BIN="${CHAIN_BIN:=injectived}"
+
+    CHAIN_DIR="${CHAIN_DIR:=$HOME/.injectived}"
+
+    KEYS_CONFIG="${KEYS_CONFIG:=configs/keys.json}"
+
+
+    FEEDADMIN="inj1k2z3chspuk9wsufle69svmtmnlc07rvw9djya7"
+
+
+    set -eu
+
+
+    # check if the binary has genesis subcommand or not, if not, set
+    CHAIN_GENESIS_CMD to empty
+
+    CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands"
+    && echo "genesis" || echo "")
+
+
+    jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN init $CHAIN_ID
+    --chain-id $CHAIN_ID --recover
+
+
+    WASM_KEY="wasm"
+
+    WASM_MNEMONIC="juice dog over thing anger search film document sight fork
+    enrich jungle vacuum grab more sunset winner diesel flock smooth route
+    impulse cheap toward"
+
+
+    VAL_KEY="localkey"
+
+    VAL_MNEMONIC="gesture inject test cycle original hollow east ridge hen
+    combine junk child bacon zero hope comfort vacuum milk pitch cage oppose
+    unhappy lunar seat"
+
+
+    USER1_KEY="user1"
+
+    USER1_MNEMONIC="copper push brief egg scan entry inform record adjust fossil
+    boss egg comic alien upon aspect dry avoid interest fury window hint race
+    symptom"
+
+
+    USER2_KEY="user2"
+
+    USER2_MNEMONIC="maximum display century economy unlock van census kite error
+    heart snow filter midnight usage egg venture cash kick motor survey drastic
+    edge muffin visual"
+
+
+    USER3_KEY="user3"
+
+    USER3_MNEMONIC="keep liar demand upon shed essence tip undo eagle run people
+    strong sense another salute double peasant egg royal hair report winner
+    student diamond"
+
+
+    USER4_KEY="user4"
+
+    USER4_MNEMONIC="pony glide frown crisp unfold lawn cup loan trial govern
+    usual matrix theory wash fresh address pioneer between meadow visa buffalo
+    keep gallery swear"
+
+
+    USER5_KEY="ocrfeedadmin"
+
+    USER5_MNEMONIC="earn front swamp dune level clip shell aware apple spare
+    faith upset flip local regret loud suspect view heavy raccoon satisfy
+    cupboard harbor basic"
+
+
+    USER6_KEY="signer1"
+
+    USER6_MNEMONIC="output arrange offer advance egg point office silent diamond
+    fame heart hotel rocket sheriff resemble couple race crouch kit laptop
+    document grape drastic lumber"
+
+
+    USER7_KEY="signer2"
+
+    USER7_MNEMONIC="velvet gesture rule caution injury stick property decorate
+    raccoon physical narrow tuition address drum shoot pyramid record sport
+    include rich actress sadness crater seek"
+
+
+    USER8_KEY="signer3"
+
+    USER8_MNEMONIC="guitar parrot nuclear sun blue marble amazing extend solar
+    device address better chalk shock street absent follow notice female picnic
+    into trade brass couch"
+
+
+    USER9_KEY="signer4"
+
+    USER9_MNEMONIC="rotate fame stamp size inform hurdle match stick brain
+    shrimp fancy clinic soccer fortune photo gloom wear punch shed diet celery
+    blossom tide bulk"
+
+
+    USER10_KEY="signer5"
+
+    USER10_MNEMONIC="apart acid night more advance december weather expect pause
+    taxi reunion eternal crater crew lady chaos visual dynamic friend match glow
+    flash couple tumble"
+
+
+    NEWLINE=$'\n'
+
+
+    # Import keys from mnemonics
+
+    echo "$WASM_MNEMONIC" | $CHAIN_BIN keys add $WASM_KEY --recover
+    --keyring-backend="test"
+
+    yes "$VAL_MNEMONIC" | $CHAIN_BIN keys add $VAL_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER1_MNEMONIC" | $CHAIN_BIN keys add $USER1_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER2_MNEMONIC" | $CHAIN_BIN keys add $USER2_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER3_MNEMONIC" | $CHAIN_BIN keys add $USER3_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER4_MNEMONIC" | $CHAIN_BIN keys add $USER4_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER5_MNEMONIC" | $CHAIN_BIN keys add $USER5_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER6_MNEMONIC" | $CHAIN_BIN keys add $USER6_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER7_MNEMONIC" | $CHAIN_BIN keys add $USER7_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER8_MNEMONIC" | $CHAIN_BIN keys add $USER8_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER9_MNEMONIC" | $CHAIN_BIN keys add $USER9_KEY --recover
+    --keyring-backend="test"
+
+    yes "$USER10_MNEMONIC" | $CHAIN_BIN keys add $USER10_KEY --recover
+    --keyring-backend="test"
+
+
+    # Add genesis keys to the keyring and self delegate initial coins
+
+    echo "Adding key...." $(jq -r ".genesis[0].name" $KEYS_CONFIG)
+
+    jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r
+    ".genesis[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
+
+    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account --chain-id $CHAIN_ID
+    $($CHAIN_BIN keys show -a $(jq -r .genesis[0].name $KEYS_CONFIG)
+    --keyring-backend="test")
+    1000000000000000000000000inj,1000000000000000000000000atom,100000000000000000000000000peggy0xdAC17F958D2ee523a2206206994597C13D831ec7,100000000000000000000000000peggy0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599
+    --keyring-backend="test"
+
+
+    # Add relayer keys to the keyring and self delegate initial coins
+
+    echo "Adding key...." $(jq -r ".relayers[0].name" $KEYS_CONFIG)
+
+    jq -r ".relayers[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r
+    ".relayers[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
+
+    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account --chain-id $CHAIN_ID
+    $($CHAIN_BIN keys show -a $(jq -r .relayers[0].name $KEYS_CONFIG)
+    --keyring-backend="test") 1000000000000000000000000inj
+    --keyring-backend="test"
+
+
+    # Add faucet keys to the keyring and self delegate initial coins
+
+    echo "Adding key...." $(jq -r ".faucet[0].name" $KEYS_CONFIG)
+
+    jq -r ".faucet[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r
+    ".faucet[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
+
+    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account --chain-id $CHAIN_ID
+    $($CHAIN_BIN keys show -a $(jq -r .faucet[0].name $KEYS_CONFIG)
+    --keyring-backend="test") 1000000000000000000000000inj
+    --keyring-backend="test"
+
+
+
+    # zero address account
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID
+    inj1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe2hm49 1inj
+
+
+    # Allocate genesis accounts (cosmos formatted addresses)
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $WASM_KEY -a --keyring-backend="test") 1000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $VAL_KEY -a --keyring-backend="test") 1000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER1_KEY -a --keyring-backend="test")
+    1000000000000000000000inj,1000000000000000000000atom,100000000000000000000000000peggy0xdAC17F958D2ee523a2206206994597C13D831ec7,100000000000000000000000000peggy0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER2_KEY -a --keyring-backend="test")
+    1000000000000000000000inj,100000000000000000000000000peggy0xdAC17F958D2ee523a2206206994597C13D831ec7,100000000000000000000000000peggy0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER3_KEY -a --keyring-backend="test") 1000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER4_KEY -a --keyring-backend="test") 1000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER5_KEY -a --keyring-backend="test") 100000000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER6_KEY -a --keyring-backend="test") 100000000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER7_KEY -a --keyring-backend="test") 100000000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER8_KEY -a --keyring-backend="test") 100000000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER9_KEY -a --keyring-backend="test") 100000000000000000000000000inj
+    --keyring-backend="test"
+
+    $CHAIN_BIN add-genesis-account --chain-id $CHAIN_ID $($CHAIN_BIN keys show
+    $USER10_KEY -a --keyring-backend="test") 100000000000000000000000000inj
+    --keyring-backend="test"
+
+
+    echo "Creating gentx..."
+
+    $CHAIN_BIN $CHAIN_GENESIS_CMD gentx $(jq -r ".genesis[0].name" $KEYS_CONFIG)
+    1000000000000000000000inj --keyring-backend="test" --chain-id $CHAIN_ID
+
+
+    echo "Output of gentx"
+
+    cat $CHAIN_DIR/config/gentx/*.json | jq
+
+
+    echo "Running collect-gentxs"
+
+    $CHAIN_BIN $CHAIN_GENESIS_CMD collect-gentxs
+
+
+    echo "Validate genesis"
+
+    $CHAIN_BIN validate-genesis
+
+
+    ls $CHAIN_DIR/config
+  updateGenesis.sh: >
+    #!/bin/bash
+
+
+    DENOM="${DENOM:=inj}"
+
+    CHAIN_BIN="${CHAIN_BIN:=injectived}"
+
+    CHAIN_DIR="${CHAIN_DIR:=$HOME/.injectived}"
+
+
+    set -eu
+
+
+    ls $CHAIN_DIR/config
+
+
+    echo "Update genesis.json file with updated local params"
+
+    sed -i -e "s/\"stake\"/\"$DENOM\"/g" $CHAIN_DIR/config/genesis.json
+
+    sed -i "s/\"time_iota_ms\": \".*\"/\"time_iota_ms\": \"$TIME_IOTA_MS\"/"
+    $CHAIN_DIR/config/genesis.json
+
+
+    echo "NOTE: Setting unbolding time to 300s to as to be able to set trusttime
+    on relayers correctly"
+
+    jq -r '.app_state.staking.params.unbonding_time |= "300s"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state.slashing.params.downtime_jail_duration |= "6s"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state.gov.deposit_params.max_deposit_period |= "30s"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state.gov.deposit_params.min_deposit[0].amount |= "10"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state.gov.tally_params.quorum |= "0.000000000000000000"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state.gov.tally_params.threshold |= "0.000000000000000000"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state.gov.tally_params.veto_threshold |= "0.000000000000000000"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+
+    jq -r '.app_state["staking"]["params"]["bond_denom"] |= "inj"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state["crisis"]["constant_fee"]["denom"] |= "inj"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state["gov"]["deposit_params"]["min_deposit"][0]["denom"] |=
+    "inj"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv
+    /tmp/genesis.json $CHAIN_DIR/config/genesis.json
+
+    echo "NOTE: Setting Governance Voting Period to 10 seconds for easy testing"
+
+    jq -r '.app_state["gov"]["voting_params"]["voting_period"] |= "10s"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state["mint"]["params"]["mint_denom"] |= "inj"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state["auction"]["params"]["auction_period"] |= "10"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state["ocr"]["params"]["module_admin"] |= "'$FEEDADMIN'"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+    jq -r '.app_state["ocr"]["params"]["payout_block_interval"] |= "5"'
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+
+
+    INJ='{"denom":"inj","decimals":18}'
+
+
+    USDT='{"denom":"peggy0xdAC17F958D2ee523a2206206994597C13D831ec7","decimals":6}'
+
+    USDC='{"denom":"peggy0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","decimals":6}'
+
+    ONEINCH='{"denom":"peggy0x111111111117dc0aa78b770fa6a738034120c302","decimals":18}'
+
+    AAVE='{"denom":"peggy0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9","decimals":18}'
+
+    AXS='{"denom":"peggy0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b","decimals":18}'
+
+    BAT='{"denom":"peggy0x0D8775F648430679A709E98d2b0Cb6250d2887EF","decimals":18}'
+
+    BNB='{"denom":"peggy0xB8c77482e45F1F44dE1745F52C74426C631bDD52","decimals":18}'
+
+    WBTC='{"denom":"peggy0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599","decimals":8}'
+
+    BUSD='{"denom":"peggy0x4Fabb145d64652a948d72533023f6E7A623C7C53","decimals":18}'
+
+    CEL='{"denom":"peggy0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d","decimals":4}'
+
+    CELL='{"denom":"peggy0x26c8AFBBFE1EBaca03C2bB082E69D0476Bffe099","decimals":18}'
+
+    CHZ='{"denom":"peggy0x3506424F91fD33084466F402d5D97f05F8e3b4AF","decimals":18}'
+
+    COMP='{"denom":"peggy0xc00e94Cb662C3520282E6f5717214004A7f26888","decimals":18}'
+
+    DAI='{"denom":"peggy0x6B175474E89094C44Da98b954EedeAC495271d0F","decimals":18}'
+
+    DEFI5='{"denom":"peggy0xfa6de2697D59E88Ed7Fc4dFE5A33daC43565ea41","decimals":18}'
+
+    ENJ='{"denom":"peggy0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c","decimals":18}'
+
+    WETH='{"denom":"peggy0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","decimals":18}'
+
+    EVAI='{"denom":"peggy0x50f09629d0afDF40398a3F317cc676cA9132055c","decimals":8}'
+
+    FTM='{"denom":"peggy0x4E15361FD6b4BB609Fa63C81A2be19d873717870","decimals":18}'
+
+    GF='{"denom":"peggy0xAaEf88cEa01475125522e117BFe45cF32044E238","decimals":18}'
+
+    GRT='{"denom":"peggy0xc944E90C64B2c07662A292be6244BDf05Cda44a7","decimals":18}'
+
+    HT='{"denom":"peggy0x6f259637dcD74C767781E37Bc6133cd6A68aa161","decimals":18}'
+
+    LINK='{"denom":"peggy0x514910771AF9Ca656af840dff83E8264EcF986CA","decimals":18}'
+
+    MATIC='{"denom":"peggy0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0","decimals":18}'
+
+    NEXO='{"denom":"peggy0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206","decimals":18}'
+
+    NOIA='{"denom":"peggy0xa8c8CfB141A3bB59FEA1E2ea6B79b5ECBCD7b6ca","decimals":18}'
+
+    OCEAN='{"denom":"peggy0x967da4048cD07aB37855c090aAF366e4ce1b9F48","decimals":18}'
+
+    PAXG='{"denom":"peggy0x45804880De22913dAFE09f4980848ECE6EcbAf78","decimals":18}'
+
+    POOL='{"denom":"peggy0x0cEC1A9154Ff802e7934Fc916Ed7Ca50bDE6844e","decimals":18}'
+
+    QNT='{"denom":"peggy0x4a220E6096B25EADb88358cb44068A3248254675","decimals":18}'
+
+    RUNE='{"denom":"peggy0x3155BA85D5F96b2d030a4966AF206230e46849cb","decimals":18}'
+
+    SHIB='{"denom":"peggy0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE","decimals":18}'
+
+    SNX='{"denom":"peggy0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F","decimals":18}'
+
+    STARS='{"denom":"peggy0xc55c2175E90A46602fD42e931f62B3Acc1A013Ca","decimals":18}'
+
+    STT='{"denom":"peggy0xaC9Bb427953aC7FDDC562ADcA86CF42D988047Fd","decimals":18}'
+
+    SUSHI='{"denom":"peggy0x6B3595068778DD592e39A122f4f5a5cF09C90fE2","decimals":18}'
+
+    SWAP='{"denom":"peggy0xCC4304A31d09258b0029eA7FE63d032f52e44EFe","decimals":18}'
+
+    UMA='{"denom":"peggy0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828","decimals":18}'
+
+    UNI='{"denom":"peggy0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984","decimals":18}'
+
+    UTK='{"denom":"peggy0xdc9Ac3C20D1ed0B540dF9b1feDC10039Df13F99c","decimals":18}'
+
+    YFI='{"denom":"peggy0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e","decimals":18}'
+
+    ZRX='{"denom":"peggy0xE41d2489571d322189246DaFA5ebDe1F4699F498","decimals":18}'
+
+
+    ATOM='{"denom":"ibc/C4CFF46FD6DE35CA4CF4CE031E643C8FDC9BA4B99AE598E9B0ED98FE3A2319F9","decimals":6}'
+
+    USTC='{"denom":"ibc/B448C0CA358B958301D328CCDC5D5AD642FC30A6D3AE106FF721DB315F3DDE5C","decimals":6}'
+
+    AXL='{"denom":"ibc/C49B72C4E85AE5361C3E0F0587B24F509CB16ECEB8970B6F917D697036AF49BE","decimals":6}'
+
+    XPRT='{"denom":"ibc/B786E7CBBF026F6F15A8DA248E0F18C62A0F7A70CB2DABD9239398C8B5150ABB","decimals":6}'
+
+    SCRT='{"denom":"ibc/3C38B741DF7CD6CAC484343A4994CFC74BC002D1840AAFD5416D9DAC61E37F10","decimals":6}'
+
+    OSMO='{"denom":"ibc/92E0120F15D037353CFB73C14651FC8930ADC05B93100FD7754D3A689E53B333","decimals":6}'
+
+    LUNC='{"denom":"ibc/B8AF5D92165F35AB31F3FC7C7B444B9D240760FA5D406C49D24862BD0284E395","decimals":6}'
+
+    HUAHUA='{"denom":"ibc/E7807A46C0B7B44B350DA58F51F278881B863EC4DCA94635DAB39E52C30766CB","decimals":6}'
+
+    EVMOS='{"denom":"ibc/16618B7F7AC551F48C057A13F4CA5503693FBFF507719A85BC6876B8BD75F821","decimals":18}'
+
+    DOT='{"denom":"ibc/624BA9DD171915A2B9EA70F69638B2CEA179959850C1A586F6C485498F29EDD4","decimals":10}'
+
+
+    PEGGY_DENOM_DECIMALS="${USDT},${USDC},${ONEINCH},${AXS},${BAT},${BNB},${WBTC},${BUSD},${CEL},${CELL},${CHZ},${COMP},${DAI},${DEFI5},${ENJ},${WETH},${EVAI},${FTM},${GF},${GRT},${HT},${LINK},${MATIC},${NEXO},${NOIA},${OCEAN},${PAXG},${POOL},${QNT},${RUNE},${SHIB},${SNX},${STARS},${STT},${SUSHI},${SWAP},${UMA},${UNI},${UTK},${YFI},${ZRX}"
+
+    IBC_DENOM_DECIMALS="${ATOM},${USTC},${AXL},${XPRT},${SCRT},${OSMO},${LUNC},${HUAHUA},${EVMOS},${DOT}"
+
+    DENOM_DECIMALS='['${INJ},${PEGGY_DENOM_DECIMALS},${IBC_DENOM_DECIMALS}']'
+
+
+    jq -r '.app_state["exchange"]["denom_decimals"]='${DENOM_DECIMALS}
+    $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json
+    $CHAIN_DIR/config/genesis.json
+
+
+    $CHAIN_BIN tendermint show-node-id
+
+
+    echo "Validate genesis"
+
+    $CHAIN_BIN validate-genesis
+  update-config.sh: >
+    #!/bin/bash
+
+
+    CHAIN_ID="${CHAIN_ID:=osmosis}"
+
+    CHAIN_DIR="${CHAIN_DIR:=$HOME/.osmosisd}"
+
+    KEYS_CONFIG="${KEYS_CONFIG:=configs/keys.json}"
+
+
+    set -eux
+
+
+    ls $CHAIN_DIR
+
+
+
+    echo "Update config.toml file"
+
+    sed -i -e 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:26657"#g'
+    $CHAIN_DIR/config/config.toml
+
+    sed -i -e 's/index_all_keys = false/index_all_keys = true/g'
+    $CHAIN_DIR/config/config.toml
+
+    sed -i -e 's/seeds = ".*"/seeds = ""/g' $CHAIN_DIR/config/config.toml
+
+    sed -i -e 's#cors_allowed_origins = \[\]#cors_allowed_origins = \["*"\]#g'
+    $CHAIN_DIR/config/config.toml
+
+    sed -i -e 's/index_all_keys = false/index_all_keys = true/g'
+    $CHAIN_DIR/config/config.toml
+
+
+    echo "Update client.toml file"
+
+    sed -i -e 's#keyring-backend = "os"#keyring-backend = "test"#g'
+    $CHAIN_DIR/config/client.toml
+
+    sed -i -e 's#output = "text"#output = "json"#g'
+    $CHAIN_DIR/config/client.toml
+
+    sed -i -e "s#chain-id = \"\"#chain-id = \"$CHAIN_ID\"#g"
+    $CHAIN_DIR/config/client.toml
+
+
+
+    echo "Update app.toml file"
+
+    sed -i -e "s#minimum-gas-prices = \".*\"#minimum-gas-prices = \"0$DENOM\"#g"
+    $CHAIN_DIR/config/app.toml
+
+    sed -i -e "s#pruning = \".*\"#pruning = \"default\"#g"
+    $CHAIN_DIR/config/app.toml
+
+    sed -i -e 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g'
+    $CHAIN_DIR/config/app.toml
+
+    sed -i -e 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g'
+    $CHAIN_DIR/config/app.toml
+
+    sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
+
+    sed -i -e 's/swagger = false/swagger = true/g' $CHAIN_DIR/config/app.toml
+
+    sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
+
+    sed -i -e 's/enabled = false/enabled = true/g' $CHAIN_DIR/config/app.toml
+
+
+
+    function get_next_line_number() {
+      local txt=$1
+      local file=$2
+      local line_number=$(grep -n "$txt" $file | cut -d: -f1 | head -1)
+      echo $((line_number + 1))
+    }
+
+
+    line_number=$(get_next_line_number "Address defines the API server to listen
+    on." $CHAIN_DIR/config/app.toml)
+
+    sed -i -e "${line_number}s#address = \".*\"#address =
+    \"tcp://0.0.0.0:1317\"#g" $CHAIN_DIR/config/app.toml
+
+
+    line_number=$(get_next_line_number "Address defines the gRPC server address
+    to bind to." $CHAIN_DIR/config/app.toml)
+
+    sed -i -e "${line_number}s#address = \".*\"#address = \"0.0.0.0:9090\"#g"
+    $CHAIN_DIR/config/app.toml
+
+
+    line_number=$(get_next_line_number "Address defines the gRPC-web server
+    address to bind to." $CHAIN_DIR/config/app.toml)
+
+    sed -i -e "${line_number}s#address = \".*\"#address = \"0.0.0.0:9091\"#g"
+    $CHAIN_DIR/config/app.toml
+
+
+    if [ "$METRICS" == "true" ]; then
+      sed -i -e "s/prometheus = false/prometheus = true/g" $CHAIN_DIR/config/config.toml
+
+      line_number=$(get_next_line_number "PrometheusRetentionTime, when positive, enables a Prometheus metrics sink." $CHAIN_DIR/config/app.toml)
+      sed -i -e "${line_number}s/prometheus-retention-time = 0/prometheus-retention-time = 3600/g" $CHAIN_DIR/config/app.toml
+    fi
+
+
+    echo "Update consensus params in config.toml"
+
+    sed -i -e "s#timeout_propose = \".*\"#timeout_propose =
+    \"$TIMEOUT_PROPOSE\"#g" $CHAIN_DIR/config/config.toml
+
+    sed -i -e "s#timeout_propose_delta = \".*\"#timeout_propose_delta =
+    \"$TIMEOUT_PROPOSE_DELTA\"#g" $CHAIN_DIR/config/config.toml
+
+    sed -i -e "s#timeout_prevote = \".*\"#timeout_prevote =
+    \"$TIMEOUT_PREVOTE\"#g" $CHAIN_DIR/config/config.toml
+
+    sed -i -e "s#timeout_prevote_delta = \".*\"#timeout_prevote_delta =
+    \"$TIMEOUT_PREVOTE_DELTA\"#g" $CHAIN_DIR/config/config.toml
+
+    sed -i -e "s#timeout_precommit = \".*\"#timeout_precommit =
+    \"$TIMEOUT_PRECOMMIT\"#g" $CHAIN_DIR/config/config.toml
+
+    sed -i -e "s#timeout_precommit_delta = \".*\"#timeout_precommit_delta =
+    \"$TIMEOUT_PRECOMMIT_DELTA\"#g" $CHAIN_DIR/config/config.toml
+
+    sed -i -e "s#timeout_commit = \".*\"#timeout_commit = \"$TIMEOUT_COMMIT\"#g"
+    $CHAIN_DIR/config/config.toml
+  createValidator.sh: |
+    #!/bin/bash
+
+    DENOM="${DENOM:=inj}"
+    CHAIN_BIN="${CHAIN_BIN:=injectived}"
+    KEYS_CONFIG="${KEYS_CONFIG:=configs/keys.json}"
+    VAL_NAME="${VAL_NAME:=injective}"
+
+    set -eux
+
+    # Wait for the node to be synced
+    max_tries=10
+    while [[ $($CHAIN_BIN status 2>&1 | jq ".SyncInfo.catching_up") == true ]]
+    do
+      if [[ max_tries -lt 0 ]]; then echo "Not able to sync with genesis node"; exit 1; fi
+      echo "Still syncing... Sleeping for 15 secs. Tries left $max_tries"
+      ((max_tries--))
+      sleep 30
+    done
+
+    function cosmos-sdk-version-default() {
+      # Run create validator tx command
+      echo "Running txn for create-validator"
+      $CHAIN_BIN tx staking create-validator \
+        --pubkey=$($CHAIN_BIN tendermint show-validator) \
+        --moniker $VAL_NAME \
+        --amount 10000000000000000inj \
+        --chain-id $CHAIN_ID \
+        --from $VAL_NAME \
+        --commission-rate="0.10" \
+        --commission-max-rate="0.20" \
+        --commission-max-change-rate="0.01" \
+        --min-self-delegation="1000000" \
+        --keyring-backend="test" \
+        --fees 100000$DENOM \
+        --gas="auto" \
+        --gas-adjustment 1.5 --yes > /validator.log
+
+      cat /validator.log | jq
+    }
+
+    cosmos-sdk-version-default
+  transfer-tokens.sh: |
+    #!/bin/bash
+
+    ADDRESS="$1"
+    DENOM="$2"
+    FAUCET_URL="$3"
+    FAUCET_ENABLED="$4"
+
+    set -eux
+
+    function transfer_token() {
+      status_code=$(curl --header "Content-Type: application/json" \
+        --request POST --write-out %{http_code} --silent --output /dev/null \
+        --data '{"denom":"'"$DENOM"'","address":"'"$ADDRESS"'"}' \
+        $FAUCET_URL)
+      echo $status_code
+    }
+
+    if [[ $FAUCET_ENABLED == "false" ]];
+    then
+      echo "Faucet not enabled... skipping transfer token from faucet"
+      exit 0
+    fi
+
+    echo "Try to send tokens, if failed, wait for 5 seconds and try again"
+    max_tries=5
+    while [[ max_tries -gt 0 ]]
+    do
+      status_code=$(transfer_token)
+      if [[ "$status_code" -eq 200 ]]; then
+        echo "Successfully sent tokens"
+        exit 0
+      fi
+      echo "Failed to send tokens. Sleeping for 2 secs. Tries left $max_tries"
+      ((max_tries--))
+      sleep 2
+    done
+  build-chain.sh: >
+    #!/bin/bash
+
+
+    set -euxo pipefail
+
+
+    mkdir -p /tmp/chains $UPGRADE_DIR
+
+
+    echo "Fetching code from tag"
+
+    mkdir -p /tmp/chains/$CHAIN_NAME
+
+    cd /tmp/chains/$CHAIN_NAME
+
+
+    if [[ $CODE_TAG =~ ^[0-9a-fA-F]{40}$ ]]; then
+      echo "Trying to fetch code from commit hash"
+      curl -LO $CODE_REPO/archive/$CODE_TAG.zip
+      unzip $CODE_TAG.zip
+      code_dir=${CODE_REPO##*/}-${CODE_TAG}
+    elif [[ $CODE_TAG = v* ]]; then
+      echo "Trying to fetch code from tag with 'v' prefix"
+      curl -LO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip
+      unzip $CODE_TAG.zip
+      code_dir=${CODE_REPO##*/}-${CODE_TAG#"v"}
+    else
+      echo "Trying to fetch code from tag or branch"
+      if curl -fsLO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip; then
+        unzip $CODE_TAG.zip
+        code_dir=${CODE_REPO##*/}-$CODE_TAG
+      elif curl -fsLO $CODE_REPO/archive/refs/heads/$CODE_TAG.zip; then
+        unzip $(echo $CODE_TAG | rev | cut -d "/" -f 1 | rev).zip
+        code_dir=${CODE_REPO##*/}-${CODE_TAG/\//-}
+      else
+        echo "Tag or branch '$CODE_TAG' not found"
+        exit 1
+      fi
+    fi
+
+
+    echo "Fetch wasmvm if needed"
+
+    cd /tmp/chains/$CHAIN_NAME/$code_dir
+
+    WASM_VERSION=$(cat go.mod | grep -oe "github.com/CosmWasm/wasmvm v[0-9.]*" |
+    cut -d ' ' -f 2)
+
+    if [[ WASM_VERSION != "" ]]; then
+      mkdir -p /tmp/chains/libwasmvm_muslc
+      cd /tmp/chains/libwasmvm_muslc
+      curl -LO https://github.com/CosmWasm/wasmvm/releases/download/$WASM_VERSION/libwasmvm_muslc.x86_64.a
+      cp libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.a
+    fi
+
+
+    echo "Build chain binary"
+
+    cd /tmp/chains/$CHAIN_NAME/$code_dir
+
+    CGO_ENABLED=1 BUILD_TAGS="muslc linkstatic" LINK_STATICALLY=true
+    LEDGER_ENABLED=false make install
+
+
+    echo "Copy created binary to the upgrade directories"
+
+    if [[ $UPGRADE_NAME == "genesis" ]]; then
+      mkdir -p $UPGRADE_DIR/genesis/bin
+      cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/genesis/bin
+    else
+      mkdir -p $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
+      cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
+    fi
+
+
+    echo "Cleanup"
+
+    rm -rf /tmp/chains/$CHAIN_NAME
+  chain-rpc-ready.sh: >
+    #!/bin/bash
+
+    # chain-rpc-ready.sh - Check if a CometBFT or Tendermint RPC service is
+    ready
+
+    # Usage: chain-rpc-ready.sh [RPC_URL]
+
+
+    set -euo pipefail
+
+
+    RPC_URL=${1:-"http://localhost:26657"}
+
+
+    echo 1>&2 "Checking if $RPC_URL is ready..."
+
+
+    # Check if the RPC URL is reachable,
+
+    json=$(curl -s --connect-timeout 2 "$RPC_URL/status")
+
+
+    # and the bootstrap block state has been validated,
+
+    if [ "$(echo "$json" | jq -r '.result.sync_info | (.earliest_block_height <
+    .latest_block_height)')" != true ]; then
+      echo 1>&2 "$RPC_URL is not ready: bootstrap block state has not been validated"
+      exit 1
+    fi
+
+
+    # and the node is not catching up.
+
+    if [ "$(echo "$json" | jq -r .result.sync_info.catching_up)" != false ];
+    then
+      echo 1>&2 "$RPC_URL is not ready: node is catching up"
+      exit 1
+    fi
+
+
+    echo "$json" | jq -r .result
+
+    exit 0
+  ibc-connection.sh: |
+    #!/bin/bash
+
+    REGISTRY_URL="$1"
+    CHAIN_1="$2"
+    CHAIN_2="$3"
+
+    set -eux
+
+    function connection_id() {
+      CONNECTION_ID=$(curl -s $REGISTRY_URL/ibc/$CHAIN_1/$CHAIN_2 | jq -r ".chain_1.connection_id")
+      echo $CONNECTION_ID
+    }
+
+    echo "Try to get connection id, if failed, wait for 2 seconds and try again"
+    max_tries=20
+    while [[ max_tries -gt 0 ]]
+    do
+      id=$(connection_id)
+      if [[ -n "$id" ]]; then
+        echo "Found connection id: $id"
+        exit 0
+      fi
+      echo "Failed to get connection id. Sleeping for 2 secs. Tries left $max_tries"
+      ((max_tries--))
+      sleep 10
+    done
+  create-ics.sh: |
+    #!/bin/bash
+
+    set -euxo pipefail
+
+    DENOM="${DENOM:=uatom}"
+    CHAIN_ID="${CHAIN_ID:=cosmoshub-1}"
+    CHAIN_BIN="${CHAIN_BIN:=gaiad}"
+    NODE_URL="${NODE_URL:=http://0.0.0.0:26657}"
+    KEYS_CONFIG="${KEYS_CONFIG:=configs/keys.json}"
+
+    PROPOSAL_FILE="${PROPOSAL_FILE}"
+    KEY_NAME="ics-setup"
+    MAX_RETRIES=3
+    RETRY_INTERVAL=30
+    SUBMIT_PROPOSAL_CMD=""
+
+    add_key() {
+      # Add test keys to the keyring and self delegate initial coins
+      echo "Adding key...." $(jq -r ".keys[0].name" $KEYS_CONFIG)
+      jq -r ".keys[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $KEY_NAME --recover --keyring-backend="test"
+      echo $($CHAIN_BIN keys show -a $KEY_NAME --keyring-backend="test")
+    }
+
+    get_validator_address() {
+      echo "Getting validator address..."
+      VALIDATOR_ADDRESS=$($CHAIN_BIN q staking validators --node $NODE_URL --output json | jq -r '.validators[0].operator_address')
+      echo "Selected validator address: $VALIDATOR_ADDRESS"
+    }
+
+    stake_tokens() {
+      COINS="10000000$DENOM"
+      echo "Staking tokens..."
+      $CHAIN_BIN tx staking delegate $VALIDATOR_ADDRESS $COINS \
+        --from $KEY_NAME \
+        --chain-id $CHAIN_ID \
+        --node $NODE_URL \
+        --keyring-backend="test" \
+        --gas auto --gas-adjustment 2 \
+        --output json \
+        --yes
+      sleep 5
+    }
+
+    determine_proposal_command() {
+      echo "Determining the correct command to submit proposals..."
+      HELP_OUTPUT=$($CHAIN_BIN tx gov --help)
+      if echo "$HELP_OUTPUT" | grep -q "submit-legacy-proposal"; then
+        SUBMIT_PROPOSAL_CMD="submit-legacy-proposal"
+      else
+        SUBMIT_PROPOSAL_CMD="submit-proposal"
+      fi
+      echo "Using $SUBMIT_PROPOSAL_CMD for submitting proposals."
+    }
+
+    submit_proposal() {
+      echo "Get all proposals"
+      PROPOSALS_OUTPUT=$($CHAIN_BIN query gov proposals --output json --node $NODE_URL 2>&1 || true)
+      if echo "$PROPOSALS_OUTPUT" | grep -q "no proposals found"; then
+        echo "No existing proposals found. Proceeding to submit a new proposal."
+      else
+        echo "Existing proposals: $PROPOSALS_OUTPUT"
+      fi
+
+      echo "Submit gov proposal on chain"
+      PROPOSAL_TX=$($CHAIN_BIN tx gov $SUBMIT_PROPOSAL_CMD consumer-addition $PROPOSAL_FILE \
+        --from $KEY_NAME \
+        --chain-id $CHAIN_ID \
+        --node $NODE_URL \
+        --keyring-backend="test" \
+        --gas auto --gas-adjustment 2 \
+        --output json \
+        --yes)
+      echo $PROPOSAL_TX
+
+      # Extract JSON part from the output
+      TX_HASH=$(echo "$PROPOSAL_TX" | grep -o '{.*}' | jq -r '.txhash')
+      if [ -n "$TX_HASH" ]; then
+        echo "Transaction hash: $TX_HASH"
+      else
+        echo "Failed to submit proposal. Output was not as expected."
+        exit 1
+      fi
+
+      sleep 5
+    }
+
+    get_proposal_id() {
+      echo "Getting proposal ID"
+      PROPOSAL_QUERY=$(gaiad query tx $TX_HASH --node $NODE_URL --output json)
+      LOGS=$(echo $PROPOSAL_QUERY | jq -r '.logs')
+      if [ "$LOGS" != "null" ] && [ "$LOGS" != "[]" ]; then
+        PROPOSAL_ID=$(echo $PROPOSAL_QUERY | jq -r '.logs[0].events[] | select(.type=="submit_proposal").attributes[] | select(.key=="proposal_id").value')
+        if [ -n "$PROPOSAL_ID" ]; then
+          echo "Proposal ID: $PROPOSAL_ID"
+          return 0
+        fi
+      fi
+      echo "Failed to retrieve proposal ID from transaction logs. Logs might be empty."
+      exit 1
+    }
+
+    vote_proposal() {
+      echo "Voting on proposal"
+      $CHAIN_BIN tx gov vote $PROPOSAL_ID yes \
+        --from $KEY_NAME \
+        --chain-id $CHAIN_ID \
+        --node $NODE_URL \
+        --keyring-backend="test" \
+        --gas auto --gas-adjustment 2 \
+        --output json \
+        --yes
+      sleep 5
+    }
+
+    wait_for_proposal_to_pass() {
+      echo "Waiting for proposal to pass"
+      for ((i=1; i<=$MAX_RETRIES; i++)); do
+        STATUS=$($CHAIN_BIN query gov proposal $PROPOSAL_ID --node $NODE_URL --output json | jq -r '.status')
+        if [ "$STATUS" == "PROPOSAL_STATUS_PASSED" ]; then
+          echo "Proposal has passed!"
+          return 0
+        else
+          echo "Current status: $STATUS. Attempt $i/$MAX_RETRIES. Waiting..."
+          sleep $RETRY_INTERVAL
+        fi
+      done
+      echo "Proposal did not pass after $MAX_RETRIES attempts."
+      exit 1
+    }
+
+    main() {
+      add_key
+      get_validator_address
+      stake_tokens
+      determine_proposal_command
+      submit_proposal
+      get_proposal_id
+      vote_proposal
+      wait_for_proposal_to_pass
+    }
+
+    main

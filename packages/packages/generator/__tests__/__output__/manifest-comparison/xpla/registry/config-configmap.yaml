@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-config
+  labels:
+    starship.io/name: xpla
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-config
+data:
+  xpla-1-1.json: >-
+    {"chain_name":"xpla","assets":[{"base":"axpla","description":"The XPLA token
+    is the native governance token for the XPLA
+    chain.","denom_units":[{"denom":"axpla","exponent":0}],"name":"XPLA","display":"XPLA","symbol":"XPLA","logo_URIs":{"png":"https://raw.githubusercontent.com/cosmos/chain-registry/master/xpla/images/xpla.png","svg":"https://raw.githubusercontent.com/cosmos/chain-registry/master/xpla/images/xpla.svg"},"coingecko_id":"xpla"}]}

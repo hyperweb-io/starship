@@ -1,0 +1,478 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: core-1-validator
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/part-of: core-1
+    app.kubernetes.io/id: core-1
+    app.kubernetes.io/name: core-1-validator
+    app.kubernetes.io/type: core-1-statefulset
+    app.kubernetes.io/role: validator
+    starship.io/chain-name: persistencecore
+spec:
+  serviceName: core-1-validator
+  podManagementPolicy: Parallel
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: starship-e2e-tests
+      app.kubernetes.io/name: core-1-validator
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: starship-e2e-tests
+        app.kubernetes.io/type: core-1
+        app.kubernetes.io/name: core-1-validator
+        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/role: validator
+    spec:
+      initContainers:
+        - name: init-build-images
+          image: ghcr.io/cosmology-tech/starship/builder:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - '-c'
+            - >-
+              # Install cosmovisor
+
+              go install
+              github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0
+
+
+              # Build genesis
+
+              UPGRADE_NAME=genesis CODE_TAG=v7.0.0 bash -e
+              /scripts/build-chain.sh
+          env:
+            - name: CODE_REF
+              value: https://github.com/persistenceOne/persistenceCore
+            - name: UPGRADE_DIR
+              value: /root/.persistenceCore/cosmovisor
+            - name: GOBIN
+              value: /go/bin
+            - name: CHAIN_NAME
+              value: core-1
+            - name: DENOM
+              value: uxprt
+            - name: COINS
+              value: 100000000000000uxprt
+            - name: CHAIN_BIN
+              value: persistenceCore
+            - name: CHAIN_DIR
+              value: /root/.persistenceCore
+            - name: CODE_REPO
+              value: https://github.com/persistenceOne/persistenceCore
+            - name: DAEMON_HOME
+              value: /root/.persistenceCore
+            - name: DAEMON_NAME
+              value: persistenceCore
+          resources:
+            limits:
+              cpu: '2'
+              memory: 2Gi
+            requests:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /root/.persistenceCore
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+        - name: wait-for-chains
+          image: curlimages/curl:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - '-c'
+            - |2-
+
+                    while [ $(curl -sw '%{http_code}' http://core-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                      echo "Genesis validator does not seem to be ready for: core-1. Waiting for it to start..."
+                      echo "Checking: http://core-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                      sleep 10;
+                    done
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 128M
+            requests:
+              cpu: '0.1'
+              memory: 128M
+        - name: init-validator
+          image: ghcr.io/cosmology-tech/starship/runner:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uxprt
+            - name: COINS
+              value: 100000000000000uxprt
+            - name: CHAIN_BIN
+              value: persistenceCore
+            - name: CHAIN_DIR
+              value: /root/.persistenceCore
+            - name: CODE_REPO
+              value: https://github.com/persistenceOne/persistenceCore
+            - name: DAEMON_HOME
+              value: /root/.persistenceCore
+            - name: DAEMON_NAME
+              value: persistenceCore
+            - name: CHAIN_ID
+              value: core-1
+            - name: GENESIS_HOST
+              value: core-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: FAUCET_ENABLED
+              value: 'true'
+            - name: METRICS
+              value: 'false'
+          command:
+            - bash
+            - '-c'
+            - >-
+              VAL_INDEX=${HOSTNAME##*-}
+
+              echo "Validator Index: $VAL_INDEX"
+
+              cp $CHAIN_DIR/cosmovisor/genesis/bin/$CHAIN_BIN /usr/bin
+
+
+              if [ -f $CHAIN_DIR/config/genesis.json ]; then
+                echo "Genesis file exists, exiting early"
+                exit 0
+              fi
+
+
+              VAL_NAME=$(jq -r ".validators[0].name" $KEYS_CONFIG)-$VAL_INDEX
+
+              echo "Validator Index: $VAL_INDEX, Key name: $VAL_NAME"
+
+
+              echo "Recover validator $VAL_NAME"
+
+              $CHAIN_BIN init $VAL_NAME --chain-id $CHAIN_ID
+
+              jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add
+              $VAL_NAME --index $VAL_INDEX --recover --keyring-backend="test"
+
+
+              curl
+              http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/genesis
+              -o $CHAIN_DIR/config/genesis.json
+
+              echo "Genesis file that we got....."
+
+              cat $CHAIN_DIR/config/genesis.json
+
+
+              echo "Create node id json file"
+
+              NODE_ID=$($CHAIN_BIN tendermint show-node-id)
+
+              echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json
+          resources:
+            limits:
+              cpu: '2'
+              memory: 2Gi
+            requests:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /root/.persistenceCore
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+        - name: init-config
+          image: ghcr.io/cosmology-tech/starship/runner:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uxprt
+            - name: COINS
+              value: 100000000000000uxprt
+            - name: CHAIN_BIN
+              value: persistenceCore
+            - name: CHAIN_DIR
+              value: /root/.persistenceCore
+            - name: CODE_REPO
+              value: https://github.com/persistenceOne/persistenceCore
+            - name: DAEMON_HOME
+              value: /root/.persistenceCore
+            - name: DAEMON_NAME
+              value: persistenceCore
+            - name: CHAIN_ID
+              value: core-1
+            - name: GENESIS_HOST
+              value: core-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: METRICS
+              value: 'false'
+          command:
+            - bash
+            - '-c'
+            - >-
+              VAL_INDEX=${HOSTNAME##*-}
+
+              echo "Validator Index: $VAL_INDEX"
+
+              cp $CHAIN_DIR/cosmovisor/genesis/bin/$CHAIN_BIN /usr/bin
+
+
+              echo "Running setup config script..."
+
+              bash -e /scripts/update-config.sh
+
+
+              curl -s
+              http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id
+
+              NODE_ID=$(curl -s
+              http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id
+              | jq -r ".node_id")
+
+              if [[ $NODE_ID == "" ]]; then
+                echo "Node ID is null, exiting early"
+                exit 1
+              fi
+
+
+              GENESIS_NODE_P2P=$NODE_ID@$GENESIS_HOST.$NAMESPACE.svc.cluster.local:26656
+
+              echo "Node P2P: $GENESIS_NODE_P2P"
+
+              sed -i "s/persistent_peers = \"\"/persistent_peers =
+              \"$GENESIS_NODE_P2P\"/g" $CHAIN_DIR/config/config.toml
+
+
+              echo "Printing the whole config.toml file"
+
+              cat $CHAIN_DIR/config/config.toml
+          resources:
+            limits:
+              cpu: '2'
+              memory: 2Gi
+            requests:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /root/.persistenceCore
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+      containers:
+        - name: validator
+          image: ghcr.io/cosmology-tech/starship/runner:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uxprt
+            - name: COINS
+              value: 100000000000000uxprt
+            - name: CHAIN_BIN
+              value: persistenceCore
+            - name: CHAIN_DIR
+              value: /root/.persistenceCore
+            - name: CODE_REPO
+              value: https://github.com/persistenceOne/persistenceCore
+            - name: DAEMON_HOME
+              value: /root/.persistenceCore
+            - name: DAEMON_NAME
+              value: persistenceCore
+            - name: CHAIN_ID
+              value: core-1
+            - name: GENESIS_HOST
+              value: core-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: SLOGFILE
+              value: slog.slog
+          command:
+            - bash
+            - '-c'
+            - |-
+              set -eux
+              START_ARGS=""
+
+
+              # Starting the chain
+
+              cp $CHAIN_DIR/cosmovisor/genesis/bin/$CHAIN_BIN /usr/bin
+              /usr/bin/cosmovisor start $START_ARGS
+          resources:
+            limits:
+              cpu: '2'
+              memory: 2Gi
+            requests:
+              cpu: '2'
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /root/.persistenceCore
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - bash
+                  - '-c'
+                  - '-e'
+                  - >-
+                    until bash -e /scripts/chain-rpc-ready.sh
+                    http://localhost:26657; do
+                      sleep 10
+                    done
+
+
+                    set -eux
+
+                    export
+
+                    VAL_INDEX=${HOSTNAME##*-}
+
+                    VAL_NAME="$(jq -r ".validators[0].name"
+                    $KEYS_CONFIG)-$VAL_INDEX"
+
+                    echo "Validator Index: $VAL_INDEX, Key name: $VAL_NAME.
+                    Chain bin $CHAIN_BIN"
+
+
+                    VAL_ADDR=$($CHAIN_BIN keys show $VAL_NAME -a
+                    --keyring-backend="test")
+
+                    echo "Transfer tokens to address $VAL_ADDR before trying to
+                    create validator. Best effort"
+
+                    bash -e /scripts/transfer-tokens.sh \
+                      $VAL_ADDR \
+                      $DENOM \
+                      http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:8000/credit \
+                      "true" || true
+
+                    $CHAIN_BIN keys list --keyring-backend test | jq
+
+                    VAL_NAME=$VAL_NAME bash -e /scripts/create-validator.sh
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - '-e'
+                - /scripts/chain-rpc-ready.sh
+                - http://localhost:26657
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+        - name: exposer
+          image: ghcr.io/cosmology-tech/starship/exposer:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uxprt
+            - name: COINS
+              value: 100000000000000uxprt
+            - name: CHAIN_BIN
+              value: persistenceCore
+            - name: CHAIN_DIR
+              value: /root/.persistenceCore
+            - name: CODE_REPO
+              value: https://github.com/persistenceOne/persistenceCore
+            - name: DAEMON_HOME
+              value: /root/.persistenceCore
+            - name: DAEMON_NAME
+              value: persistenceCore
+            - name: CHAIN_ID
+              value: core-1
+            - name: GENESIS_HOST
+              value: core-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: EXPOSER_HTTP_PORT
+              value: '8081'
+            - name: EXPOSER_GRPC_PORT
+              value: '9099'
+            - name: EXPOSER_GENESIS_FILE
+              value: /root/.persistenceCore/config/genesis.json
+            - name: EXPOSER_MNEMONIC_FILE
+              value: /configs/keys.json
+            - name: EXPOSER_PRIV_VAL_FILE
+              value: /root/.persistenceCore/config/priv_validator_key.json
+            - name: EXPOSER_NODE_KEY_FILE
+              value: /root/.persistenceCore/config/node_key.json
+            - name: EXPOSER_PRIV_VAL_STATE_FILE
+              value: /root/.persistenceCore/data/priv_validator_state.json
+          command:
+            - exposer
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 128M
+            requests:
+              cpu: '0.1'
+              memory: 128M
+          volumeMounts:
+            - mountPath: /root/.persistenceCore
+              name: node
+            - mountPath: /configs
+              name: addresses
+      volumes:
+        - name: node
+          emptyDir: {}
+        - name: addresses
+          configMap:
+            name: keys
+        - name: scripts
+          configMap:
+            name: setup-scripts-core-1
+        - name: faucet
+          emptyDir: {}

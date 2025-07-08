@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  labels:
+    starship.io/name: xpla
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+        starship.io/name: xpla
+        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/managed-by: starship
+    spec:
+      containers:
+        - name: registry
+          image: ghcr.io/hyperweb-io/starship/registry:20250205-544757d
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: grpc
+              containerPort: 9090
+          env:
+            - name: REGISTRY_CHAIN_CLIENT_RPCS
+              value: http://localhost:26657
+            - name: REGISTRY_CHAIN_API_RPCS
+              value: http://localhost:26657
+            - name: REGISTRY_CHAIN_API_GRPCS
+              value: http://localhost:9090
+            - name: REGISTRY_CHAIN_API_RESTS
+              value: http://localhost:1317
+            - name: REGISTRY_CHAIN_CLIENT_EXPOSERS
+              value: http://xpla-1-1-genesis.$(NAMESPACE).svc.cluster.local:8081
+          volumeMounts:
+            - name: chain-xpla-1-1
+              mountPath: /chains/xpla_1-1
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: '8080'
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: '8080'
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: chain-xpla-1-1
+          configMap:
+            name: chain-xpla-1-1

@@ -1,0 +1,270 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hermes-osmos-cosmos
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: relayer
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/role: hermes
+    app.kubernetes.io/name: hermes-osmos-cosmos
+spec:
+  serviceName: hermes-osmos-cosmos
+  replicas: 1
+  podManagementPolicy: Parallel
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: relayer
+      app.kubernetes.io/type: hermes
+      app.kubernetes.io/name: hermes-osmos-cosmos
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: relayer
+        app.kubernetes.io/type: hermes
+        app.kubernetes.io/name: hermes-osmos-cosmos
+        app.kubernetes.io/rawname: osmos-cosmos
+        app.kubernetes.io/version: 4.0.0-alpha.0
+    spec:
+      initContainers:
+        - name: init-exposer
+          image: ghcr.io/cosmology-tech/starship/exposer:v0.2.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - '-c'
+          args:
+            - |-
+              # Install exposer binary from the image
+              cp /bin/exposer /exposer/exposer
+              chmod +x /exposer/exposer
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
+          volumeMounts:
+            - mountPath: /exposer
+              name: exposer
+        - name: init-osmosis-1
+          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - '-c'
+          args:
+            - >-
+              echo "Waiting for osmosis-1 service..."
+
+              wait-for-service
+              osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+        - name: init-cosmoshub-4
+          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - bash
+            - '-c'
+          args:
+            - >-
+              echo "Waiting for cosmoshub-4 service..."
+
+              wait-for-service
+              cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+        - name: init-relayer
+          image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KEYS_CONFIG
+              value: /keys/keys.json
+            - name: RELAYER_DIR
+              value: /root/.hermes
+            - name: RELAYER_INDEX
+              value: ${HOSTNAME##*-}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - bash
+            - '-c'
+          args:
+            - >
+              set -ux
+
+
+              RLY_INDEX=${HOSTNAME##*-}
+
+              echo "Relayer Index: $RLY_INDEX"
+
+
+              mkdir -p $RELAYER_DIR
+
+              cp /configs/config.toml $RELAYER_DIR/config.toml
+
+              cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
+
+
+              MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
+
+              echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
+
+              MNEMONIC_CLI=$(jq -r ".relayers_cli[$RLY_INDEX].mnemonic"
+              $KEYS_CONFIG)
+
+              echo $MNEMONIC_CLI > $RELAYER_DIR/mnemonic-cli.txt
+
+
+
+              echo "Creating key for osmosis-1..."
+
+              hermes keys add \
+                --chain osmosis-1 \
+                --mnemonic-file $RELAYER_DIR/mnemonic.txt \
+                --key-name osmosis-1 \
+                --hd-path "m/44'/118'/0'/0/0"
+
+              DENOM="uosmo"
+
+              RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 |
+              jq -r '.result."osmosis-1".account')
+
+
+              echo "Transfer tokens to address $RLY_ADDR"
+
+              bash -e /scripts/transfer-tokens.sh \
+                $RLY_ADDR \
+                $DENOM \
+                http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
+                "true" || true
+
+              echo "Creating key for cosmoshub-4..."
+
+              hermes keys add \
+                --chain cosmoshub-4 \
+                --mnemonic-file $RELAYER_DIR/mnemonic.txt \
+                --key-name cosmoshub-4 \
+                --hd-path "m/44'/118'/0'/0/0"
+
+              DENOM="uatom"
+
+              RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 |
+              jq -r '.result."cosmoshub-4".account')
+
+
+              echo "Transfer tokens to address $RLY_ADDR"
+
+              bash -e /scripts/transfer-tokens.sh \
+                $RLY_ADDR \
+                $DENOM \
+                http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
+                "true" || true
+          resources:
+            limits:
+              cpu: '0.2'
+              memory: 200M
+            requests:
+              cpu: '0.2'
+              memory: 200M
+          volumeMounts:
+            - mountPath: /root
+              name: relayer
+            - mountPath: /configs
+              name: relayer-config
+            - mountPath: /keys
+              name: keys
+            - mountPath: /scripts
+              name: scripts
+      containers:
+        - name: relayer
+          image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RELAYER_DIR
+              value: /root/.hermes
+          command:
+            - bash
+            - '-c'
+          args:
+            - |-
+              RLY_INDEX=${HOSTNAME##*-}
+              echo "Relayer Index: $RLY_INDEX"
+              hermes start
+          resources:
+            limits:
+              cpu: '0.2'
+              memory: 200M
+            requests:
+              cpu: '0.2'
+              memory: 200M
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          volumeMounts:
+            - mountPath: /root
+              name: relayer
+            - mountPath: /configs
+              name: relayer-config
+        - name: exposer
+          image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EXPOSER_HTTP_PORT
+              value: '8081'
+            - name: EXPOSER_GRPC_PORT
+              value: '9099'
+          command:
+            - bash
+            - '-c'
+          args:
+            - /exposer/exposer
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          volumeMounts:
+            - mountPath: /root
+              name: relayer
+            - mountPath: /configs
+              name: relayer-config
+            - mountPath: /exposer
+              name: exposer
+      volumes:
+        - name: relayer
+          emptyDir: {}
+        - name: relayer-config
+          configMap:
+            name: hermes-osmos-cosmos
+        - name: keys
+          configMap:
+            name: keys
+        - name: scripts
+          configMap:
+            name: setup-scripts
+        - name: exposer
+          emptyDir: {}

@@ -1,0 +1,281 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: juno-2-genesis
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/part-of: juno-2
+    app.kubernetes.io/id: juno-2
+    app.kubernetes.io/name: juno-2-genesis
+    app.kubernetes.io/type: juno-2-statefulset
+    app.kubernetes.io/role: genesis
+    starship.io/chain-name: juno
+spec:
+  serviceName: juno-2-genesis
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: starship-e2e-tests
+      app.kubernetes.io/name: juno-2-genesis
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: starship-e2e-tests
+        app.kubernetes.io/type: juno-2
+        app.kubernetes.io/name: juno-2-genesis
+        app.kubernetes.io/rawname: juno-2
+        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/role: genesis
+    spec:
+      initContainers:
+        - name: init-genesis
+          image: ghcr.io/cosmology-tech/starship/juno:v18.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: ujuno
+            - name: COINS
+              value: 100000000000000ujuno
+            - name: CHAIN_BIN
+              value: junod
+            - name: CHAIN_DIR
+              value: /root/.juno
+            - name: CODE_REPO
+              value: https://github.com/CosmosContracts/juno
+            - name: DAEMON_HOME
+              value: /root/.juno
+            - name: DAEMON_NAME
+              value: junod
+            - name: CHAIN_ID
+              value: juno-2
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: FAUCET_ENABLED
+              value: 'false'
+            - name: NUM_VALIDATORS
+              value: '1'
+            - name: NUM_RELAYERS
+              value: '1'
+          command:
+            - bash
+            - '-c'
+            - >-
+              VAL_INDEX=${HOSTNAME##*-}
+
+              echo "Validator Index: $VAL_INDEX"
+
+
+              if [ -f $CHAIN_DIR/config/genesis.json ]; then
+                echo "Genesis file exists, exiting init container"
+                exit 0
+              fi
+
+
+              echo "Running setup genesis script..."
+
+              bash -e /scripts/create-genesis.sh
+
+              bash -e /scripts/update-genesis.sh
+
+
+              echo "Create node id json file"
+
+              NODE_ID=$($CHAIN_BIN tendermint show-node-id)
+
+              echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json
+
+
+              echo "Create consensus key json file"
+
+              $CHAIN_BIN tendermint show-validator >
+              $CHAIN_DIR/config/consensus_key.json
+
+              cat $CHAIN_DIR/config/consensus_key.json
+
+
+              echo "Add custom accounts and balances"
+
+              CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related
+              subcommands" && echo "genesis" || echo "")
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /root/.juno
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+        - name: init-config
+          image: ghcr.io/cosmology-tech/starship/juno:v18.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: ujuno
+            - name: COINS
+              value: 100000000000000ujuno
+            - name: CHAIN_BIN
+              value: junod
+            - name: CHAIN_DIR
+              value: /root/.juno
+            - name: CODE_REPO
+              value: https://github.com/CosmosContracts/juno
+            - name: DAEMON_HOME
+              value: /root/.juno
+            - name: DAEMON_NAME
+              value: junod
+            - name: CHAIN_ID
+              value: juno-2
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: METRICS
+              value: 'false'
+          command:
+            - bash
+            - '-c'
+            - |-
+              VAL_INDEX=${HOSTNAME##*-}
+              echo "Validator Index: $VAL_INDEX"
+
+              echo "Running setup config script..."
+
+              bash -e /scripts/update-config.sh
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /root/.juno
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+      containers:
+        - name: validator
+          image: ghcr.io/cosmology-tech/starship/juno:v18.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: ujuno
+            - name: COINS
+              value: 100000000000000ujuno
+            - name: CHAIN_BIN
+              value: junod
+            - name: CHAIN_DIR
+              value: /root/.juno
+            - name: CODE_REPO
+              value: https://github.com/CosmosContracts/juno
+            - name: DAEMON_HOME
+              value: /root/.juno
+            - name: DAEMON_NAME
+              value: junod
+            - name: CHAIN_ID
+              value: juno-2
+            - name: FAUCET_ENABLED
+              value: 'false'
+            - name: SLOGFILE
+              value: slog.slog
+          command:
+            - bash
+            - '-c'
+            - |-
+              #!/bin/bash
+              set -euo pipefail
+
+              START_ARGS=""
+
+
+              $CHAIN_BIN start $START_ARGS
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /root/.juno
+              name: node
+            - mountPath: /configs
+              name: addresses
+            - mountPath: /scripts
+              name: scripts
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - '-e'
+                - /scripts/chain-rpc-ready.sh
+                - http://localhost:26657
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 15
+        - name: exposer
+          image: ghcr.io/cosmology-tech/starship/exposer:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GENESIS_HOST
+              value: juno-2-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: EXPOSER_HTTP_PORT
+              value: '8081'
+            - name: EXPOSER_GRPC_PORT
+              value: '9099'
+            - name: EXPOSER_GENESIS_FILE
+              value: /root/.juno/config/genesis.json
+            - name: EXPOSER_MNEMONIC_FILE
+              value: /configs/keys.json
+            - name: EXPOSER_PRIV_VAL_FILE
+              value: /root/.juno/config/priv_validator_key.json
+            - name: EXPOSER_NODE_KEY_FILE
+              value: /root/.juno/config/node_key.json
+            - name: EXPOSER_NODE_ID_FILE
+              value: /root/.juno/config/node_id.json
+            - name: EXPOSER_PRIV_VAL_STATE_FILE
+              value: /root/.juno/data/priv_validator_state.json
+          command:
+            - exposer
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 128M
+            requests:
+              cpu: '0.1'
+              memory: 128M
+          volumeMounts:
+            - mountPath: /root/.juno
+              name: node
+            - mountPath: /configs
+              name: addresses
+      volumes:
+        - name: node
+          emptyDir: {}
+        - name: addresses
+          configMap:
+            name: keys
+        - name: scripts
+          configMap:
+            name: setup-scripts-juno-2
