@@ -130,21 +130,61 @@ describe('DefaultsManager', () => {
     it('should apply defaults to a full config', () => {
       const config: StarshipConfig = {
         name: 'test',
-        chains: [],
+        chains: [
+          {
+            name: 'cosmoshub' as const,
+            id: 'chain1',
+            numValidators: 1,
+            image: 'ghcr.io/hyperweb-io/starship/chain:xyz',
+            faucet: {
+              enabled: true,
+              type: 'cosmjs',
+              image: 'ghcr.io/hyperweb-io/starship/cosmjs-faucet:xyz'
+            }
+          }
+        ],
         relayers: [],
       };
 
       const processedConfig = applyDefaults(config);
 
       expect(processedConfig.relayers).toHaveLength(0);
-      expect(processedConfig.chains).toHaveLength(0);
+      expect(processedConfig.chains).toHaveLength(1);
+      expect(processedConfig.chains![0].faucet?.enabled).toBe(true);
+      expect(processedConfig.chains![0].faucet?.type).toBe('cosmjs');
+      expect(processedConfig.chains![0].faucet?.image).toBe('ghcr.io/hyperweb-io/starship/cosmjs-faucet:xyz');
       expect(processedConfig.exposer?.image).toBe('ghcr.io/hyperweb-io/starship/exposer:20250205-544757d');
-      expect(processedConfig.faucet?.image).toBe('ghcr.io/hyperweb-io/starship/faucet:20250205-544757d');
+      expect(processedConfig.faucet?.enabled).toBe(true);
+      expect(processedConfig.faucet?.image).toBe('ghcr.io/hyperweb-io/starship/faucet:20250325-2207109'); // default faucet
       expect(processedConfig.monitoring?.enabled).toBe(false);
       expect(processedConfig.ingress?.enabled).toBe(false);
       expect(processedConfig.ingress?.type).toBe('nginx');
       expect(processedConfig.images?.imagePullPolicy).toBe('IfNotPresent');
     });
+
+    it('should override defaults with config', () => {
+      const config: StarshipConfig = {
+        name: 'test',
+        chains: [],
+        relayers: [],
+        exposer: {
+          image: 'ghcr.io/hyperweb-io/starship/exposer:xyz'
+        },
+        faucet: {
+          enabled: true,
+          type: 'starship',
+          image: 'ghcr.io/hyperweb-io/starship/faucet:xyz'
+        },
+      };
+
+      const processedConfig = applyDefaults(config);
+
+      expect(processedConfig.exposer?.image).toBe('ghcr.io/hyperweb-io/starship/exposer:xyz');
+      expect(processedConfig.faucet?.enabled).toBe(true);
+      expect(processedConfig.faucet?.type).toBe('starship');
+      expect(processedConfig.faucet?.image).toBe('ghcr.io/hyperweb-io/starship/faucet:xyz');
+    });
+
     it('should process relayers in a full config', () => {
       const config: StarshipConfig = {
         name: 'test',
@@ -180,7 +220,7 @@ describe('DefaultsManager', () => {
 
       const processedConfig = applyDefaults(config);
 
-      expect(processedConfig.relayers).toBeUndefined();
+      expect(processedConfig.relayers).toHaveLength(0);
     });
   });
 

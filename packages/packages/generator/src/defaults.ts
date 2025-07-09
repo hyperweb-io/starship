@@ -129,90 +129,83 @@ export class DefaultsManager {
    * Process explorer configuration by merging with defaults
    */
   processExplorer(explorerConfig?: any): any {
-    if (!explorerConfig) return undefined;
-
     const defaultExplorer = this.defaultsData.explorer || {};
-    return deepMerge(defaultExplorer, explorerConfig);
+    return deepMerge(defaultExplorer, explorerConfig || {});
   }
 
   /**
    * Process registry configuration by merging with defaults
    */
   processRegistry(registryConfig?: any): any {
-    if (!registryConfig) return undefined;
-
     const defaultRegistry = this.defaultsData.registry || {};
-    return deepMerge(defaultRegistry, registryConfig);
+    return deepMerge(defaultRegistry, registryConfig || {});
   }
 
   /**
    * Process faucet configuration by merging with defaults
    */
   processFaucet(faucetConfig?: any): any {
-    if (!faucetConfig) return undefined;
-
-    const defaultFaucet = this.defaultsData.faucet || {};
-    return deepMerge(defaultFaucet, faucetConfig);
+    const defaultGlobalFaucet = this.defaultsData.faucet || {};
+    
+    // Determine faucet type (default to 'starship')
+    const inputType = faucetConfig && typeof faucetConfig === 'object' ? faucetConfig.type : undefined;
+    const defaultType = defaultGlobalFaucet && typeof defaultGlobalFaucet === 'object' ? (defaultGlobalFaucet as any).type : undefined;
+    const faucetType = inputType || defaultType || 'starship';
+    
+    // Get type-specific defaults (includes image)
+    const defaultTypeFaucet = this.getFaucetDefaults(faucetType) || {};
+    
+    // Merge: global defaults + type-specific defaults + input config
+    const mergedDefaults = deepMerge(defaultGlobalFaucet, defaultTypeFaucet);
+    return deepMerge(mergedDefaults, faucetConfig || {});
   }
 
   /**
    * Process monitoring configuration by merging with defaults
    */
   processMonitoring(monitoringConfig?: any): any {
-    if (!monitoringConfig) return undefined;
-
     const defaultMonitoring = this.defaultsData.monitoring || {};
-    return deepMerge(defaultMonitoring, monitoringConfig);
+    return deepMerge(defaultMonitoring, monitoringConfig || {});
   }
 
   /**
    * Process ingress configuration by merging with defaults
    */
   processIngress(ingressConfig?: any): any {
-    if (!ingressConfig) return undefined;
-
     const defaultIngress = this.defaultsData.ingress || {};
-    return deepMerge(defaultIngress, ingressConfig);
+    return deepMerge(defaultIngress, ingressConfig || {});
   }
 
   /**
    * Process exposer configuration by merging with defaults
    */
   processExposer(exposerConfig?: Exposer): Exposer {
-    if (!exposerConfig) return undefined;
-
     const defaultExposer = this.defaultsData.exposer || {};
-    return deepMerge(defaultExposer, exposerConfig);
+    return deepMerge(defaultExposer, exposerConfig || {});
   }
 
   /**
    * Process images configuration by merging with defaults
    */
   processImages(imagesConfig?: any): any {
-    if (!imagesConfig) return undefined;
-
     const defaultImages = this.defaultsData.images || {};
-    return deepMerge(defaultImages, imagesConfig);
+    return deepMerge(defaultImages, imagesConfig || {});
   }
 
   /**
    * Process resources configuration by merging with defaults
    */
   processResources(resourcesConfig?: any): any {
-    if (!resourcesConfig) return undefined;
-
     const defaultResources = this.defaultsData.resources || {};
-    return deepMerge(defaultResources, resourcesConfig);
+    return deepMerge(defaultResources, resourcesConfig || {});
   }
 
   /**
    * Process timeouts configuration by merging with defaults
    */
   processTimeouts(timeoutsConfig?: any): any {
-    if (!timeoutsConfig) return undefined;
-
     const defaultTimeouts = this.defaultsData.timeouts || {};
-    return deepMerge(defaultTimeouts, timeoutsConfig);
+    return deepMerge(defaultTimeouts, timeoutsConfig || {});
   }
 
   /**
@@ -324,7 +317,7 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
   );
 
   // Process relayers with defaults
-  let processedRelayers: Relayer[] | undefined;
+  let processedRelayers: Relayer[] = [];
   if (config.relayers && config.relayers?.length > 0) {
     processedRelayers = config.relayers.map((relayer: Relayer) =>
       defaultsManager.processRelayer(relayer)
@@ -333,37 +326,27 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
 
   console.log('input config:', config);
 
-  // Process global configurations individually to maintain type safety
+  // Always apply global defaults, merge with existing config if present
   const processedConfig = {
     ...config,
     chains: processedChains,
     relayers: processedRelayers,
+    
+    // Always process global configurations with defaults
+    exposer: defaultsManager.processExposer(config.exposer || {}),
+    faucet: defaultsManager.processFaucet(config.faucet || {}),
+    monitoring: defaultsManager.processMonitoring(config.monitoring || {}),
+    ingress: defaultsManager.processIngress(config.ingress || {}),
+    images: defaultsManager.processImages(config.images || {}),
+    resources: defaultsManager.processResources(config.resources || {}),
+    timeouts: defaultsManager.processTimeouts(config.timeouts || {}),
+    
+    // Optional configurations that only apply if defined
     ...(config.explorer && {
       explorer: defaultsManager.processExplorer(config.explorer)
     }),
     ...(config.registry && {
       registry: defaultsManager.processRegistry(config.registry)
-    }),
-    ...(config.faucet && {
-      faucet: defaultsManager.processFaucet(config.faucet)
-    }),
-    ...(config.monitoring && {
-      monitoring: defaultsManager.processMonitoring(config.monitoring)
-    }),
-    ...(config.ingress && {
-      ingress: defaultsManager.processIngress(config.ingress)
-    }),
-    ...(config.exposer && {
-      exposer: defaultsManager.processExposer(config.exposer)
-    }),
-    ...(config.images && {
-      images: defaultsManager.processImages(config.images)
-    }),
-    ...(config.resources && {
-      resources: defaultsManager.processResources(config.resources)
-    }),
-    ...(config.timeouts && {
-      timeouts: defaultsManager.processTimeouts(config.timeouts)
     })
   };
 
