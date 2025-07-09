@@ -36,13 +36,11 @@ spec:
             - name: REGISTRY_CHAIN_API_RPCS
               value: http://localhost:26653,http://localhost:26657
             - name: REGISTRY_CHAIN_API_GRPCS
-              value: >-
-                http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9091,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9091
+              value: http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9091,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9091
             - name: REGISTRY_CHAIN_API_RESTS
               value: http://localhost:1313,http://localhost:1317
             - name: REGISTRY_CHAIN_CLIENT_EXPOSERS
-              value: >-
-                http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:8081,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:8081
+              value: http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:8081,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:8081
           volumeMounts:
             - name: chain-osmosis-1
               mountPath: /chains/osmosis-1
@@ -58,13 +56,13 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: '8080'
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /health
-              port: '8080'
+              port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
       volumes:

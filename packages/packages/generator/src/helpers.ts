@@ -293,11 +293,11 @@ export function generateWaitInitContainer(
   const waitScript = chainIDs
     .map(
       (chainID) => `
-      while [ $(curl -sw '%{http_code}' http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
-        echo "Genesis validator does not seem to be ready for: ${chainID}. Waiting for it to start..."
-        echo "Checking: http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
-        sleep 10;
-      done`
+while [ $(curl -sw '%{http_code}' http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: ${chainID}. Waiting for it to start..."
+  echo "Checking: http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done`
     )
     .join('\n');
 

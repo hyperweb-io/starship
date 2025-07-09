@@ -68,44 +68,29 @@ spec:
           command:
             - bash
             - '-c'
-            - >-
+            - |-
               VAL_INDEX=${HOSTNAME##*-}
-
               echo "Validator Index: $VAL_INDEX"
-
 
               if [ -f $CHAIN_DIR/config/genesis.json ]; then
                 echo "Genesis file exists, exiting init container"
                 exit 0
               fi
 
-
               echo "Running setup genesis script..."
-
               bash -e /scripts/create-genesis.sh
-
               bash -e /scripts/update-genesis.sh
 
-
               echo "Create node id json file"
-
               NODE_ID=$($CHAIN_BIN tendermint show-node-id)
-
               echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json
 
-
               echo "Create consensus key json file"
-
-              $CHAIN_BIN tendermint show-validator >
-              $CHAIN_DIR/config/consensus_key.json
-
+              $CHAIN_BIN tendermint show-validator > $CHAIN_DIR/config/consensus_key.json
               cat $CHAIN_DIR/config/consensus_key.json
 
-
               echo "Add custom accounts and balances"
-
-              CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related
-              subcommands" && echo "genesis" || echo "")
+              CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && echo "genesis" || echo "")
           resources:
             limits:
               cpu: '0.5'
@@ -196,17 +181,12 @@ spec:
           command:
             - bash
             - '-c'
-            - >-
+            - |-
               #!/bin/bash
-
               set -euo pipefail
 
-
               START_ARGS=""
-
-              START_ARGS="--grpc-web.enable=false --transport=grpc
-              --with-tendermint=false --address tcp://0.0.0.0:26658"
-
+              START_ARGS="--grpc-web.enable=false --transport=grpc --with-tendermint=false --address tcp://0.0.0.0:26658"
 
               $CHAIN_BIN start $START_ARGS
           resources:

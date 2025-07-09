@@ -331,6 +331,8 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
     );
   }
 
+  console.log('input config:', config);
+
   // Process global configurations individually to maintain type safety
   const processedConfig = {
     ...config,
@@ -364,6 +366,8 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
       timeouts: defaultsManager.processTimeouts(config.timeouts)
     })
   };
+
+  console.log('processedConfig:', processedConfig);
 
   return processedConfig;
 }

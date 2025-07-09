@@ -56,40 +56,41 @@ spec:
           volumeMounts:
             - mountPath: /exposer
               name: exposer
-        - name: init-osmosis-1
-          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
+        - name: wait-for-chains
+          image: curlimages/curl:latest
           imagePullPolicy: IfNotPresent
-          command:
-            - bash
-            - '-c'
-          args:
-            - >-
-              echo "Waiting for osmosis-1 service..."
-
-              wait-for-service
-              osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657
           env:
+            - name: GENESIS_PORT
+              value: '8081'
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-        - name: init-cosmoshub-4
-          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
-          imagePullPolicy: IfNotPresent
           command:
-            - bash
+            - /bin/sh
             - '-c'
-          args:
-            - >-
-              echo "Waiting for cosmoshub-4 service..."
+            - |-
 
-              wait-for-service
-              cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657
-          env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+                echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+
+              while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+                echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 128M
+            requests:
+              cpu: '0.1'
+              memory: 128M
         - name: init-relayer
           image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
           imagePullPolicy: IfNotPresent
@@ -108,35 +109,23 @@ spec:
             - bash
             - '-c'
           args:
-            - >
+            - |
               set -ux
 
-
               RLY_INDEX=${HOSTNAME##*-}
-
               echo "Relayer Index: $RLY_INDEX"
 
-
               mkdir -p $RELAYER_DIR
-
               cp /configs/config.toml $RELAYER_DIR/config.toml
-
               cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
 
-
               MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
-
               echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
-
-              MNEMONIC_CLI=$(jq -r ".relayers_cli[$RLY_INDEX].mnemonic"
-              $KEYS_CONFIG)
-
+              MNEMONIC_CLI=$(jq -r ".relayers_cli[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
               echo $MNEMONIC_CLI > $RELAYER_DIR/mnemonic-cli.txt
 
 
-
               echo "Creating key for osmosis-1..."
-
               hermes keys add \
                 --chain osmosis-1 \
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
@@ -144,13 +133,9 @@ spec:
                 --hd-path "m/44'/118'/0'/0/0"
 
               DENOM="uosmo"
-
-              RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 |
-              jq -r '.result."osmosis-1".account')
-
+              RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1".account')
 
               echo "Transfer tokens to address $RLY_ADDR"
-
               bash -e /scripts/transfer-tokens.sh \
                 $RLY_ADDR \
                 $DENOM \
@@ -158,7 +143,6 @@ spec:
                 "false" || true
 
               echo "Creating key for cosmoshub-4..."
-
               hermes keys add \
                 --chain cosmoshub-4 \
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
@@ -166,13 +150,9 @@ spec:
                 --hd-path "m/44'/118'/0'/0/0"
 
               DENOM="uatom"
-
-              RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 |
-              jq -r '.result."cosmoshub-4".account')
-
+              RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4".account')
 
               echo "Transfer tokens to address $RLY_ADDR"
-
               bash -e /scripts/transfer-tokens.sh \
                 $RLY_ADDR \
                 $DENOM \

@@ -127,6 +127,24 @@ describe('DefaultsManager', () => {
   });
 
   describe('applyDefaults', () => {
+    it('should apply defaults to a full config', () => {
+      const config: StarshipConfig = {
+        name: 'test',
+        chains: [],
+        relayers: [],
+      };
+
+      const processedConfig = applyDefaults(config);
+
+      expect(processedConfig.relayers).toHaveLength(0);
+      expect(processedConfig.chains).toHaveLength(0);
+      expect(processedConfig.exposer?.image).toBe('ghcr.io/hyperweb-io/starship/exposer:20250205-544757d');
+      expect(processedConfig.faucet?.image).toBe('ghcr.io/hyperweb-io/starship/faucet:20250205-544757d');
+      expect(processedConfig.monitoring?.enabled).toBe(false);
+      expect(processedConfig.ingress?.enabled).toBe(false);
+      expect(processedConfig.ingress?.type).toBe('nginx');
+      expect(processedConfig.images?.imagePullPolicy).toBe('IfNotPresent');
+    });
     it('should process relayers in a full config', () => {
       const config: StarshipConfig = {
         name: 'test',
