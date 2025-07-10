@@ -50,8 +50,8 @@ data:
     type = "CosmosSdk"
     key_name = "osmosis-1"
 
-    rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+    rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
     event_source = { mode = 'pull', interval = '500ms' }
     trusted_node = false
     account_prefix = "osmo"
@@ -74,8 +74,8 @@ data:
     type = "CosmosSdk"
     key_name = "cosmoshub-4"
 
-    rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+    rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
     event_source = { mode = 'pull', interval = '500ms' }
     trusted_node = false
     account_prefix = "cosmos"
@@ -131,8 +131,8 @@ data:
     type = "CosmosSdk"
     key_name = "osmosis-1-cli"
 
-    rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+    rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
     event_source = { mode = 'pull', interval = '500ms' }
     trusted_node = false
     account_prefix = "osmo"
@@ -155,8 +155,8 @@ data:
     type = "CosmosSdk"
     key_name = "cosmoshub-4-cli"
 
-    rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+    rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
     event_source = { mode = 'pull', interval = '500ms' }
     trusted_node = false
     account_prefix = "cosmos"

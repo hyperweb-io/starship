@@ -35,40 +35,41 @@ spec:
         app.kubernetes.io/version: 4.0.0-alpha.0
     spec:
       initContainers:
-        - name: init-neutron-1
-          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
+        - name: wait-for-chains
+          image: curlimages/curl:latest
           imagePullPolicy: IfNotPresent
-          command:
-            - bash
-            - '-c'
-          args:
-            - >-
-              echo "Waiting for neutron-1 service..."
-
-              wait-for-service
-              neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657
           env:
+            - name: GENESIS_PORT
+              value: '8081'
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-        - name: init-cosmoshub-4
-          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
-          imagePullPolicy: IfNotPresent
           command:
-            - bash
+            - /bin/sh
             - '-c'
-          args:
-            - >-
-              echo "Waiting for cosmoshub-4 service..."
+            - |-
 
-              wait-for-service
-              cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657
-          env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              while [ $(curl -sw '%{http_code}' http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: neutron-1. Waiting for it to start..."
+                echo "Checking: http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+
+              while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+                echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
         - name: init-relayer
           image: ghcr.io/cosmology-tech/starship/neutron-query-relayer:v0.2.0
           imagePullPolicy: IfNotPresent
@@ -93,56 +94,33 @@ spec:
             - bash
             - '-c'
           args:
-            - >
+            - |
               set -ux
 
-
               RLY_INDEX=${HOSTNAME##*-}
-
               echo "Relayer Index: $RLY_INDEX"
-
 
               mkdir -p $STORAGE_PATH
 
-
-              NEUTRON_MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic"
-              $KEYS_CONFIG)
-
-              TARGET_MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic"
-              $KEYS_CONFIG)
-
+              NEUTRON_MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
+              TARGET_MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
 
 
               echo "Setting up keys for neutron-1..."
-
-              # Keys will be managed through environment variables for
-              neutron-query-relayer
-
+              # Keys will be managed through environment variables for neutron-query-relayer
 
               DENOM="untrn"
-
-              # For neutron-query-relayer, we need to derive the address from
-              mnemonic
-
+              # For neutron-query-relayer, we need to derive the address from mnemonic
               # This will be handled by the relayer binary itself
-
 
               echo "Chain neutron-1 setup completed"
 
-
               echo "Setting up keys for cosmoshub-4..."
-
-              # Keys will be managed through environment variables for
-              neutron-query-relayer
-
+              # Keys will be managed through environment variables for neutron-query-relayer
 
               DENOM="uatom"
-
-              # For neutron-query-relayer, we need to derive the address from
-              mnemonic
-
+              # For neutron-query-relayer, we need to derive the address from mnemonic
               # This will be handled by the relayer binary itself
-
 
               echo "Chain cosmoshub-4 setup completed"
           resources:

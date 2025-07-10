@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-simapp
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-simapp
+data:
+  chain.json: |-
+    {
+      "$schema": "../chain.schema.json",
+      "chain_name": "simapp",
+      "status": "live",
+      "network_type": "devnet",
+      "chain_id": "simapp",
+      "pretty_name": "Sim App Devnet",
+      "bech32_prefix": "cosmos",
+      "daemon_name": "simd",
+      "node_home": "/root/.simapp",
+      "key_algos": [
+        "secp256k1"
+      ],
+      "slip44": "118",
+      "fees": {
+        "fee_tokens": [
+          {
+            "denom": "stake",
+            "fixed_min_gas_price": 0,
+            "low_gas_price": 0,
+            "average_gas_price": 0.025,
+            "high_gas_price": 0.04
+          }
+        ]
+      },
+      "staking": {
+        "staking_tokens": [
+          {
+            "denom": "stake"
+          }
+        ],
+        "lock_duration": {
+          "time": "1209600s"
+        }
+      },
+      "codebase": {
+        "git_repo": "https://github.com/cosmos/cosmos-sdk/tree/main/simapp",
+        "compatible_versions": [],
+        "binaries": {},
+        "ics_enabled": [],
+        "versions": [],
+        "consensus": {
+          "type": "tendermint"
+        }
+      },
+      "peers": {
+        "seeds": [],
+        "persistent_peers": []
+      }
+    }
+  assetlist.json: |-
+    {
+      "$schema": "../assetlist.schema.json",
+      "chain_name": "simapp",
+      "assets": [
+        {
+          "description": "The denom for token stake",
+          "base": "stake",
+          "name": "stake",
+          "display": "stake",
+          "symbol": "STAKE",
+          "denom_units": [
+            {
+              "denom": "stake",
+              "exponent": 0
+            },
+            {
+              "denom": "stake",
+              "exponent": 6
+            }
+          ],
+          "coingecko_id": "simapp"
+        }
+      ]
+    }

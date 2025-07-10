@@ -57,6 +57,22 @@ spec:
               value: gaiad
             - name: CHAIN_ID
               value: cosmoshub-4
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
             - name: KEYS_CONFIG
               value: /configs/keys.json
             - name: FAUCET_ENABLED
@@ -125,6 +141,22 @@ spec:
               value: gaiad
             - name: CHAIN_ID
               value: cosmoshub-4
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
             - name: KEYS_CONFIG
               value: /configs/keys.json
             - name: METRICS
@@ -231,7 +263,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 15
         - name: exposer
-          image: ghcr.io/cosmology-tech/starship/exposer:latest
+          image: ghcr.io/hyperweb-io/starship/exposer:20250205-544757d
           imagePullPolicy: IfNotPresent
           env:
             - name: GENESIS_HOST
@@ -262,11 +294,11 @@ spec:
             - exposer
           resources:
             limits:
-              cpu: '0.1'
-              memory: 128M
+              cpu: '0.2'
+              memory: 200M
             requests:
-              cpu: '0.1'
-              memory: 128M
+              cpu: '0.2'
+              memory: 200M
           volumeMounts:
             - mountPath: /root/.gaia
               name: node

@@ -11,11 +11,11 @@ metadata:
     app.kubernetes.io/name: registry
 spec:
   selector:
-    app: registry
+    app.kubernetes.io/name: registry
   ports:
     - name: http
       port: 8080
-      targetPort: '8080'
+      targetPort: 8080
     - name: grpc
       port: 9090
-      targetPort: '9090'
+      targetPort: 9090

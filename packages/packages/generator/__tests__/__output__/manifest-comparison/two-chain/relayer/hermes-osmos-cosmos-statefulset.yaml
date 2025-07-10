@@ -36,7 +36,7 @@ spec:
     spec:
       initContainers:
         - name: init-exposer
-          image: ghcr.io/cosmology-tech/starship/exposer:v0.2.0
+          image: ghcr.io/hyperweb-io/starship/exposer:20250205-544757d
           imagePullPolicy: IfNotPresent
           command:
             - bash
@@ -87,10 +87,10 @@ spec:
           resources:
             limits:
               cpu: '0.1'
-              memory: 128M
+              memory: 100M
             requests:
               cpu: '0.1'
-              memory: 128M
+              memory: 100M
         - name: init-relayer
           image: ghcr.io/hyperweb-io/starship/hermes:1.12.0
           imagePullPolicy: IfNotPresent
@@ -118,6 +118,10 @@ spec:
               mkdir -p $RELAYER_DIR
               cp /configs/config.toml $RELAYER_DIR/config.toml
               cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
+
+              # Replace namespace placeholder with actual namespace environment variable
+              sed -i "s|\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+              sed -i "s|\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
 
               MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
               echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
@@ -158,6 +162,13 @@ spec:
                 $DENOM \
                 http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
                 "false" || true
+
+              hermes create channel \
+                --new-client-connection --yes \
+                --b-chain cosmoshub-4 \
+                --a-chain osmosis-1 \
+                --a-port transfer \
+                --b-port transfer
           resources:
             limits:
               cpu: '0.2'
@@ -181,6 +192,10 @@ spec:
           env:
             - name: RELAYER_DIR
               value: /root/.hermes
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           command:
             - bash
             - '-c'
@@ -219,11 +234,11 @@ spec:
             - /exposer/exposer
           resources:
             limits:
-              cpu: '0.1'
-              memory: 100M
+              cpu: '0.2'
+              memory: 200M
             requests:
-              cpu: '0.1'
-              memory: 100M
+              cpu: '0.2'
+              memory: 200M
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 0

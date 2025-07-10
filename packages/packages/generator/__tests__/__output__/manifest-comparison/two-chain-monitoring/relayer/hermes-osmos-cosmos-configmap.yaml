@@ -50,9 +50,9 @@ data:
     type = "CosmosSdk"
     key_name = "osmosis-1"
 
-    rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
-    event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+    rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
+    event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
     trusted_node = false
     account_prefix = "osmo"
     default_gas = 500000000
@@ -74,9 +74,9 @@ data:
     type = "CosmosSdk"
     key_name = "cosmoshub-4"
 
-    rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
-    event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+    rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
+    event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
     trusted_node = false
     account_prefix = "cosmos"
     default_gas = 500000000
@@ -131,9 +131,9 @@ data:
     type = "CosmosSdk"
     key_name = "osmosis-1-cli"
 
-    rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
-    event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+    rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
+    event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
     trusted_node = false
     account_prefix = "osmo"
     default_gas = 500000000
@@ -155,9 +155,9 @@ data:
     type = "CosmosSdk"
     key_name = "cosmoshub-4-cli"
 
-    rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-    grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
-    event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+    rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+    grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
+    event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
     trusted_node = false
     account_prefix = "cosmos"
     default_gas = 500000000

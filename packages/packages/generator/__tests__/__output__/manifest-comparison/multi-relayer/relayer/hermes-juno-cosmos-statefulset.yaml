@@ -36,7 +36,7 @@ spec:
     spec:
       initContainers:
         - name: init-exposer
-          image: ghcr.io/cosmology-tech/starship/exposer:v0.2.0
+          image: ghcr.io/hyperweb-io/starship/exposer:20250205-544757d
           imagePullPolicy: IfNotPresent
           command:
             - bash
@@ -56,40 +56,41 @@ spec:
           volumeMounts:
             - mountPath: /exposer
               name: exposer
-        - name: init-juno-2
-          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
+        - name: wait-for-chains
+          image: curlimages/curl:latest
           imagePullPolicy: IfNotPresent
-          command:
-            - bash
-            - '-c'
-          args:
-            - >-
-              echo "Waiting for juno-2 service..."
-
-              wait-for-service
-              juno-2-genesis.$(NAMESPACE).svc.cluster.local:26657
           env:
+            - name: GENESIS_PORT
+              value: '8081'
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-        - name: init-cosmoshub-4
-          image: ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0
-          imagePullPolicy: IfNotPresent
           command:
-            - bash
+            - /bin/sh
             - '-c'
-          args:
-            - >-
-              echo "Waiting for cosmoshub-4 service..."
+            - |-
 
-              wait-for-service
-              cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657
-          env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              while [ $(curl -sw '%{http_code}' http://juno-2-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: juno-2. Waiting for it to start..."
+                echo "Checking: http://juno-2-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+
+              while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+                echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
         - name: init-relayer
           image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
           imagePullPolicy: IfNotPresent
@@ -108,35 +109,27 @@ spec:
             - bash
             - '-c'
           args:
-            - >
+            - |
               set -ux
 
-
               RLY_INDEX=${HOSTNAME##*-}
-
               echo "Relayer Index: $RLY_INDEX"
 
-
               mkdir -p $RELAYER_DIR
-
               cp /configs/config.toml $RELAYER_DIR/config.toml
-
               cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
 
+              # Replace namespace placeholder with actual namespace environment variable
+              sed -i "s|\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+              sed -i "s|\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
 
               MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
-
               echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
-
-              MNEMONIC_CLI=$(jq -r ".relayers_cli[$RLY_INDEX].mnemonic"
-              $KEYS_CONFIG)
-
+              MNEMONIC_CLI=$(jq -r ".relayers_cli[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
               echo $MNEMONIC_CLI > $RELAYER_DIR/mnemonic-cli.txt
 
 
-
               echo "Creating key for juno-2..."
-
               hermes keys add \
                 --chain juno-2 \
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
@@ -144,13 +137,9 @@ spec:
                 --hd-path "m/44'/118'/0'/0/0"
 
               DENOM="ujuno"
-
-              RLY_ADDR=$(hermes --json keys list --chain juno-2 | tail -1 | jq
-              -r '.result."juno-2".account')
-
+              RLY_ADDR=$(hermes --json keys list --chain juno-2 | tail -1 | jq -r '.result."juno-2".account')
 
               echo "Transfer tokens to address $RLY_ADDR"
-
               bash -e /scripts/transfer-tokens.sh \
                 $RLY_ADDR \
                 $DENOM \
@@ -158,7 +147,6 @@ spec:
                 "false" || true
 
               echo "Creating key for cosmoshub-4..."
-
               hermes keys add \
                 --chain cosmoshub-4 \
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
@@ -166,18 +154,21 @@ spec:
                 --hd-path "m/44'/118'/0'/0/0"
 
               DENOM="uatom"
-
-              RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 |
-              jq -r '.result."cosmoshub-4".account')
-
+              RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4".account')
 
               echo "Transfer tokens to address $RLY_ADDR"
-
               bash -e /scripts/transfer-tokens.sh \
                 $RLY_ADDR \
                 $DENOM \
                 http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
                 "false" || true
+
+              hermes create channel \
+                --new-client-connection --yes \
+                --b-chain cosmoshub-4 \
+                --a-chain juno-2 \
+                --a-port transfer \
+                --b-port transfer
           resources:
             limits:
               cpu: '0.2'
@@ -201,6 +192,10 @@ spec:
           env:
             - name: RELAYER_DIR
               value: /root/.hermes
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           command:
             - bash
             - '-c'
@@ -239,11 +234,11 @@ spec:
             - /exposer/exposer
           resources:
             limits:
-              cpu: '0.1'
-              memory: 100M
+              cpu: '0.2'
+              memory: 200M
             requests:
-              cpu: '0.1'
-              memory: 100M
+              cpu: '0.2'
+              memory: 200M
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 0

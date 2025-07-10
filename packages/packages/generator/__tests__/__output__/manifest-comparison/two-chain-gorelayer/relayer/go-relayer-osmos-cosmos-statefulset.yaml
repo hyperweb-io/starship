@@ -66,10 +66,10 @@ spec:
           resources:
             limits:
               cpu: '0.1'
-              memory: 128M
+              memory: 100M
             requests:
               cpu: '0.1'
-              memory: 128M
+              memory: 100M
         - name: init-relayer
           image: ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1
           imagePullPolicy: IfNotPresent
@@ -133,6 +133,13 @@ spec:
                 $DENOM \
                 http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
                 "true" || true
+
+              echo "Adding paths..."
+              rly paths add --file /configs/path.json
+
+
+              echo "Creating client, connection and channel for path0..."
+              rly tx link path0 --src-port transfer --dst-port transfer
           resources:
             limits:
               cpu: '0.2'
@@ -156,6 +163,10 @@ spec:
           env:
             - name: RELAYER_DIR
               value: /root/.relayer
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           command:
             - bash
             - '-c'
