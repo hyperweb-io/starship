@@ -171,6 +171,7 @@ export class RegistryServiceGenerator implements IGenerator {
           }
         },
         spec: {
+          clusterIP: 'None',
           selector: {
             'app.kubernetes.io/name': 'registry'
           },
