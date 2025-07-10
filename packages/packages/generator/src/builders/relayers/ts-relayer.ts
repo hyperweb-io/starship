@@ -345,7 +345,10 @@ export class TsRelayerStatefulSetGenerator implements IGenerator {
         this.relayer.image ||
         'ghcr.io/cosmology-tech/starship/ts-relayer:0.9.0',
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
-      env: [{ name: 'RELAYER_DIR', value: '/root/.ts-relayer' }],
+      env: [
+        { name: 'RELAYER_DIR', value: '/root/.ts-relayer' },
+        { name: 'NAMESPACE', valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } } }
+      ],
       command: ['bash', '-c'],
       args: [
         'RLY_INDEX=${HOSTNAME##*-}\necho "Relayer Index: $RLY_INDEX"\nts-relayer start'

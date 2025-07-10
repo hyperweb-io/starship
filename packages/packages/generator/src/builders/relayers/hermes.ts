@@ -116,14 +116,14 @@ id = "${chainId}"
 type = "CosmosSdk"
 key_name = "${chainId}"
 ${chain.ics?.enabled ? 'ccv_consumer_chain = true' : ''}
-rpc_addr = "http://${chainName}-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://${chainName}-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:9090"
 ${
   eventSourceConfig.mode === 'pull'
     ? `event_source = { mode = 'pull', interval = '${
         eventSourceConfig.interval || '500ms'
       }' }`
-    : `event_source = { mode = 'push', url = "ws://${chainName}-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '${
+    : `event_source = { mode = 'push', url = "ws://${chainName}-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '${
         eventSourceConfig.batch_delay || '500ms'
       }' }`
 }
@@ -354,7 +354,10 @@ export class HermesStatefulSetGenerator implements IGenerator {
       image:
         this.relayer.image || 'ghcr.io/cosmology-tech/starship/hermes:1.10.0',
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
-      env: [{ name: 'RELAYER_DIR', value: '/root/.hermes' }],
+      env: [
+        { name: 'RELAYER_DIR', value: '/root/.hermes' },
+        { name: 'NAMESPACE', valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } } }
+      ],
       command: ['bash', '-c'],
       args: [
         'RLY_INDEX=${HOSTNAME##*-}\necho "Relayer Index: $RLY_INDEX"\nhermes start'
@@ -376,7 +379,7 @@ export class HermesStatefulSetGenerator implements IGenerator {
     containers.push({
       name: 'exposer',
       image:
-        this.relayer.image || 'ghcr.io/cosmology-tech/starship/hermes:1.10.0',
+        this.relayer.image,
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
       env: [
         { name: 'EXPOSER_HTTP_PORT', value: '8081' },
@@ -424,6 +427,10 @@ mkdir -p $RELAYER_DIR
 cp /configs/config.toml $RELAYER_DIR/config.toml
 cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
 
+# Replace namespace placeholder with actual namespace environment variable
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
+
 MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
 echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
 MNEMONIC_CLI=$(jq -r ".relayers_cli[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
@@ -460,24 +467,21 @@ bash -e /scripts/transfer-tokens.sh \\
     // Add channel creation if specified
     if (this.relayer.channels && this.relayer.channels.length > 0) {
       this.relayer.channels.forEach((channel) => {
+        // Build command arguments array and filter out empty values
+        const args = [
+          'hermes create channel',
+          channel['new-connection'] ? '--new-client-connection --yes' : '',
+          channel['b-chain'] ? `--b-chain ${channel['b-chain']}` : '',
+          channel['a-connection'] ? `--a-connection ${channel['a-connection']}` : '',
+          channel['channel-version'] ? `--channel-version ${channel['channel-version']}` : '',
+          channel.order ? `--order ${channel.order}` : '',
+          `--a-chain ${channel['a-chain']}`,
+          `--a-port ${channel['a-port']}`,
+          `--b-port ${channel['b-port']}`
+        ].filter(arg => arg.trim() !== ''); // Remove empty arguments
+
         command += `
-hermes create channel \\
-  ${channel['new-connection'] ? '--new-client-connection --yes \\' : ''}
-  ${channel['b-chain'] ? `--b-chain ${channel['b-chain']} \\` : ''}
-  ${
-    channel['a-connection']
-      ? `--a-connection ${channel['a-connection']} \\`
-      : ''
-  }
-  ${
-    channel['channel-version']
-      ? `--channel-version ${channel['channel-version']} \\`
-      : ''
-  }
-  ${channel.order ? `--order ${channel.order} \\` : ''}
-  --a-chain ${channel['a-chain']} \\
-  --a-port ${channel['a-port']} \\
-  --b-port ${channel['b-port']}
+${args.join(' \\\n  ')}
 `;
       });
     }

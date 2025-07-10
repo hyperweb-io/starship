@@ -1,4 +1,4 @@
-import { StarshipConfig } from '@starship-ci/types';
+import { StarshipConfig, Chain } from '@starship-ci/types';
 import { ConfigMap, Deployment, Service } from 'kubernetesjs';
 
 import * as helpers from '../helpers';
@@ -15,47 +15,134 @@ export class RegistryConfigMapGenerator implements IGenerator {
     this.config = config;
   }
 
+  getChainAssetList(chain: Chain): Record<string, any> {
+    const chainName = chain.name === 'custom' ? chain.id : chain.name;
+    
+    let assets;
+    if (chain.assets && chain.assets.length > 0) {
+      assets = chain.assets;
+    } else {
+      assets = [
+        {
+          description: `The denom for token ${chain.denom}`,
+          base: chain.denom,
+          name: chain.denom,
+          display: chain.denom,
+          symbol: chain.denom.toUpperCase(),
+          denom_units: [
+            {
+              denom: chain.denom,
+              exponent: 0
+            },
+            {
+              denom: chain.denom,
+              exponent: 6
+            }
+          ],
+          coingecko_id: chain.name
+        }
+      ];
+    }
+
+    return {
+      "$schema": "../assetlist.schema.json",
+      chain_name: chainName,
+      assets: assets
+    };
+  }
+
+  getChainConfig(chain: Chain): Record<string, any> {
+    const chainName = chain.name === 'custom' ? chain.id : chain.name;
+    
+    const config: Record<string, any> = {
+      "$schema": "../chain.schema.json",
+      chain_name: chainName,
+      status: "live",
+      network_type: "devnet",
+      chain_id: chain.id,
+      pretty_name: `${chain.prettyName} Devnet`,
+      bech32_prefix: chain.prefix,
+      daemon_name: chain.binary,
+      node_home: chain.home,
+      key_algos: ["secp256k1"],
+      slip44: String(chain.coinType),
+      fees: {
+        fee_tokens: [
+          {
+            denom: chain.denom,
+            fixed_min_gas_price: 0,
+            low_gas_price: 0,
+            average_gas_price: 0.025,
+            high_gas_price: 0.04
+          }
+        ]
+      },
+      staking: {
+        staking_tokens: [
+          {
+            denom: chain.denom
+          }
+        ],
+        lock_duration: {
+          time: "1209600s"
+        }
+      },
+      codebase: {
+        git_repo: chain.repo,
+        compatible_versions: [],
+        binaries: {},
+        ics_enabled: [],
+        versions: [],
+        consensus: {
+          type: "tendermint"
+        }
+      },
+      peers: {
+        seeds: [],
+        persistent_peers: []
+      }
+    };
+
+    // Add explorers section if explorer is enabled (equivalent to Helm's if condition)
+    if (this.config.explorer?.enabled) {
+      config.explorers = [
+        {
+          kind: this.config.explorer.type,
+          url: `http://localhost:${this.config.explorer.ports?.rest}`
+        }
+      ];
+    }
+
+    return config;
+  }
+
   generate(): Array<ConfigMap> {
-    const chainConfigs: Record<string, string> = {};
-    const assetLists: Record<string, string> = {};
+    let configMaps: Array<ConfigMap> = [];
 
     this.config.chains.forEach((chain) => {
-      const hostname = helpers.getChainName(String(chain.id));
-      chainConfigs[`${hostname}.json`] = JSON.stringify({
-        chain_name: chain.name,
-        api: {
-          rpc: `http://${hostname}-genesis.$(NAMESPACE).svc.cluster.local:26657`,
-          grpc: `http://${hostname}-genesis.$(NAMESPACE).svc.cluster.local:9090`,
-          rest: `http://${hostname}-genesis.$(NAMESPACE).svc.cluster.local:1317`
-        },
-        assets: chain.assets || []
-      });
+      const chainConfig = this.getChainConfig(chain);
+      const assetList = this.getChainAssetList(chain);
 
-      assetLists[`${hostname}.json`] = JSON.stringify({
-        chain_name: chain.name,
-        assets: chain.assets || []
-      });
-    });
-
-    return [
-      {
+      configMaps.push({
         apiVersion: 'v1',
         kind: 'ConfigMap',
         metadata: {
-          name: 'registry-config',
+          name: `registry-${helpers.getChainName(String(chain.id))}`,
           labels: {
             ...helpers.getCommonLabels(this.config),
             'app.kubernetes.io/component': 'registry',
             'app.kubernetes.io/part-of': 'starship',
-            'app.kubernetes.io/name': 'registry-config'
+            'app.kubernetes.io/name': `registry-${helpers.getChainName(String(chain.id))}`
           }
         },
         data: {
-          ...chainConfigs,
-          ...assetLists
+          "chain.json": JSON.stringify(chainConfig, null, 2),
+          "assetlist.json": JSON.stringify(assetList, null, 2)
         }
-      }
-    ];
+      });
+    });
+
+    return configMaps;
   }
 }
 
@@ -85,7 +172,7 @@ export class RegistryServiceGenerator implements IGenerator {
         },
         spec: {
           selector: {
-            app: 'registry'
+            'app.kubernetes.io/name': 'registry'
           },
           ports: [
             {
@@ -117,14 +204,14 @@ export class RegistryDeploymentGenerator implements IGenerator {
 
   generate(): Array<Deployment> {
     const volumeMounts = this.config.chains.map((chain) => ({
-      name: `chain-${helpers.getChainName(String(chain.id))}`,
+      name: `registry-${helpers.getChainName(String(chain.id))}`,
       mountPath: `/chains/${chain.id}`
     }));
 
     const volumes = this.config.chains.map((chain) => ({
-      name: `chain-${helpers.getChainName(String(chain.id))}`,
+      name: `registry-${helpers.getChainName(String(chain.id))}`,
       configMap: {
-        name: `chain-${helpers.getChainName(String(chain.id))}`
+        name: `registry-${helpers.getChainName(String(chain.id))}`
       }
     }));
 
@@ -145,37 +232,51 @@ export class RegistryDeploymentGenerator implements IGenerator {
           replicas: 1,
           selector: {
             matchLabels: {
-              app: 'registry'
+              'app.kubernetes.io/name': 'registry'
             }
           },
           template: {
             metadata: {
               labels: {
-                app: 'registry',
-                ...helpers.getCommonLabels(this.config)
+                ...helpers.getCommonLabels(this.config),
+                'app.kubernetes.io/component': 'registry',
+                'app.kubernetes.io/part-of': 'starship',
+                'app.kubernetes.io/name': 'registry'
               }
             },
             spec: {
+              initContainers: [
+                helpers.generateWaitInitContainer(
+                  this.config.chains.map((chain) => String(chain.id)),
+                  this.config.exposer.ports.rest,
+                  this.config
+                )
+              ],
               containers: [
                 {
                   name: 'registry',
                   image: this.config.registry?.image,
-                  ports: [
-                    {
-                      name: 'http',
-                      containerPort: 8080
-                    },
-                    {
-                      name: 'grpc',
-                      containerPort: 9090
-                    }
-                  ],
                   env: [
                     {
+                      name: 'NAMESPACE',
+                      valueFrom: {
+                        fieldRef: {
+                          fieldPath: 'metadata.namespace'
+                        }
+                      }
+                    },
+                    {
+                      name: 'REGISTRY_CHAIN_CLIENT_IDS',
+                      value: this.config.chains.map((chain) => String(chain.id)).join(',')
+                    },
+                    {
+                      name: 'REGISTRY_CHAIN_CLIENT_NAMES',
+                      value: this.config.chains.map((chain) => chain.name).join(',')
+                    },
+                    {
                       name: 'REGISTRY_CHAIN_CLIENT_RPCS',
-                      value: helpers.getChainRpcAddrs(
+                      value: helpers.getChainInternalRpcAddrs(
                         this.config.chains,
-                        this.config
                       )
                     },
                     {
@@ -202,23 +303,24 @@ export class RegistryDeploymentGenerator implements IGenerator {
                     {
                       name: 'REGISTRY_CHAIN_CLIENT_EXPOSERS',
                       value: helpers.getChainExposerAddrs(this.config.chains)
+                    },
+                    {
+                      name: 'REGISTRY_CHAIN_REGISTRY',
+                      value: '/chains'
                     }
+
                   ],
                   volumeMounts,
-                  resources: helpers.getResourceObject(
-                    this.config.registry?.resources
-                  ),
+                  resources: helpers.getResourceObject(this.config.registry?.resources),
                   readinessProbe: {
-                    httpGet: {
-                      path: '/health',
+                    tcpSocket: {
                       port: '8080'
                     },
                     initialDelaySeconds: 5,
                     periodSeconds: 10
                   },
                   livenessProbe: {
-                    httpGet: {
-                      path: '/health',
+                    tcpSocket: {
                       port: '8080'
                     },
                     initialDelaySeconds: 15,

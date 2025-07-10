@@ -219,6 +219,43 @@ export class DefaultsManager {
     // Deep merge the configurations (relayer config takes precedence)
     const mergedRelayer = deepMerge(defaultRelayer, relayerConfig);
 
+    // Auto-generate channels if not provided (equivalent to Helm template logic)
+    if (!mergedRelayer.channels || mergedRelayer.channels.length === 0) {
+      // Check if ICS is enabled
+      if (mergedRelayer.ics?.enabled) {
+        // ICS case: create consumer/provider channel + transfer channel
+        mergedRelayer.channels = [
+          {
+            'a-chain': mergedRelayer.ics.consumer,
+            'a-connection': 'connection-0',
+            'a-port': 'consumer',
+            'b-port': 'provider',
+            order: 'ordered',
+            'channel-version': '1'
+          },
+          {
+            'a-chain': mergedRelayer.ics.consumer,
+            'a-port': 'transfer',
+            'b-port': 'transfer',
+            'a-connection': 'connection-0'
+          }
+        ];
+      } else {
+        // Regular case: create transfer channel between first two chains
+        if (mergedRelayer.chains && mergedRelayer.chains.length >= 2) {
+          mergedRelayer.channels = [
+            {
+              'a-chain': mergedRelayer.chains[0],
+              'b-chain': mergedRelayer.chains[1],
+              'a-port': 'transfer',
+              'b-port': 'transfer',
+              'new-connection': true
+            }
+          ];
+        }
+      }
+    }
+
     return mergedRelayer;
   }
 

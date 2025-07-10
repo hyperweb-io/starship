@@ -141,12 +141,7 @@ export function getNodeResources(
     return getResourceObject(chain.resources);
   }
 
-  return getResourceObject(
-    context.resources?.node || {
-      cpu: '0.5',
-      memory: '500M'
-    }
-  );
+  return getResourceObject(context.resources?.node);
 }
 
 /**

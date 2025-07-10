@@ -271,7 +271,10 @@ export class GoRelayerStatefulSetGenerator implements IGenerator {
         this.relayer.image ||
         'ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1',
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
-      env: [{ name: 'RELAYER_DIR', value: '/root/.relayer' }],
+      env: [
+        { name: 'RELAYER_DIR', value: '/root/.relayer' },
+        { name: 'NAMESPACE', valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } } }
+      ],
       command: ['bash', '-c'],
       args: [
         'RLY_INDEX=${HOSTNAME##*-}\necho "Relayer Index: $RLY_INDEX"\nrly start'

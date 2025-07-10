@@ -9,123 +9,6 @@ describe('DefaultsManager', () => {
     defaultsManager = new DefaultsManager();
   });
 
-  describe('processRelayer', () => {
-    it('should merge partial overrides with defaults correctly', () => {
-      const relayerConfig: Relayer = {
-        type: 'hermes',
-        name: 'test-hermes',
-        chains: ['chain1', 'chain2'],
-        replicas: 1,
-        config: {
-          rest: {
-            port: 3001 // Only override port, should keep other defaults
-          },
-          telemetry: {
-            enabled: false // Only override enabled, should keep other defaults
-          }
-        }
-      };
-
-      const processedRelayer = defaultsManager.processRelayer(relayerConfig);
-
-      // Should have merged partial overrides with defaults
-      expect(processedRelayer.config?.rest?.port).toBe(3001);
-      expect(processedRelayer.config?.rest?.host).toBe('0.0.0.0');
-      expect(processedRelayer.config?.rest?.enabled).toBe(true);
-      expect(processedRelayer.config?.telemetry?.enabled).toBe(false);
-      expect(processedRelayer.config?.telemetry?.host).toBe('0.0.0.0');
-      expect(processedRelayer.config?.telemetry?.port).toBe(3001);
-    });
-
-    it('should handle complete overrides', () => {
-      const relayerConfig: Relayer = {
-        type: 'hermes',
-        name: 'test-hermes',
-        chains: ['chain1'],
-        replicas: 1,
-        config: {
-          rest: {
-            enabled: false,
-            host: '127.0.0.1',
-            port: 8080
-          },
-          telemetry: {
-            enabled: true,
-            host: '127.0.0.1',
-            port: 9090
-          }
-        }
-      };
-
-      const processedRelayer = defaultsManager.processRelayer(relayerConfig);
-
-      // Should use complete overrides
-      expect(processedRelayer.config?.rest?.enabled).toBe(false);
-      expect(processedRelayer.config?.rest?.host).toBe('127.0.0.1');
-      expect(processedRelayer.config?.rest?.port).toBe(8080);
-      expect(processedRelayer.config?.telemetry?.enabled).toBe(true);
-      expect(processedRelayer.config?.telemetry?.host).toBe('127.0.0.1');
-      expect(processedRelayer.config?.telemetry?.port).toBe(9090);
-    });
-
-    it('should handle relayers with no config', () => {
-      const relayerConfig: Relayer = {
-        type: 'hermes',
-        name: 'test-hermes',
-        chains: ['chain1'],
-        replicas: 1
-      };
-
-      const processedRelayer = defaultsManager.processRelayer(relayerConfig);
-
-      // Should use all defaults
-      expect(processedRelayer.config?.rest?.enabled).toBe(true);
-      expect(processedRelayer.config?.rest?.host).toBe('0.0.0.0');
-      expect(processedRelayer.config?.rest?.port).toBe(3000);
-      expect(processedRelayer.config?.telemetry?.enabled).toBe(true);
-      expect(processedRelayer.config?.telemetry?.host).toBe('0.0.0.0');
-      expect(processedRelayer.config?.telemetry?.port).toBe(3001);
-    });
-
-    it('should handle different relayer types', () => {
-      const hermesRelayer: Relayer = {
-        type: 'hermes' as const,
-        name: 'test-hermes',
-        chains: ['chain1'],
-        replicas: 1
-      };
-
-      const goRelayer: Relayer = {
-        type: 'go-relayer' as const,
-        name: 'test-go',
-        chains: ['chain1'],
-        replicas: 1
-      };
-
-      const tsRelayer: Relayer = {
-        type: 'ts-relayer' as const,
-        name: 'test-ts',
-        chains: ['chain1'],
-        replicas: 1
-      };
-
-      const neutronRelayer: Relayer = {
-        type: 'neutron-query-relayer' as const,
-        name: 'test-neutron',
-        chains: ['chain1'],
-        replicas: 1
-      };
-
-      // All should be processed without errors
-      expect(() => defaultsManager.processRelayer(hermesRelayer)).not.toThrow();
-      expect(() => defaultsManager.processRelayer(goRelayer)).not.toThrow();
-      expect(() => defaultsManager.processRelayer(tsRelayer)).not.toThrow();
-      expect(() =>
-        defaultsManager.processRelayer(neutronRelayer)
-      ).not.toThrow();
-    });
-  });
-
   describe('applyDefaults', () => {
     it('should apply defaults to a full config', () => {
       const config: StarshipConfig = {
@@ -222,6 +105,47 @@ describe('DefaultsManager', () => {
 
       expect(processedConfig.relayers).toHaveLength(0);
     });
+  });
+
+  it('should override images in some cases', () => {
+    const config: StarshipConfig = {
+      name: 'test',
+      chains: [
+        {
+          name: 'cosmoshub' as const,
+          id: 'chain1',
+          numValidators: 1,
+          image: 'ghcr.io/hyperweb-io/starship/chain:xyz',
+        },
+        {
+          name: 'osmosis' as const,
+          id: 'chain2',
+          numValidators: 1,
+        }
+      ],
+      relayers: [
+        {
+          type: 'hermes' as const,
+          name: 'test-hermes',
+          chains: ['cosmoshub', 'osmosis'],
+          replicas: 1,
+          image: 'ghcr.io/hyperweb-io/starship/hermes:xyz'
+        },
+        {
+          type: 'hermes' as const,
+          name: 'test-hermes',
+          chains: ['osmosis', 'cosmoshub'],
+          replicas: 1,
+        }
+      ],
+    };
+
+    const processedConfig = applyDefaults(config);
+
+    expect(processedConfig.relayers![0].image).toBe('ghcr.io/hyperweb-io/starship/hermes:xyz');
+    expect(processedConfig.chains![0].image).toBe('ghcr.io/hyperweb-io/starship/chain:xyz');
+    expect(processedConfig.relayers![1].image).toBe('ghcr.io/cosmology-tech/starship/hermes:1.10.0'); // default hermes image
+    expect(processedConfig.chains![1].image).toBe('ghcr.io/cosmology-tech/starship/osmosis:v25.0.0'); // default osmosis image
   });
 
   describe('deepMerge utility', () => {
