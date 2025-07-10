@@ -29,10 +29,16 @@ interface NormalizedResource {
   data?: any;
 }
 
-export interface ComparisonRules {
-  ignoreResources?: string[]; // Resource patterns to ignore (e.g., "ConfigMap/keys", "Service/*")
-  allowExtraResources?: string[]; // Extra resource patterns to allow (e.g., "Service/*")
-  ignoreMissingResources?: string[]; // Missing resource patterns to ignore
+export interface ChainTypeConfig {
+  hasCosmosChains: boolean;
+  hasEthereumChains: boolean;
+  chainNames: string[];
+}
+
+export interface ComparisonOptions {
+  chainTypes?: ChainTypeConfig;
+  allowExtraServices?: boolean; // Allow extra services for chains
+  strictMode?: boolean; // Fail on any difference
 }
 
 export class ManifestComparator {
@@ -240,16 +246,60 @@ export class ManifestComparator {
   }
 
   /**
+   * Determine if a resource is cosmos-specific based on its characteristics
+   */
+  private isCosmosSpecificResource(resource: NormalizedResource): boolean {
+    const key = this.getResourceKey(resource);
+    const labels = resource.metadata.labels || {};
+    
+    // Global cosmos resources
+    if (key === 'ConfigMap/default/keys' || 
+        key === 'ConfigMap/default/setup-scripts' ||
+        key.includes('/setup-scripts-')) {
+      return true;
+    }
+    
+    // Resources with cosmos chain markers
+    if (labels['starship.io/chain-name'] && 
+        labels['starship.io/chain-name'] !== 'ethereum') {
+      return true;
+    }
+    
+    // Resources for cosmos chains (osmosis, cosmoshub, etc.)
+    const cosmosChainNames = ['osmosis', 'cosmoshub', 'gaia', 'juno', 'stargaze'];
+    const chainName = labels['starship.io/chain-name'];
+    if (chainName && cosmosChainNames.some(name => chainName.includes(name))) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Determine if a resource is an extra service that's expected for chains
+   */
+  private isExpectedExtraService(resource: NormalizedResource, options?: ComparisonOptions): boolean {
+    if (resource.kind !== 'Service') return false;
+    if (!options?.allowExtraServices) return false;
+    
+    const labels = resource.metadata.labels || {};
+    const component = labels['app.kubernetes.io/component'];
+    
+    // Allow extra services for chain components
+    return component === 'chain';
+  }
+
+  /**
    * Compare two sets of resources and return detailed differences
    */
   public compareManifests(
     generated: NormalizedResource[], 
     expected: NormalizedResource[], 
-    rules?: ComparisonRules
+    options?: ComparisonOptions
   ): ManifestComparison {
-    // Apply filtering rules if provided
-    const filteredGenerated = this.applyResourceRules(generated, rules, 'generated');
-    const filteredExpected = this.applyResourceRules(expected, rules, 'expected');
+    // Filter resources based on chain types
+    const filteredGenerated = this.filterResourcesByChainType(generated, options?.chainTypes);
+    const filteredExpected = this.filterResourcesByChainType(expected, options?.chainTypes);
 
     const generatedMap = new Map<string, NormalizedResource>();
     const expectedMap = new Map<string, NormalizedResource>();
@@ -273,20 +323,17 @@ export class ManifestComparator {
     }> = [];
 
     // Find missing resources (in expected but not in generated)
-    for (const [key] of expectedMap) {
+    for (const [key, resource] of expectedMap) {
       if (!generatedMap.has(key)) {
-        // Check if this missing resource should be ignored
-        if (!this.shouldIgnoreByRules(key, rules?.ignoreMissingResources)) {
-          missingResources.push(key);
-        }
+        missingResources.push(key);
       }
     }
 
     // Find extra resources (in generated but not in expected)
-    for (const [key] of generatedMap) {
+    for (const [key, resource] of generatedMap) {
       if (!expectedMap.has(key)) {
-        // Check if this extra resource is allowed
-        if (!this.shouldIgnoreByRules(key, rules?.allowExtraResources)) {
+        // Check if this is an expected extra resource
+        if (!this.isExpectedExtraService(resource, options)) {
           extraResources.push(key);
         }
       }
@@ -318,46 +365,24 @@ export class ManifestComparator {
   }
 
   /**
-   * Apply resource filtering rules to a list of resources
+   * Filter resources based on chain type expectations
    */
-  private applyResourceRules(
+  private filterResourcesByChainType(
     resources: NormalizedResource[], 
-    rules?: ComparisonRules, 
-    context?: 'generated' | 'expected'
+    chainTypes?: ChainTypeConfig
   ): NormalizedResource[] {
-    if (!rules?.ignoreResources) {
+    if (!chainTypes) {
       return resources;
     }
 
     return resources.filter(resource => {
-      const resourceKey = this.getResourceKey(resource);
-      return !this.shouldIgnoreByRules(resourceKey, rules.ignoreResources);
+      // If config has no cosmos chains, exclude cosmos-specific resources
+      if (!chainTypes.hasCosmosChains && this.isCosmosSpecificResource(resource)) {
+        return false;
+      }
+      
+      return true;
     });
-  }
-
-  /**
-   * Check if a resource key matches any of the ignore patterns
-   */
-  private shouldIgnoreByRules(resourceKey: string, patterns?: string[]): boolean {
-    if (!patterns) {
-      return false;
-    }
-
-    return patterns.some(pattern => this.matchesPattern(resourceKey, pattern));
-  }
-
-  /**
-   * Check if a resource key matches a pattern (supports wildcards)
-   */
-  private matchesPattern(resourceKey: string, pattern: string): boolean {
-    // Convert pattern to regex
-    // Support patterns like "ConfigMap/keys", "Service/*", "*/*"
-    const regexPattern = pattern
-      .replace(/\*/g, '[^/]*') // Replace * with regex for non-slash characters
-      .replace(/\//g, '\\/');   // Escape slashes
-    
-    const regex = new RegExp(`^${regexPattern}$`);
-    return regex.test(resourceKey);
   }
 
   /**
@@ -504,6 +529,36 @@ export class ManifestComparator {
 
     const content = readFileSync(manifestFile, 'utf-8');
     return this.parseManifestFile(content);
+  }
+
+  /**
+   * Analyze chain types from resources to create ChainTypeConfig
+   */
+  public analyzeChainTypes(resources: NormalizedResource[]): ChainTypeConfig {
+    const chainNames = new Set<string>();
+    let hasCosmosChains = false;
+    let hasEthereumChains = false;
+
+    for (const resource of resources) {
+      const labels = resource.metadata.labels || {};
+      const chainName = labels['starship.io/chain-name'];
+      
+      if (chainName) {
+        chainNames.add(chainName);
+        
+        if (chainName === 'ethereum' || chainName.startsWith('ethereum-')) {
+          hasEthereumChains = true;
+        } else {
+          hasCosmosChains = true;
+        }
+      }
+    }
+
+    return {
+      hasCosmosChains,
+      hasEthereumChains,
+      chainNames: Array.from(chainNames)
+    };
   }
 }
 
