@@ -10,6 +10,7 @@ metadata:
     app.kubernetes.io/part-of: starship
     app.kubernetes.io/name: registry
 spec:
+  clusterIP: None
   selector:
     app.kubernetes.io/name: registry
   ports:
