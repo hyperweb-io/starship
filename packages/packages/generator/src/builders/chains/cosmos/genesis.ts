@@ -31,7 +31,7 @@ export class CosmosGenesisStatefulSetGenerator implements IGenerator {
       'app.kubernetes.io/component': 'chain',
       'app.kubernetes.io/part-of': helpers.getChainId(processedChain),
       'app.kubernetes.io/id': helpers.getChainId(processedChain),
-      'app.kubernetes.io/name': `${helpers.getHostname(processedChain)}-genesis`,
+      'app.kubernetes.io/name': `${helpers.getChainId(processedChain)}-genesis`,
       'app.kubernetes.io/type': `${helpers.getChainId(processedChain)}-statefulset`,
       'app.kubernetes.io/role': 'genesis',
       'starship.io/chain-name': processedChain.name
@@ -225,7 +225,7 @@ export class CosmosGenesisStatefulSetGenerator implements IGenerator {
         ...helpers.getChainEnvVars(chain),
         ...helpers.getTimeoutEnvVars(this.config.timeouts || {}),
         { name: 'KEYS_CONFIG', value: '/configs/keys.json' },
-        { name: 'METRICS', value: String(chain.metrics || false) }
+        { name: 'METRICS', value: String(chain.metrics) }
       ],
       command: ['bash', '-c', this.getConfigInitScript(chain)],
       resources: helpers.getNodeResources(chain, this.config),

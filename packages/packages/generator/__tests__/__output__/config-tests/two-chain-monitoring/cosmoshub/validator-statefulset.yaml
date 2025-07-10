@@ -50,22 +50,22 @@ spec:
           command:
             - /bin/sh
             - '-c'
-            - |2-
+            - |-
 
-                    while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
-                      echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
-                      echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
-                      sleep 10;
-                    done
+              while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+                echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
               echo "Ready to start"
               exit 0
           resources:
             limits:
               cpu: '0.1'
-              memory: 128M
+              memory: 100M
             requests:
               cpu: '0.1'
-              memory: 128M
+              memory: 100M
         - name: init-validator
           image: ghcr.io/cosmology-tech/starship/gaia:v10.0.1
           imagePullPolicy: IfNotPresent
@@ -86,6 +86,22 @@ spec:
               value: gaiad
             - name: CHAIN_ID
               value: cosmoshub-4
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
             - name: GENESIS_HOST
               value: cosmoshub-4-genesis
             - name: GENESIS_PORT
@@ -103,11 +119,9 @@ spec:
           command:
             - bash
             - '-c'
-            - >-
+            - |-
               VAL_INDEX=${HOSTNAME##*-}
-
               echo "Validator Index: $VAL_INDEX"
-
 
 
               if [ -f $CHAIN_DIR/config/genesis.json ]; then
@@ -115,33 +129,19 @@ spec:
                 exit 0
               fi
 
-
               VAL_NAME=$(jq -r ".validators[0].name" $KEYS_CONFIG)-$VAL_INDEX
-
               echo "Validator Index: $VAL_INDEX, Key name: $VAL_NAME"
 
-
               echo "Recover validator $VAL_NAME"
-
               $CHAIN_BIN init $VAL_NAME --chain-id $CHAIN_ID
+              jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $VAL_NAME --index $VAL_INDEX --recover --keyring-backend="test"
 
-              jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add
-              $VAL_NAME --index $VAL_INDEX --recover --keyring-backend="test"
-
-
-              curl
-              http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/genesis
-              -o $CHAIN_DIR/config/genesis.json
-
+              curl http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/genesis -o $CHAIN_DIR/config/genesis.json
               echo "Genesis file that we got....."
-
               cat $CHAIN_DIR/config/genesis.json
 
-
               echo "Create node id json file"
-
               NODE_ID=$($CHAIN_BIN tendermint show-node-id)
-
               echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json
           resources:
             limits:
@@ -177,6 +177,22 @@ spec:
               value: gaiad
             - name: CHAIN_ID
               value: cosmoshub-4
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
             - name: GENESIS_HOST
               value: cosmoshub-4-genesis
             - name: GENESIS_PORT
@@ -192,41 +208,26 @@ spec:
           command:
             - bash
             - '-c'
-            - >-
+            - |-
               VAL_INDEX=${HOSTNAME##*-}
-
               echo "Validator Index: $VAL_INDEX"
 
 
-
               echo "Running setup config script..."
-
               bash -e /scripts/update-config.sh
 
-
-              curl -s
-              http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id
-
-              NODE_ID=$(curl -s
-              http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id
-              | jq -r ".node_id")
-
+              curl -s http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id
+              NODE_ID=$(curl -s http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id | jq -r ".node_id")
               if [[ $NODE_ID == "" ]]; then
                 echo "Node ID is null, exiting early"
                 exit 1
               fi
 
-
               GENESIS_NODE_P2P=$NODE_ID@$GENESIS_HOST.$NAMESPACE.svc.cluster.local:26656
-
               echo "Node P2P: $GENESIS_NODE_P2P"
-
-              sed -i "s/persistent_peers = \"\"/persistent_peers =
-              \"$GENESIS_NODE_P2P\"/g" $CHAIN_DIR/config/config.toml
-
+              sed -i "s/persistent_peers = \"\"/persistent_peers = \"$GENESIS_NODE_P2P\"/g" $CHAIN_DIR/config/config.toml
 
               echo "Printing the whole config.toml file"
-
               cat $CHAIN_DIR/config/config.toml
           resources:
             limits:
@@ -307,32 +308,19 @@ spec:
                   - bash
                   - '-c'
                   - '-e'
-                  - >-
-                    until bash -e /scripts/chain-rpc-ready.sh
-                    http://localhost:26657; do
+                  - |-
+                    until bash -e /scripts/chain-rpc-ready.sh http://localhost:26657; do
                       sleep 10
                     done
 
-
                     set -eux
-
                     export
-
                     VAL_INDEX=${HOSTNAME##*-}
+                    VAL_NAME="$(jq -r ".validators[0].name" $KEYS_CONFIG)-$VAL_INDEX"
+                    echo "Validator Index: $VAL_INDEX, Key name: $VAL_NAME. Chain bin $CHAIN_BIN"
 
-                    VAL_NAME="$(jq -r ".validators[0].name"
-                    $KEYS_CONFIG)-$VAL_INDEX"
-
-                    echo "Validator Index: $VAL_INDEX, Key name: $VAL_NAME.
-                    Chain bin $CHAIN_BIN"
-
-
-                    VAL_ADDR=$($CHAIN_BIN keys show $VAL_NAME -a
-                    --keyring-backend="test")
-
-                    echo "Transfer tokens to address $VAL_ADDR before trying to
-                    create validator. Best effort"
-
+                    VAL_ADDR=$($CHAIN_BIN keys show $VAL_NAME -a --keyring-backend="test")
+                    echo "Transfer tokens to address $VAL_ADDR before trying to create validator. Best effort"
                     bash -e /scripts/transfer-tokens.sh \
                       $VAL_ADDR \
                       $DENOM \
@@ -340,7 +328,6 @@ spec:
                       "false" || true
 
                     $CHAIN_BIN keys list --keyring-backend test | jq
-
                     VAL_NAME=$VAL_NAME bash -e /scripts/create-validator.sh
           readinessProbe:
             exec:
@@ -353,7 +340,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 15
         - name: exposer
-          image: ghcr.io/cosmology-tech/starship/exposer:latest
+          image: ghcr.io/hyperweb-io/starship/exposer:20250205-544757d
           imagePullPolicy: IfNotPresent
           env:
             - name: DENOM
@@ -398,11 +385,11 @@ spec:
             - exposer
           resources:
             limits:
-              cpu: '0.1'
-              memory: 128M
+              cpu: '0.2'
+              memory: 200M
             requests:
-              cpu: '0.1'
-              memory: 128M
+              cpu: '0.2'
+              memory: 200M
           volumeMounts:
             - mountPath: /root/.gaia
               name: node

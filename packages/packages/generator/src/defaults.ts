@@ -268,10 +268,15 @@ export class DefaultsManager {
     const defaultChain = this.getChainDefaults(chainConfig.name);
 
     // Merge configurations (chain config takes precedence)
-    const mergedChain = {
+    let mergedChain = {
       ...defaultChain,
       ...chainConfig
     };
+
+    // set default metrics to false
+    if (mergedChain.metrics === undefined) {
+      mergedChain.metrics = false;
+    }
 
     // Process faucet configuration
     const defaultFaucet = this.getFaucetDefaults('starship');
@@ -361,8 +366,6 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
     );
   }
 
-  console.log('input config:', config);
-
   // Always apply global defaults, merge with existing config if present
   const processedConfig = {
     ...config,
@@ -386,8 +389,6 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
       registry: defaultsManager.processRegistry(config.registry)
     })
   };
-
-  console.log('processedConfig:', processedConfig);
 
   return processedConfig;
 }

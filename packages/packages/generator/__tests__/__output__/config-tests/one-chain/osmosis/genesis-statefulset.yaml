@@ -57,6 +57,22 @@ spec:
               value: osmosisd
             - name: CHAIN_ID
               value: osmosis-1
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
             - name: KEYS_CONFIG
               value: /configs/keys.json
             - name: FAUCET_ENABLED
@@ -68,60 +84,35 @@ spec:
           command:
             - bash
             - '-c'
-            - >-
+            - |-
               VAL_INDEX=${HOSTNAME##*-}
-
               echo "Validator Index: $VAL_INDEX"
-
 
               if [ -f $CHAIN_DIR/config/genesis.json ]; then
                 echo "Genesis file exists, exiting init container"
                 exit 0
               fi
 
-
               echo "Running setup genesis script..."
-
               bash -e /scripts/create-genesis.sh
-
               bash -e /scripts/update-genesis.sh
 
-
               echo "Create node id json file"
-
               NODE_ID=$($CHAIN_BIN tendermint show-node-id)
-
               echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json
 
-
               echo "Create consensus key json file"
-
-              $CHAIN_BIN tendermint show-validator >
-              $CHAIN_DIR/config/consensus_key.json
-
+              $CHAIN_BIN tendermint show-validator > $CHAIN_DIR/config/consensus_key.json
               cat $CHAIN_DIR/config/consensus_key.json
 
-
               echo "Add custom accounts and balances"
+              CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && echo "genesis" || echo "")
 
-              CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related
-              subcommands" && echo "genesis" || echo "")
+              echo "Adding balance to osmo1e9ucjn5fjmetky5wezzcsccp7hqcwzrrhthpf5"
+              $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account osmo1e9ucjn5fjmetky5wezzcsccp7hqcwzrrhthpf5 2000000000000uosmo --keyring-backend="test"
 
-
-              echo "Adding balance to
-              osmo1e9ucjn5fjmetky5wezzcsccp7hqcwzrrhthpf5"
-
-              $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account
-              osmo1e9ucjn5fjmetky5wezzcsccp7hqcwzrrhthpf5 2000000000000uosmo
-              --keyring-backend="test"
-
-
-              echo "Adding balance to
-              osmo10eykchznjdn8jdlwaj5v9wvlmdsp6kxx7u0hv9"
-
-              $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account
-              osmo10eykchznjdn8jdlwaj5v9wvlmdsp6kxx7u0hv9 2000000000000uosmo
-              --keyring-backend="test"
+              echo "Adding balance to osmo10eykchznjdn8jdlwaj5v9wvlmdsp6kxx7u0hv9"
+              $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account osmo10eykchznjdn8jdlwaj5v9wvlmdsp6kxx7u0hv9 2000000000000uosmo --keyring-backend="test"
           resources:
             limits:
               cpu: '0.5'
@@ -156,6 +147,22 @@ spec:
               value: osmosisd
             - name: CHAIN_ID
               value: osmosis-1
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
             - name: KEYS_CONFIG
               value: /configs/keys.json
             - name: METRICS
@@ -163,19 +170,13 @@ spec:
           command:
             - bash
             - '-c'
-            - >-
+            - |-
               VAL_INDEX=${HOSTNAME##*-}
-
               echo "Validator Index: $VAL_INDEX"
-
 
               echo "Running setup config script..."
 
-
-              jq -s '.[0] * .[1]' $CHAIN_DIR/config/genesis.json
-              /patch/genesis.json > $CHAIN_DIR/config/genesis.json.tmp && mv
-              $CHAIN_DIR/config/genesis.json.tmp $CHAIN_DIR/config/genesis.json
-
+              jq -s '.[0] * .[1]' $CHAIN_DIR/config/genesis.json /patch/genesis.json > $CHAIN_DIR/config/genesis.json.tmp && mv $CHAIN_DIR/config/genesis.json.tmp $CHAIN_DIR/config/genesis.json
 
               bash -e /scripts/update-config.sh
           resources:
@@ -272,7 +273,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 15
         - name: exposer
-          image: ghcr.io/cosmology-tech/starship/exposer:latest
+          image: ghcr.io/hyperweb-io/starship/exposer:20250205-544757d
           imagePullPolicy: IfNotPresent
           env:
             - name: GENESIS_HOST
@@ -303,11 +304,11 @@ spec:
             - exposer
           resources:
             limits:
-              cpu: '0.1'
-              memory: 128M
+              cpu: '0.2'
+              memory: 200M
             requests:
-              cpu: '0.1'
-              memory: 128M
+              cpu: '0.2'
+              memory: 200M
           volumeMounts:
             - mountPath: /root/.osmosisd
               name: node
@@ -330,13 +331,10 @@ spec:
           command:
             - bash
             - '-c'
-            - >-
+            - |-
               CREDIT_COINS=""
-
               FEES=""
-
               for coin in ${COINS//,/ }
-
               do
                   amt="${coin//[!0-9]/}"
                   denom="${coin//[0-9]/}"
@@ -359,19 +357,13 @@ spec:
                   fi
               done
 
-
-              export FAUCET_MNEMONIC=$(jq -r ".faucet[0].mnemonic"
-              /configs/keys.json)
-
+              export FAUCET_MNEMONIC=$(jq -r ".faucet[0].mnemonic" /configs/keys.json)
 
               export | grep "FAUCET"
 
-
-              until bash -e /scripts/chain-rpc-ready.sh http://localhost:26657;
-              do
+              until bash -e /scripts/chain-rpc-ready.sh http://localhost:26657; do
                 sleep 10
               done
-
 
               /faucet/faucet --credit-coins="$CREDIT_COINS" --chain-fees="$FEES"
           resources:
@@ -391,7 +383,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /status
-              port: '8000'
+              port: 8000
             initialDelaySeconds: 30
             periodSeconds: 10
       volumes:

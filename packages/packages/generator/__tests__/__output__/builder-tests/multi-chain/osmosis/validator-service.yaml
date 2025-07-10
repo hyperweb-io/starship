@@ -15,41 +15,37 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - name: p2p
-      port: 26656
-      protocol: TCP
-      targetPort: '26656'
     - name: address
       port: 26658
       protocol: TCP
-      targetPort: '26658'
+      targetPort: 26658
     - name: grpc
       port: 9090
       protocol: TCP
-      targetPort: '9090'
+      targetPort: 9090
     - name: grpc-web
       port: 9091
       protocol: TCP
-      targetPort: '9091'
+      targetPort: 9091
+    - name: p2p
+      port: 26656
+      protocol: TCP
+      targetPort: 26656
     - name: rest
       port: 1317
       protocol: TCP
-      targetPort: '1317'
+      targetPort: 1317
     - name: rpc
       port: 26657
       protocol: TCP
-      targetPort: '26657'
-    - name: metrics
-      port: 26660
-      protocol: TCP
-      targetPort: '26660'
+      targetPort: 26657
     - name: exposer
       port: 8081
       protocol: TCP
-      targetPort: '8081'
+      targetPort: 8081
     - name: faucet
       port: 8000
       protocol: TCP
-      targetPort: '8000'
+      targetPort: 8000
   selector:
     app.kubernetes.io/name: osmosis-1-validator

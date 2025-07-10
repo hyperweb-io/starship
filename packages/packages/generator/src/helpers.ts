@@ -149,13 +149,12 @@ export function getNodeResources(
  */
 export function getPortMap(): Record<string, number> {
   return {
-    p2p: 26656,
     address: 26658,
     grpc: 9090,
     'grpc-web': 9091,
+    p2p: 26656,
     rest: 1317,
     rpc: 26657,
-    metrics: 26660,
     exposer: 8081,
     faucet: 8000
   };

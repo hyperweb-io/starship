@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/component: chain
     app.kubernetes.io/part-of: evmos_9000-1
     app.kubernetes.io/id: evmos_9000-1
-    app.kubernetes.io/name: evmos-9000-1-genesis
+    app.kubernetes.io/name: evmos_9000-1-genesis
     app.kubernetes.io/type: evmos_9000-1-statefulset
     app.kubernetes.io/role: genesis
     starship.io/chain-name: evmos

@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/version: 4.0.0-alpha.0
     app.kubernetes.io/managed-by: starship
     app.kubernetes.io/component: chain
-    app.kubernetes.io/name: evmos-9000-1-genesis
+    app.kubernetes.io/name: evmos_9000-1-genesis
     app.kubernetes.io/type: evmos_9000-1-service
     app.kubernetes.io/role: genesis
     starship.io/chain-name: evmos
@@ -15,10 +15,6 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    - name: p2p
-      port: 26656
-      protocol: TCP
-      targetPort: 26656
     - name: address
       port: 26658
       protocol: TCP
@@ -31,6 +27,10 @@ spec:
       port: 9091
       protocol: TCP
       targetPort: 9091
+    - name: p2p
+      port: 26656
+      protocol: TCP
+      targetPort: 26656
     - name: rest
       port: 1317
       protocol: TCP
@@ -39,10 +39,6 @@ spec:
       port: 26657
       protocol: TCP
       targetPort: 26657
-    - name: metrics
-      port: 26660
-      protocol: TCP
-      targetPort: 26660
     - name: exposer
       port: 8081
       protocol: TCP
@@ -52,4 +48,4 @@ spec:
       protocol: TCP
       targetPort: 8000
   selector:
-    app.kubernetes.io/name: evmos-9000-1-genesis
+    app.kubernetes.io/name: evmos_9000-1-genesis

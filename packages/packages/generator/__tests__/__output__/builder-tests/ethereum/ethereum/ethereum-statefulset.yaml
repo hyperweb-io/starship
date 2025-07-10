@@ -59,8 +59,12 @@ spec:
               echo "Copy secrets over"
               cp /config/jwt.hex /etc/secrets/jwt.hex
           resources:
-            requests: {}
-            limits: {}
+            requests:
+              cpu: '0.5'
+              memory: 500M
+            limits:
+              cpu: '0.5'
+              memory: 500M
           volumeMounts:
             - name: secrets
               mountPath: /etc/secrets
@@ -75,14 +79,16 @@ spec:
             - bash
             - '-c'
           args:
-            - >-
+            - |-
               echo "Initializing genesis geth"
-
-              geth --datadir /ethereum/execution init
-              /ethereum/execution/genesis.json
+              geth --datadir /ethereum/execution init /ethereum/execution/genesis.json
           resources:
-            requests: {}
-            limits: {}
+            requests:
+              cpu: '0.5'
+              memory: 500M
+            limits:
+              cpu: '0.5'
+              memory: 500M
           volumeMounts:
             - name: secrets
               mountPath: /etc/secrets
@@ -136,8 +142,12 @@ spec:
                 --nat=none \
                 --log.vmodule=engine=6
           resources:
-            requests: {}
-            limits: {}
+            requests:
+              cpu: '0.5'
+              memory: 500M
+            limits:
+              cpu: '0.5'
+              memory: 500M
           volumeMounts:
             - name: ethereum
               mountPath: /ethereum
@@ -148,11 +158,7 @@ spec:
               command:
                 - /bin/bash
                 - '-c'
-                - >-
-                  curl -s --data
-                  '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}'
-                  -H "Content-Type: application/json" -X POST
-                  http://localhost:8545 | grep -q '"result":false'
+                - 'curl -s --data ''{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}'' -H "Content-Type: application/json" -X POST http://localhost:8545 | grep -q ''"result":false'''
             initialDelaySeconds: 15
             periodSeconds: 10
         - name: beacon-chain
@@ -189,8 +195,12 @@ spec:
                 --minimum-peers-per-subnet=0 \
                 --force-clear-db
           resources:
-            requests: {}
-            limits: {}
+            requests:
+              cpu: '0.5'
+              memory: 500M
+            limits:
+              cpu: '0.5'
+              memory: 500M
           volumeMounts:
             - name: ethereum
               mountPath: /ethereum
@@ -199,7 +209,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /eth/v1/node/health
-              port: '3500'
+              port: 3500
             initialDelaySeconds: 15
             periodSeconds: 20
         - name: validator
@@ -232,8 +242,12 @@ spec:
                 --monitoring-port=8081 \
                 --suggested-fee-recipient=0x0C46c2cAFE097b4f7e1BB868B89e5697eE65f934
           resources:
-            requests: {}
-            limits: {}
+            requests:
+              cpu: '0.5'
+              memory: 500M
+            limits:
+              cpu: '0.5'
+              memory: 500M
           volumeMounts:
             - name: ethereum
               mountPath: /ethereum
@@ -242,7 +256,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /metrics
-              port: '8081'
+              port: 8081
             initialDelaySeconds: 20
             periodSeconds: 30
       volumes:

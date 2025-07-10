@@ -1,0 +1,306 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: osmosis-1-cometmock
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/part-of: osmosis-1
+    app.kubernetes.io/id: osmosis-1
+    app.kubernetes.io/name: osmosis-1-cometmock
+    app.kubernetes.io/type: osmosis-1-statefulset
+    app.kubernetes.io/role: cometmock
+    starship.io/chain-name: osmosis
+spec:
+  serviceName: osmosis-1-cometmock
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: osmosis
+      app.kubernetes.io/name: osmosis-1-cometmock
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: osmosis
+        app.kubernetes.io/type: cometmock
+        app.kubernetes.io/name: osmosis-1-cometmock
+        app.kubernetes.io/rawname: osmosis-1-cometmock
+        app.kubernetes.io/version: 4.0.0-alpha.0
+    spec:
+      initContainers:
+        - name: init-validator
+          image: ghcr.io/cosmology-tech/starship/osmosis:v25.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uosmo
+            - name: COINS
+              value: 100000000000000uosmo,100000000000000uion
+            - name: CHAIN_BIN
+              value: osmosisd
+            - name: CHAIN_DIR
+              value: /root/.osmosisd
+            - name: CODE_REPO
+              value: https://github.com/osmosis-labs/osmosis
+            - name: DAEMON_HOME
+              value: /root/.osmosisd
+            - name: DAEMON_NAME
+              value: osmosisd
+            - name: CHAIN_ID
+              value: osmosis-1
+            - name: GENESIS_HOST
+              value: osmosis-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+          command:
+            - bash
+            - '-c'
+            - |-
+              for i in $(seq 0 0); do
+                mkdir -p /chain/validator-$i/config /chain/validator-$i/data
+                VAL_KEY_NAME="$(jq -r '.validators[0].name' $KEYS_CONFIG)-$i"
+                echo "Adding validator key.... $VAL_KEY_NAME"
+                jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $VAL_KEY_NAME --index $i --recover --keyring-backend="test" --home /chain/validator-$i
+              done
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /chain
+              name: node
+            - mountPath: /scripts
+              name: scripts
+            - mountPath: /configs
+              name: addresses
+        - name: init-wait
+          image: curlimages/curl
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - '-c'
+            - |-
+              while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+                echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys"
+                sleep 10;
+              done
+                  
+              for i in $(seq 0 0); do
+                while [ $(curl -sw '%{http_code}' http://osmosis-1-validator-$i.osmosis-1-validator.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /dev/null) -ne 200 ]; do
+                  echo "Validator does not seem to be ready for: osmosis-1 validator-$i. Waiting for it to start..."
+                  echo "Checking: http://osmosis-1-validator-$i.osmosis-1-validator.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys"
+                  sleep 10;
+                done
+              done
+                    
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
+        - name: init-comet
+          image: ghcr.io/informalsystems/cometmock:v0.37.x
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uosmo
+            - name: COINS
+              value: 100000000000000uosmo,100000000000000uion
+            - name: CHAIN_BIN
+              value: osmosisd
+            - name: CHAIN_DIR
+              value: /root/.osmosisd
+            - name: CODE_REPO
+              value: https://github.com/osmosis-labs/osmosis
+            - name: DAEMON_HOME
+              value: /root/.osmosisd
+            - name: DAEMON_NAME
+              value: osmosisd
+            - name: CHAIN_ID
+              value: osmosis-1
+            - name: GENESIS_HOST
+              value: osmosis-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
+          command:
+            - bash
+            - '-c'
+            - |-
+              mkdir -p /chain/genesis/config
+              mkdir -p /chain/genesis/data
+              curl http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/genesis -o /chain/genesis/config/genesis.json
+              echo "Genesis file that we got....."
+              cat /chain/genesis/config/genesis.json
+
+              ## fetch priv_validator and priv_validator_state of all validators
+              curl http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /chain/genesis/config/priv_validator_key.json
+              echo '{"height":"0","round":0,"step":0}' > /chain/genesis/data/priv_validator_state.json
+                  
+              for i in $(seq 0 0); do
+                mkdir -p /chain/validator-$i/config
+                mkdir -p /chain/validator-$i/data
+                curl http://osmosis-1-validator-$i.osmosis-1-validator.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_key -o /chain/validator-$i/config/node_key.json
+                curl http://osmosis-1-validator-$i.osmosis-1-validator.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /chain/validator-$i/config/priv_validator_key.json
+                echo '{"height":"0","round":0,"step":0}' > /chain/validator-$i/data/priv_validator_state.json
+              done
+                    
+              echo "copy cometmock binary to shared dir"
+              cp /usr/local/bin/cometmock /chain/cometmock
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /chain
+              name: node
+            - mountPath: /scripts
+              name: scripts
+            - mountPath: /configs
+              name: addresses
+      containers:
+        - name: comet
+          image: ghcr.io/cosmology-tech/starship/osmosis:v25.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uosmo
+            - name: COINS
+              value: 100000000000000uosmo,100000000000000uion
+            - name: CHAIN_BIN
+              value: osmosisd
+            - name: CHAIN_DIR
+              value: /root/.osmosisd
+            - name: CODE_REPO
+              value: https://github.com/osmosis-labs/osmosis
+            - name: DAEMON_HOME
+              value: /root/.osmosisd
+            - name: DAEMON_NAME
+              value: osmosisd
+            - name: CHAIN_ID
+              value: osmosis-1
+            - name: GENESIS_HOST
+              value: osmosis-1-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+          command:
+            - bash
+            - '-c'
+            - |-
+              NODE_LISTEN_ADDR_STR="tcp://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26658"
+              NODE_HOME_STR="/chain/genesis"
+                  
+              for i in $(seq 0 0); do
+                NODE_LISTEN_ADDR_STR="tcp://osmosis-1-validator-$i.osmosis-1-validator.$NAMESPACE.svc.cluster.local:26658,$NODE_LISTEN_ADDR_STR"
+                NODE_HOME_STR="/chain/validator-$i,$NODE_HOME_STR"
+              done
+                    
+              /chain/cometmock --block-time=800 $NODE_LISTEN_ADDR_STR /chain/genesis/config/genesis.json tcp://0.0.0.0:22331 $NODE_HOME_STR grpc
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - bash
+                  - '-c'
+                  - '-e'
+                  - |-
+                    set -eux
+
+                    sleep 10
+
+                    for i in $(seq 0 0); do
+                      $CHAIN_BIN keys list --keyring-backend test --home /chain/validator-$i --output json | jq
+                      VAL_KEY_NAME="$(jq -r '.validators[0].name' $KEYS_CONFIG)-$i"
+                      echo "Create validator.... $VAL_KEY_NAME"
+                      VAL_NAME=$VAL_KEY_NAME \
+                        NODE_URL="http://0.0.0.0:22331" \
+                        NODE_ARGS="--home /chain/validator-$i" \
+                        GAS="1000000" \
+                        bash -e /scripts/create-validator.sh
+                    done
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /chain
+              name: node
+            - mountPath: /scripts
+              name: scripts
+            - mountPath: /configs
+              name: addresses
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 22331
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: node
+          emptyDir: {}
+        - name: addresses
+          configMap:
+            name: keys
+        - name: scripts
+          configMap:
+            name: setup-scripts-osmosis-1

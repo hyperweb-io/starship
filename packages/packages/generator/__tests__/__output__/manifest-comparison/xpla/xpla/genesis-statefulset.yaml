@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/component: chain
     app.kubernetes.io/part-of: xpla_1-1
     app.kubernetes.io/id: xpla_1-1
-    app.kubernetes.io/name: xpla-1-1-genesis
+    app.kubernetes.io/name: xpla_1-1-genesis
     app.kubernetes.io/type: xpla_1-1-statefulset
     app.kubernetes.io/role: genesis
     starship.io/chain-name: xpla

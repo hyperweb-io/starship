@@ -10,7 +10,5 @@ metadata:
     app.kubernetes.io/part-of: starship
     app.kubernetes.io/name: explorer
 data:
-  osmosis-1.json: >-
-    {"chain_name":"osmosis-1","coingecko":"osmosis","api":"https://rest.osmosis-1-genesis.starship-test.io:443","rpc":["https://rpc.osmosis-1-genesis.starship-test.io:443"],"snapshot_provider":"","sdk_version":"0.45.6","coin_type":118,"min_tx_fee":"3000","addr_prefix":"osmo","logo":"","assets":[{"base":"uosmo","symbol":"OSMO","exponent":"6","coingecko_id":"osmosis-1","logo":""}]}
-  cosmoshub-4.json: >-
-    {"chain_name":"cosmoshub-4","coingecko":"cosmoshub","api":"https://rest.cosmoshub-4-genesis.starship-test.io:443","rpc":["https://rpc.cosmoshub-4-genesis.starship-test.io:443"],"snapshot_provider":"","sdk_version":"0.45.6","coin_type":118,"min_tx_fee":"3000","addr_prefix":"cosmos","logo":"","assets":[{"base":"uatom","symbol":"COSMOS","exponent":"6","coingecko_id":"cosmoshub-4","logo":""}]}
+  osmosis-1.json: '{"chain_name":"osmosis-1","coingecko":"osmosis","api":"https://rest.osmosis-1-genesis.starship-test.io:443","rpc":["https://rpc.osmosis-1-genesis.starship-test.io:443"],"snapshot_provider":"","sdk_version":"0.45.6","coin_type":118,"min_tx_fee":"3000","addr_prefix":"osmo","logo":"","assets":[{"base":"uosmo","symbol":"OSMO","exponent":"6","coingecko_id":"osmosis-1","logo":""}]}'
+  cosmoshub-4.json: '{"chain_name":"cosmoshub-4","coingecko":"cosmoshub","api":"https://rest.cosmoshub-4-genesis.starship-test.io:443","rpc":["https://rpc.cosmoshub-4-genesis.starship-test.io:443"],"snapshot_provider":"","sdk_version":"0.45.6","coin_type":118,"min_tx_fee":"3000","addr_prefix":"cosmos","logo":"","assets":[{"base":"uatom","symbol":"COSMOS","exponent":"6","coingecko_id":"cosmoshub-4","logo":""}]}'

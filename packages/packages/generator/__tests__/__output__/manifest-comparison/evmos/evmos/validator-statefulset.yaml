@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/component: chain
     app.kubernetes.io/part-of: evmos_9000-1
     app.kubernetes.io/id: evmos_9000-1
-    app.kubernetes.io/name: evmos-9000-1-validator
+    app.kubernetes.io/name: evmos_9000-1-validator
     app.kubernetes.io/type: evmos_9000-1-statefulset
     app.kubernetes.io/role: validator
     starship.io/chain-name: evmos

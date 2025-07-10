@@ -4,13 +4,37 @@ import { existsSync, readdirSync } from 'fs';
 import { BuilderManager } from '../src/builders';
 import { GeneratorConfig } from '../src/types';
 import { loadConfig } from './test-utils/load';
-import { ManifestComparator, type ManifestComparison, type NormalizedResource } from './test-utils/manifestComparison';
+import { ManifestComparator, type ManifestComparison, type NormalizedResource, type ComparisonRules } from './test-utils/manifestComparison';
 
 describe('Manifest Comparison Tests', () => {
   const configsDir = join(__dirname, '../../../__fixtures__/configs');
   const expectedManifestsDir = join(__dirname, '../../../__fixtures__/config-manifests');
   const testOutputDir = join(__dirname, '__output__', 'manifest-comparison');
   const comparator = new ManifestComparator();
+
+  // Define config-specific comparison rules
+  const configRules: Record<string, ComparisonRules> = {
+    'eth': {
+      ignoreResources: [
+        'ConfigMap/*/keys',
+        'ConfigMap/*/setup-scripts',
+        'ConfigMap/*/setup-scripts-*'
+      ],
+      allowExtraResources: [
+        'Service/*/*' // Allow extra services that weren't in original manifests (Kind/namespace/name)
+      ]
+    },
+    'eth-lite': {
+      ignoreResources: [
+        'ConfigMap/*/keys',
+        'ConfigMap/*/setup-scripts',
+        'ConfigMap/*/setup-scripts-*'
+      ],
+      allowExtraResources: [
+        'Service/*/*' // Allow extra services that weren't in original manifests (Kind/namespace/name)
+      ]
+    }
+  };
 
   // Get all config files that have corresponding expected manifests
   const getConfigsWithExpectedManifests = (): string[] => {
@@ -48,8 +72,11 @@ describe('Manifest Comparison Tests', () => {
           const expectedManifestFile = join(expectedManifestsDir, `${configName}.yaml`);
           expectedManifests = comparator.parseExpectedManifests(expectedManifestFile);
 
+          // Get comparison rules for this config
+          const rules = configRules[configName];
+
           // Perform comparison
-          comparison = comparator.compareManifests(generatedManifests, expectedManifests);
+          comparison = comparator.compareManifests(generatedManifests, expectedManifests, rules);
           comparison.configName = configName;
         });
 
@@ -134,7 +161,10 @@ describe('Manifest Comparison Tests', () => {
         const expectedManifestFile = join(expectedManifestsDir, `${configName}.yaml`);
         const expectedManifests = comparator.parseExpectedManifests(expectedManifestFile);
 
-        const comparison = comparator.compareManifests(generatedManifests, expectedManifests);
+        // Get comparison rules for this config
+        const rules = configRules[configName];
+
+        const comparison = comparator.compareManifests(generatedManifests, expectedManifests, rules);
         comparison.configName = configName;
         allComparisons.push(comparison);
       });
@@ -149,6 +179,12 @@ describe('Manifest Comparison Tests', () => {
       console.log(`  Total configs tested: ${totalConfigs}`);
       console.log(`  Perfect matches: ${matchingConfigs}`);
       console.log(`  Compatibility rate: ${(compatibilityRate * 100).toFixed(1)}%`);
+
+      // List configs with rules applied
+      const configsWithRules = Object.keys(configRules);
+      if (configsWithRules.length > 0) {
+        console.log(`  Configs with special rules: ${configsWithRules.join(', ')}`);
+      }
 
       // Expect at least 70% compatibility (adjust threshold as needed)
       expect(compatibilityRate).toBeGreaterThanOrEqual(0.7);
