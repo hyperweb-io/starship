@@ -135,7 +135,6 @@ spec:
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
                 --key-name osmosis-1 \
                 --hd-path "m/44'/118'/0'/0/0"
-
               DENOM="uosmo"
               RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1".account')
 
@@ -146,19 +145,48 @@ spec:
                 http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
                 "false" || true
 
+              echo "Creating key for osmosis-1-cli..."
+              hermes keys add \
+                --chain osmosis-1 \
+                --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \
+                --key-name osmosis-1-cli \
+                --hd-path "m/44'/118'/0'/0/0"
+              RLY_ADDR_CLI=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1-cli".account')
+
+              echo "Transfer tokens to address $RLY_ADDR_CLI"
+              bash -e /scripts/transfer-tokens.sh \
+                $RLY_ADDR_CLI \
+                $DENOM \
+                http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
+                "false" || true
+
               echo "Creating key for juno-2..."
               hermes keys add \
                 --chain juno-2 \
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
                 --key-name juno-2 \
                 --hd-path "m/44'/118'/0'/0/0"
-
               DENOM="ujuno"
               RLY_ADDR=$(hermes --json keys list --chain juno-2 | tail -1 | jq -r '.result."juno-2".account')
 
               echo "Transfer tokens to address $RLY_ADDR"
               bash -e /scripts/transfer-tokens.sh \
                 $RLY_ADDR \
+                $DENOM \
+                http://juno-2-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
+                "false" || true
+
+              echo "Creating key for juno-2-cli..."
+              hermes keys add \
+                --chain juno-2 \
+                --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \
+                --key-name juno-2-cli \
+                --hd-path "m/44'/118'/0'/0/0"
+              RLY_ADDR_CLI=$(hermes --json keys list --chain juno-2 | tail -1 | jq -r '.result."juno-2-cli".account')
+
+              echo "Transfer tokens to address $RLY_ADDR_CLI"
+              bash -e /scripts/transfer-tokens.sh \
+                $RLY_ADDR_CLI \
                 $DENOM \
                 http://juno-2-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
                 "false" || true

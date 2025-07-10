@@ -135,7 +135,6 @@ spec:
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
                 --key-name juno-2 \
                 --hd-path "m/44'/118'/0'/0/0"
-
               DENOM="ujuno"
               RLY_ADDR=$(hermes --json keys list --chain juno-2 | tail -1 | jq -r '.result."juno-2".account')
 
@@ -146,19 +145,48 @@ spec:
                 http://juno-2-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
                 "false" || true
 
+              echo "Creating key for juno-2-cli..."
+              hermes keys add \
+                --chain juno-2 \
+                --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \
+                --key-name juno-2-cli \
+                --hd-path "m/44'/118'/0'/0/0"
+              RLY_ADDR_CLI=$(hermes --json keys list --chain juno-2 | tail -1 | jq -r '.result."juno-2-cli".account')
+
+              echo "Transfer tokens to address $RLY_ADDR_CLI"
+              bash -e /scripts/transfer-tokens.sh \
+                $RLY_ADDR_CLI \
+                $DENOM \
+                http://juno-2-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
+                "false" || true
+
               echo "Creating key for cosmoshub-4..."
               hermes keys add \
                 --chain cosmoshub-4 \
                 --mnemonic-file $RELAYER_DIR/mnemonic.txt \
                 --key-name cosmoshub-4 \
                 --hd-path "m/44'/118'/0'/0/0"
-
               DENOM="uatom"
               RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4".account')
 
               echo "Transfer tokens to address $RLY_ADDR"
               bash -e /scripts/transfer-tokens.sh \
                 $RLY_ADDR \
+                $DENOM \
+                http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
+                "false" || true
+
+              echo "Creating key for cosmoshub-4-cli..."
+              hermes keys add \
+                --chain cosmoshub-4 \
+                --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \
+                --key-name cosmoshub-4-cli \
+                --hd-path "m/44'/118'/0'/0/0"
+              RLY_ADDR_CLI=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4-cli".account')
+
+              echo "Transfer tokens to address $RLY_ADDR_CLI"
+              bash -e /scripts/transfer-tokens.sh \
+                $RLY_ADDR_CLI \
                 $DENOM \
                 http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \
                 "false" || true

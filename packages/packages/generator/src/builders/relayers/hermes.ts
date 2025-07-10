@@ -438,20 +438,22 @@ echo $MNEMONIC_CLI > $RELAYER_DIR/mnemonic-cli.txt
 
 `;
 
-    // Add key creation and funding for each chain
+    // Add key creation and funding for each chain (both regular and CLI keys)
     this.relayer.chains.forEach((chainId) => {
       const chain = this.config.chains.find((c) => String(c.id) === chainId);
       if (!chain) return;
 
       const chainName = helpers.getChainName(String(chain.id));
+      const hdPath = chain.hdPath || "m/44'/118'/0'/0/0";
+      
+      // Create regular key
       command += `
 echo "Creating key for ${chainId}..."
 hermes keys add \\
   --chain ${chainId} \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name ${chainId} \\
-  --hd-path "${chain.hdPath || "m/44'/118'/0'/0/0"}"
-
+  --hd-path "${hdPath}"
 DENOM="${chain.denom}"
 RLY_ADDR=$(hermes --json keys list --chain ${chainId} | tail -1 | jq -r '.result."${chainId}".account')
 
@@ -460,7 +462,22 @@ bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
   $DENOM \\
   http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
-  "${chain.faucet?.enabled || false}" || true
+  "${chain.faucet?.enabled}" || true
+
+echo "Creating key for ${chainId}-cli..."
+hermes keys add \\
+  --chain ${chainId} \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name ${chainId}-cli \\
+  --hd-path "${hdPath}"
+RLY_ADDR_CLI=$(hermes --json keys list --chain ${chainId} | tail -1 | jq -r '.result."${chainId}-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
+  $DENOM \\
+  http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "${chain.faucet?.enabled}" || true
 `;
     });
 
