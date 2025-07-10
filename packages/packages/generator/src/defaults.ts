@@ -146,15 +146,21 @@ export class DefaultsManager {
    */
   processFaucet(faucetConfig?: any): any {
     const defaultGlobalFaucet = this.defaultsData.faucet || {};
-    
+
     // Determine faucet type (default to 'starship')
-    const inputType = faucetConfig && typeof faucetConfig === 'object' ? faucetConfig.type : undefined;
-    const defaultType = defaultGlobalFaucet && typeof defaultGlobalFaucet === 'object' ? (defaultGlobalFaucet as any).type : undefined;
+    const inputType =
+      faucetConfig && typeof faucetConfig === 'object'
+        ? faucetConfig.type
+        : undefined;
+    const defaultType =
+      defaultGlobalFaucet && typeof defaultGlobalFaucet === 'object'
+        ? (defaultGlobalFaucet as any).type
+        : undefined;
     const faucetType = inputType || defaultType || 'starship';
-    
+
     // Get type-specific defaults (includes image)
     const defaultTypeFaucet = this.getFaucetDefaults(faucetType) || {};
-    
+
     // Merge: global defaults + type-specific defaults + input config
     const mergedDefaults = deepMerge(defaultGlobalFaucet, defaultTypeFaucet);
     return deepMerge(mergedDefaults, faucetConfig || {});
@@ -268,7 +274,7 @@ export class DefaultsManager {
     const defaultChain = this.getChainDefaults(chainConfig.name);
 
     // Merge configurations (chain config takes precedence)
-    let mergedChain = {
+    const mergedChain = {
       ...defaultChain,
       ...chainConfig
     };
@@ -371,7 +377,7 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
     ...config,
     chains: processedChains,
     relayers: processedRelayers,
-    
+
     // Always process global configurations with defaults
     exposer: defaultsManager.processExposer(config.exposer || {}),
     faucet: defaultsManager.processFaucet(config.faucet || {}),
@@ -380,7 +386,7 @@ export function applyDefaults(config: StarshipConfig): StarshipConfig {
     images: defaultsManager.processImages(config.images || {}),
     resources: defaultsManager.processResources(config.resources || {}),
     timeouts: defaultsManager.processTimeouts(config.timeouts || {}),
-    
+
     // Optional configurations that only apply if defined
     ...(config.explorer && {
       explorer: defaultsManager.processExplorer(config.explorer)

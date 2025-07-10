@@ -1,14 +1,8 @@
-import { Relayer, StarshipConfig } from '@starship-ci/types';
+import { StarshipConfig } from '@starship-ci/types';
 
-import { applyDefaults, deepMerge, DefaultsManager } from '../src/defaults';
+import { applyDefaults, deepMerge } from '../src/defaults';
 
 describe('DefaultsManager', () => {
-  let defaultsManager: DefaultsManager;
-
-  beforeEach(() => {
-    defaultsManager = new DefaultsManager();
-  });
-
   describe('applyDefaults', () => {
     it('should apply defaults to a full config', () => {
       const config: StarshipConfig = {
@@ -26,7 +20,7 @@ describe('DefaultsManager', () => {
             }
           }
         ],
-        relayers: [],
+        relayers: []
       };
 
       const processedConfig = applyDefaults(config);
@@ -35,10 +29,16 @@ describe('DefaultsManager', () => {
       expect(processedConfig.chains).toHaveLength(1);
       expect(processedConfig.chains![0].faucet?.enabled).toBe(true);
       expect(processedConfig.chains![0].faucet?.type).toBe('cosmjs');
-      expect(processedConfig.chains![0].faucet?.image).toBe('ghcr.io/hyperweb-io/starship/cosmjs-faucet:xyz');
-      expect(processedConfig.exposer?.image).toBe('ghcr.io/hyperweb-io/starship/exposer:20250205-544757d');
+      expect(processedConfig.chains![0].faucet?.image).toBe(
+        'ghcr.io/hyperweb-io/starship/cosmjs-faucet:xyz'
+      );
+      expect(processedConfig.exposer?.image).toBe(
+        'ghcr.io/hyperweb-io/starship/exposer:20250205-544757d'
+      );
       expect(processedConfig.faucet?.enabled).toBe(true);
-      expect(processedConfig.faucet?.image).toBe('ghcr.io/hyperweb-io/starship/faucet:20250325-2207109'); // default faucet
+      expect(processedConfig.faucet?.image).toBe(
+        'ghcr.io/hyperweb-io/starship/faucet:20250325-2207109'
+      ); // default faucet
       expect(processedConfig.monitoring?.enabled).toBe(false);
       expect(processedConfig.ingress?.enabled).toBe(false);
       expect(processedConfig.ingress?.type).toBe('nginx');
@@ -57,15 +57,19 @@ describe('DefaultsManager', () => {
           enabled: true,
           type: 'starship',
           image: 'ghcr.io/hyperweb-io/starship/faucet:xyz'
-        },
+        }
       };
 
       const processedConfig = applyDefaults(config);
 
-      expect(processedConfig.exposer?.image).toBe('ghcr.io/hyperweb-io/starship/exposer:xyz');
+      expect(processedConfig.exposer?.image).toBe(
+        'ghcr.io/hyperweb-io/starship/exposer:xyz'
+      );
       expect(processedConfig.faucet?.enabled).toBe(true);
       expect(processedConfig.faucet?.type).toBe('starship');
-      expect(processedConfig.faucet?.image).toBe('ghcr.io/hyperweb-io/starship/faucet:xyz');
+      expect(processedConfig.faucet?.image).toBe(
+        'ghcr.io/hyperweb-io/starship/faucet:xyz'
+      );
     });
 
     it('should process relayers in a full config', () => {
@@ -115,12 +119,12 @@ describe('DefaultsManager', () => {
           name: 'cosmoshub' as const,
           id: 'chain1',
           numValidators: 1,
-          image: 'ghcr.io/hyperweb-io/starship/chain:xyz',
+          image: 'ghcr.io/hyperweb-io/starship/chain:xyz'
         },
         {
           name: 'osmosis' as const,
           id: 'chain2',
-          numValidators: 1,
+          numValidators: 1
         }
       ],
       relayers: [
@@ -135,17 +139,25 @@ describe('DefaultsManager', () => {
           type: 'hermes' as const,
           name: 'test-hermes',
           chains: ['osmosis', 'cosmoshub'],
-          replicas: 1,
+          replicas: 1
         }
-      ],
+      ]
     };
 
     const processedConfig = applyDefaults(config);
 
-    expect(processedConfig.relayers![0].image).toBe('ghcr.io/hyperweb-io/starship/hermes:xyz');
-    expect(processedConfig.chains![0].image).toBe('ghcr.io/hyperweb-io/starship/chain:xyz');
-    expect(processedConfig.relayers![1].image).toBe('ghcr.io/cosmology-tech/starship/hermes:1.10.0'); // default hermes image
-    expect(processedConfig.chains![1].image).toBe('ghcr.io/cosmology-tech/starship/osmosis:v25.0.0'); // default osmosis image
+    expect(processedConfig.relayers![0].image).toBe(
+      'ghcr.io/hyperweb-io/starship/hermes:xyz'
+    );
+    expect(processedConfig.chains![0].image).toBe(
+      'ghcr.io/hyperweb-io/starship/chain:xyz'
+    );
+    expect(processedConfig.relayers![1].image).toBe(
+      'ghcr.io/cosmology-tech/starship/hermes:1.10.0'
+    ); // default hermes image
+    expect(processedConfig.chains![1].image).toBe(
+      'ghcr.io/cosmology-tech/starship/osmosis:v25.0.0'
+    ); // default osmosis image
   });
 
   describe('deepMerge utility', () => {

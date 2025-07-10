@@ -356,7 +356,10 @@ export class HermesStatefulSetGenerator implements IGenerator {
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
       env: [
         { name: 'RELAYER_DIR', value: '/root/.hermes' },
-        { name: 'NAMESPACE', valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } } }
+        {
+          name: 'NAMESPACE',
+          valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } }
+        }
       ],
       command: ['bash', '-c'],
       args: [
@@ -378,8 +381,7 @@ export class HermesStatefulSetGenerator implements IGenerator {
     // Exposer container
     containers.push({
       name: 'exposer',
-      image:
-        this.relayer.image,
+      image: this.relayer.image,
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
       env: [
         { name: 'EXPOSER_HTTP_PORT', value: '8081' },
@@ -445,7 +447,7 @@ echo $MNEMONIC_CLI > $RELAYER_DIR/mnemonic-cli.txt
 
       const chainName = helpers.getChainName(String(chain.id));
       const hdPath = chain.hdPath || "m/44'/118'/0'/0/0";
-      
+
       // Create regular key
       command += `
 echo "Creating key for ${chainId}..."
@@ -489,13 +491,17 @@ bash -e /scripts/transfer-tokens.sh \\
           'hermes create channel',
           channel['new-connection'] ? '--new-client-connection --yes' : '',
           channel['b-chain'] ? `--b-chain ${channel['b-chain']}` : '',
-          channel['a-connection'] ? `--a-connection ${channel['a-connection']}` : '',
-          channel['channel-version'] ? `--channel-version ${channel['channel-version']}` : '',
+          channel['a-connection']
+            ? `--a-connection ${channel['a-connection']}`
+            : '',
+          channel['channel-version']
+            ? `--channel-version ${channel['channel-version']}`
+            : '',
           channel.order ? `--order ${channel.order}` : '',
           `--a-chain ${channel['a-chain']}`,
           `--a-port ${channel['a-port']}`,
           `--b-port ${channel['b-port']}`
-        ].filter(arg => arg.trim() !== ''); // Remove empty arguments
+        ].filter((arg) => arg.trim() !== ''); // Remove empty arguments
 
         command += `
 ${args.join(' \\\n  ')}

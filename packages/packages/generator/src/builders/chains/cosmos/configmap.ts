@@ -92,7 +92,9 @@ export class GlobalScriptsConfigMapGenerator implements IGenerator {
         if (fs.existsSync(filePath)) {
           data[fileName] = fs.readFileSync(filePath, 'utf-8');
         } else {
-          console.warn(`Warning: Required script ${fileName} not found in ${scriptsDir}. Skipping.`);
+          console.warn(
+            `Warning: Required script ${fileName} not found in ${scriptsDir}. Skipping.`
+          );
         }
       });
 

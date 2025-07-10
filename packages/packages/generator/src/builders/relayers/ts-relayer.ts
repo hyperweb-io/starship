@@ -347,7 +347,10 @@ export class TsRelayerStatefulSetGenerator implements IGenerator {
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
       env: [
         { name: 'RELAYER_DIR', value: '/root/.ts-relayer' },
-        { name: 'NAMESPACE', valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } } }
+        {
+          name: 'NAMESPACE',
+          valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } }
+        }
       ],
       command: ['bash', '-c'],
       args: [

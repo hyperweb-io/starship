@@ -12,7 +12,17 @@ class CosmosGenesisServiceGenerator implements IGenerator {
   constructor(chain: Chain, config: StarshipConfig) {
     this.config = config;
     this.chain = chain;
-    this.ports = ['p2p', 'address', 'grpc', 'grpc-web', 'rest', 'rpc', 'metrics', 'exposer', 'faucet'];
+    this.ports = [
+      'p2p',
+      'address',
+      'grpc',
+      'grpc-web',
+      'rest',
+      'rpc',
+      'metrics',
+      'exposer',
+      'faucet'
+    ];
   }
 
   labels(): Record<string, string> {

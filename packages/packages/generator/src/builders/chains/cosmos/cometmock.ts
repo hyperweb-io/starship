@@ -193,7 +193,10 @@ export class CometMockStatefulSetGenerator implements IGenerator {
     };
   }
 
-  private createWaitInitContainer(chain: Chain, exposerPort: number): Container {
+  private createWaitInitContainer(
+    chain: Chain,
+    exposerPort: number
+  ): Container {
     return {
       name: 'init-wait',
       image: 'curlimages/curl',
@@ -216,12 +219,14 @@ export class CometMockStatefulSetGenerator implements IGenerator {
     };
   }
 
-  private createCometInitContainer(chain: Chain, exposerPort: number): Container {
+  private createCometInitContainer(
+    chain: Chain,
+    exposerPort: number
+  ): Container {
     return {
       name: 'init-comet',
       image:
-        chain.cometmock?.image ||
-        'ghcr.io/informalsystems/cometmock:v0.37.x',
+        chain.cometmock?.image || 'ghcr.io/informalsystems/cometmock:v0.37.x',
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
       env: [
         ...helpers.getDefaultEnvVars(chain),
@@ -261,7 +266,12 @@ export class CometMockStatefulSetGenerator implements IGenerator {
             lifecycle: {
               postStart: {
                 exec: {
-                  command: ['bash', '-c', '-e', this.getCometPostStartScript(chain)]
+                  command: [
+                    'bash',
+                    '-c',
+                    '-e',
+                    this.getCometPostStartScript(chain)
+                  ]
                 }
               }
             }
@@ -368,8 +378,9 @@ cp /usr/local/bin/cometmock /chain/cometmock
 
   private getCometContainerScript(chain: Chain): string {
     const chainHostname = helpers.getHostname(chain);
-    const blockTime = this.config.timeouts?.timeout_commit?.replace('ms', '') || '800';
-    
+    const blockTime =
+      this.config.timeouts?.timeout_commit?.replace('ms', '') || '800';
+
     let script = `
 NODE_LISTEN_ADDR_STR="tcp://${chainHostname}-genesis.$NAMESPACE.svc.cluster.local:26658"
 NODE_HOME_STR="/chain/genesis"
@@ -443,4 +454,4 @@ export class CometMockGenerator implements IGenerator {
   generate(): Array<Manifest> {
     return this.generators.flatMap((generator) => generator.generate());
   }
-} 
+}

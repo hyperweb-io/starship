@@ -1,7 +1,7 @@
-import { existsSync, readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
-import * as yaml from 'js-yaml';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { diff } from 'jest-diff';
+import * as yaml from 'js-yaml';
+import { join } from 'path';
 
 interface ManifestComparison {
   configName: string;
@@ -46,19 +46,20 @@ export class ManifestComparator {
    * Parse a YAML file containing multiple documents separated by ---
    */
   private parseManifestFile(content: string): NormalizedResource[] {
-    const documents = content.split(/^---$/m)
-      .map(doc => doc.trim())
-      .filter(doc => doc.length > 0);
-    
+    const documents = content
+      .split(/^---$/m)
+      .map((doc) => doc.trim())
+      .filter((doc) => doc.length > 0);
+
     return documents
-      .map(doc => {
+      .map((doc) => {
         try {
           // Remove leading comments to find the actual YAML content
           const yamlContent = doc.replace(/^#.*$/gm, '').trim();
           if (yamlContent.length === 0) {
             return null;
           }
-          
+
           const parsed = yaml.load(yamlContent) as any;
           return this.normalizeResource(parsed);
         } catch (error) {
@@ -82,9 +83,15 @@ export class ManifestComparator {
       kind: resource.kind,
       metadata: {
         name: resource.metadata.name,
-        ...(resource.metadata.namespace && { namespace: resource.metadata.namespace }),
-        ...(resource.metadata.labels && { labels: { ...resource.metadata.labels } }),
-        ...(resource.metadata.annotations && { annotations: { ...resource.metadata.annotations } })
+        ...(resource.metadata.namespace && {
+          namespace: resource.metadata.namespace
+        }),
+        ...(resource.metadata.labels && {
+          labels: { ...resource.metadata.labels }
+        }),
+        ...(resource.metadata.annotations && {
+          annotations: { ...resource.metadata.annotations }
+        })
       }
     };
 
@@ -133,28 +140,36 @@ export class ManifestComparator {
    * Normalize arrays by sorting them when possible
    */
   private normalizeArray(arr: any[]): any[] {
-    const normalized = arr.map(item => this.deepNormalize(item));
-    
+    const normalized = arr.map((item) => this.deepNormalize(item));
+
     // Try to sort arrays that contain objects with name or key fields
     try {
-      if (normalized.length > 0 && typeof normalized[0] === 'object' && normalized[0] !== null) {
+      if (
+        normalized.length > 0 &&
+        typeof normalized[0] === 'object' &&
+        normalized[0] !== null
+      ) {
         const firstItem = normalized[0];
-        
+
         // Sort by name field if it exists
         if ('name' in firstItem) {
-          return normalized.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+          return normalized.sort((a, b) =>
+            String(a.name).localeCompare(String(b.name))
+          );
         }
-        
+
         // Sort by key field if it exists
         if ('key' in firstItem) {
-          return normalized.sort((a, b) => String(a.key).localeCompare(String(b.key)));
+          return normalized.sort((a, b) =>
+            String(a.key).localeCompare(String(b.key))
+          );
         }
-        
+
         // For ports, sort by port number or name
         if ('port' in firstItem) {
           return normalized.sort((a, b) => {
-            const aPort = typeof a.port === 'number' ? a.port : (a.name || '');
-            const bPort = typeof b.port === 'number' ? b.port : (b.name || '');
+            const aPort = typeof a.port === 'number' ? a.port : a.name || '';
+            const bPort = typeof b.port === 'number' ? b.port : b.name || '';
             return String(aPort).localeCompare(String(bPort));
           });
         }
@@ -162,7 +177,7 @@ export class ManifestComparator {
     } catch (error) {
       // If sorting fails, return the normalized array as-is
     }
-    
+
     return normalized;
   }
 
@@ -178,8 +193,8 @@ export class ManifestComparator {
     } catch {
       // Not JSON, apply other normalizations
       return str
-        .replace(/,\s*\n/g, '\n')  // Remove trailing commas before newlines
-        .replace(/,\s*$/gm, '')    // Remove trailing commas at end of lines
+        .replace(/,\s*\n/g, '\n') // Remove trailing commas before newlines
+        .replace(/,\s*$/gm, '') // Remove trailing commas at end of lines
         .trim();
     }
   }
@@ -189,7 +204,7 @@ export class ManifestComparator {
    */
   private normalizeDataFields(data: Record<string, any>): Record<string, any> {
     const normalized: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {
         normalized[key] = this.normalizeString(value);
@@ -197,7 +212,7 @@ export class ManifestComparator {
         normalized[key] = this.deepNormalize(value);
       }
     }
-    
+
     return normalized;
   }
 
@@ -210,7 +225,7 @@ export class ManifestComparator {
       // Remove Helm-specific annotations that won't be in generated manifests
       delete resource.metadata.annotations['meta.helm.sh/release-name'];
       delete resource.metadata.annotations['meta.helm.sh/release-namespace'];
-      
+
       // Remove empty annotations object
       if (Object.keys(resource.metadata.annotations).length === 0) {
         delete resource.metadata.annotations;
@@ -230,7 +245,7 @@ export class ManifestComparator {
       // For Services, normalize ports if needed
       if (resource.kind === 'Service' && resource.spec.ports) {
         resource.spec.ports = resource.spec.ports.map((port: any) => ({
-          ...port,
+          ...port
           // Ensure consistent ordering of port fields
         }));
       }
@@ -251,40 +266,56 @@ export class ManifestComparator {
   private isCosmosSpecificResource(resource: NormalizedResource): boolean {
     const key = this.getResourceKey(resource);
     const labels = resource.metadata.labels || {};
-    
+
     // Global cosmos resources
-    if (key === 'ConfigMap/default/keys' || 
-        key === 'ConfigMap/default/setup-scripts' ||
-        key.includes('/setup-scripts-')) {
+    if (
+      key === 'ConfigMap/default/keys' ||
+      key === 'ConfigMap/default/setup-scripts' ||
+      key.includes('/setup-scripts-')
+    ) {
       return true;
     }
-    
+
     // Resources with cosmos chain markers
-    if (labels['starship.io/chain-name'] && 
-        labels['starship.io/chain-name'] !== 'ethereum') {
+    if (
+      labels['starship.io/chain-name'] &&
+      labels['starship.io/chain-name'] !== 'ethereum'
+    ) {
       return true;
     }
-    
+
     // Resources for cosmos chains (osmosis, cosmoshub, etc.)
-    const cosmosChainNames = ['osmosis', 'cosmoshub', 'gaia', 'juno', 'stargaze'];
+    const cosmosChainNames = [
+      'osmosis',
+      'cosmoshub',
+      'gaia',
+      'juno',
+      'stargaze'
+    ];
     const chainName = labels['starship.io/chain-name'];
-    if (chainName && cosmosChainNames.some(name => chainName.includes(name))) {
+    if (
+      chainName &&
+      cosmosChainNames.some((name) => chainName.includes(name))
+    ) {
       return true;
     }
-    
+
     return false;
   }
 
   /**
    * Determine if a resource is an extra service that's expected for chains
    */
-  private isExpectedExtraService(resource: NormalizedResource, options?: ComparisonOptions): boolean {
+  private isExpectedExtraService(
+    resource: NormalizedResource,
+    options?: ComparisonOptions
+  ): boolean {
     if (resource.kind !== 'Service') return false;
     if (!options?.allowExtraServices) return false;
-    
+
     const labels = resource.metadata.labels || {};
     const component = labels['app.kubernetes.io/component'];
-    
+
     // Allow extra services for chain components
     return component === 'chain';
   }
@@ -293,23 +324,29 @@ export class ManifestComparator {
    * Compare two sets of resources and return detailed differences
    */
   public compareManifests(
-    generated: NormalizedResource[], 
-    expected: NormalizedResource[], 
+    generated: NormalizedResource[],
+    expected: NormalizedResource[],
     options?: ComparisonOptions
   ): ManifestComparison {
     // Filter resources based on chain types
-    const filteredGenerated = this.filterResourcesByChainType(generated, options?.chainTypes);
-    const filteredExpected = this.filterResourcesByChainType(expected, options?.chainTypes);
+    const filteredGenerated = this.filterResourcesByChainType(
+      generated,
+      options?.chainTypes
+    );
+    const filteredExpected = this.filterResourcesByChainType(
+      expected,
+      options?.chainTypes
+    );
 
     const generatedMap = new Map<string, NormalizedResource>();
     const expectedMap = new Map<string, NormalizedResource>();
 
     // Index resources by their keys
-    filteredGenerated.forEach(resource => {
+    filteredGenerated.forEach((resource) => {
       generatedMap.set(this.getResourceKey(resource), resource);
     });
 
-    filteredExpected.forEach(resource => {
+    filteredExpected.forEach((resource) => {
       expectedMap.set(this.getResourceKey(resource), resource);
     });
 
@@ -323,7 +360,7 @@ export class ManifestComparator {
     }> = [];
 
     // Find missing resources (in expected but not in generated)
-    for (const [key, resource] of expectedMap) {
+    for (const [key] of expectedMap) {
       if (!generatedMap.has(key)) {
         missingResources.push(key);
       }
@@ -343,7 +380,10 @@ export class ManifestComparator {
     for (const [key, generatedResource] of generatedMap) {
       const expectedResource = expectedMap.get(key);
       if (expectedResource) {
-        const differences = this.compareResources(generatedResource, expectedResource);
+        const differences = this.compareResources(
+          generatedResource,
+          expectedResource
+        );
         if (differences) {
           modifiedResources.push({
             kind: generatedResource.kind,
@@ -357,7 +397,10 @@ export class ManifestComparator {
 
     return {
       configName: '', // Will be set by caller
-      hasMismatches: missingResources.length > 0 || extraResources.length > 0 || modifiedResources.length > 0,
+      hasMismatches:
+        missingResources.length > 0 ||
+        extraResources.length > 0 ||
+        modifiedResources.length > 0,
       missingResources,
       extraResources,
       modifiedResources
@@ -368,19 +411,22 @@ export class ManifestComparator {
    * Filter resources based on chain type expectations
    */
   private filterResourcesByChainType(
-    resources: NormalizedResource[], 
+    resources: NormalizedResource[],
     chainTypes?: ChainTypeConfig
   ): NormalizedResource[] {
     if (!chainTypes) {
       return resources;
     }
 
-    return resources.filter(resource => {
+    return resources.filter((resource) => {
       // If config has no cosmos chains, exclude cosmos-specific resources
-      if (!chainTypes.hasCosmosChains && this.isCosmosSpecificResource(resource)) {
+      if (
+        !chainTypes.hasCosmosChains &&
+        this.isCosmosSpecificResource(resource)
+      ) {
         return false;
       }
-      
+
       return true;
     });
   }
@@ -388,7 +434,10 @@ export class ManifestComparator {
   /**
    * Compare two individual resources and return diff string if different
    */
-  private compareResources(generated: NormalizedResource, expected: NormalizedResource): string | null {
+  private compareResources(
+    generated: NormalizedResource,
+    expected: NormalizedResource
+  ): string | null {
     // Special handling for labels - allow extra labels in generated
     const generatedForComparison = { ...generated };
     const expectedForComparison = { ...expected };
@@ -401,16 +450,16 @@ export class ManifestComparator {
           missingLabels.push(`${key}: ${value}`);
         }
       }
-      
+
       if (missingLabels.length > 0) {
         return `Missing expected labels: ${missingLabels.join(', ')}`;
       }
-      
+
       // For comparison, only include the expected labels in generated
       generatedForComparison.metadata = {
         ...generatedForComparison.metadata,
         labels: Object.fromEntries(
-          Object.entries(expected.metadata.labels).map(([key, value]) => [
+          Object.entries(expected.metadata.labels).map(([key]) => [
             key,
             generated.metadata.labels![key]
           ])
@@ -427,7 +476,10 @@ export class ManifestComparator {
     });
 
     // If Jest's diff indicates no difference, return null
-    if (differences && differences.includes('Compared values have no visual difference')) {
+    if (
+      differences &&
+      differences.includes('Compared values have no visual difference')
+    ) {
       return null;
     }
 
@@ -446,39 +498,41 @@ export class ManifestComparator {
     // Split into lines and check if differences are only formatting
     const lines = diffString.split('\n');
     let hasSignificantDiff = false;
-    
+
     for (const line of lines) {
       const trimmedLine = line.trim();
-      
+
       // Skip metadata lines
-      if (trimmedLine.startsWith('@@') || 
-          trimmedLine.includes('Expected (reference)') || 
-          trimmedLine.includes('Generated (actual)')) {
+      if (
+        trimmedLine.startsWith('@@') ||
+        trimmedLine.includes('Expected (reference)') ||
+        trimmedLine.includes('Generated (actual)')
+      ) {
         continue;
       }
-      
+
       // Check for significant differences
       if (trimmedLine.startsWith('-') || trimmedLine.startsWith('+')) {
         const content = trimmedLine.substring(1).trim();
-        
+
         // Skip empty lines
         if (content === '') continue;
-        
+
         // Skip lines that are just quotes or commas
         if (content === '",' || content === '"' || content === ',') {
           continue;
         }
-        
+
         // Skip lines that only differ by trailing commas or quotes
         const withoutTrailing = content.replace(/[",]*$/, '');
         if (withoutTrailing === '') continue;
-        
+
         // If we get here, it's a significant difference
         hasSignificantDiff = true;
         break;
       }
     }
-    
+
     return !hasSignificantDiff;
   }
 
@@ -487,7 +541,7 @@ export class ManifestComparator {
    */
   public parseGeneratedManifests(outputDir: string): NormalizedResource[] {
     const manifests: NormalizedResource[] = [];
-    
+
     if (!existsSync(outputDir)) {
       throw new Error(`Output directory does not exist: ${outputDir}`);
     }
@@ -495,7 +549,7 @@ export class ManifestComparator {
     // Recursively find all YAML files
     const findYamlFiles = (dir: string): string[] => {
       const files: string[] = [];
-      
+
       const items = readdirSync(dir, { withFileTypes: true });
       for (const item of items) {
         const fullPath = join(dir, item.name);
@@ -509,7 +563,7 @@ export class ManifestComparator {
     };
 
     const yamlFiles = findYamlFiles(outputDir);
-    
+
     for (const file of yamlFiles) {
       const content = readFileSync(file, 'utf-8');
       const resources = this.parseManifestFile(content);
@@ -542,10 +596,10 @@ export class ManifestComparator {
     for (const resource of resources) {
       const labels = resource.metadata.labels || {};
       const chainName = labels['starship.io/chain-name'];
-      
+
       if (chainName) {
         chainNames.add(chainName);
-        
+
         if (chainName === 'ethereum' || chainName.startsWith('ethereum-')) {
           hasEthereumChains = true;
         } else {

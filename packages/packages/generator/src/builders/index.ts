@@ -12,8 +12,6 @@ import { MonitoringBuilder } from './monitoring';
 import { RegistryBuilder } from './registry';
 import { RelayerBuilder } from './relayers';
 
-import { IntOrString } from 'kubernetesjs';
-
 export class BuilderManager {
   private config: GeneratorConfig;
 
@@ -31,37 +29,163 @@ export class BuilderManager {
    */
   private readonly INT_OR_STRING_FIELDS = [
     // Service ports
-    { path: ['spec', 'ports', '*', 'targetPort'], description: 'Service targetPort' },
-    
+    {
+      path: ['spec', 'ports', '*', 'targetPort'],
+      description: 'Service targetPort'
+    },
+
     // Container probes - direct containers
-    { path: ['spec', 'containers', '*', 'livenessProbe', 'httpGet', 'port'], description: 'Container liveness HTTP probe port' },
-    { path: ['spec', 'containers', '*', 'readinessProbe', 'httpGet', 'port'], description: 'Container readiness HTTP probe port' },
-    { path: ['spec', 'containers', '*', 'startupProbe', 'httpGet', 'port'], description: 'Container startup HTTP probe port' },
-    { path: ['spec', 'containers', '*', 'livenessProbe', 'tcpSocket', 'port'], description: 'Container liveness TCP probe port' },
-    { path: ['spec', 'containers', '*', 'readinessProbe', 'tcpSocket', 'port'], description: 'Container readiness TCP probe port' },
-    { path: ['spec', 'containers', '*', 'startupProbe', 'tcpSocket', 'port'], description: 'Container startup TCP probe port' },
-    
+    {
+      path: ['spec', 'containers', '*', 'livenessProbe', 'httpGet', 'port'],
+      description: 'Container liveness HTTP probe port'
+    },
+    {
+      path: ['spec', 'containers', '*', 'readinessProbe', 'httpGet', 'port'],
+      description: 'Container readiness HTTP probe port'
+    },
+    {
+      path: ['spec', 'containers', '*', 'startupProbe', 'httpGet', 'port'],
+      description: 'Container startup HTTP probe port'
+    },
+    {
+      path: ['spec', 'containers', '*', 'livenessProbe', 'tcpSocket', 'port'],
+      description: 'Container liveness TCP probe port'
+    },
+    {
+      path: ['spec', 'containers', '*', 'readinessProbe', 'tcpSocket', 'port'],
+      description: 'Container readiness TCP probe port'
+    },
+    {
+      path: ['spec', 'containers', '*', 'startupProbe', 'tcpSocket', 'port'],
+      description: 'Container startup TCP probe port'
+    },
+
     // Pod template containers (Deployment/StatefulSet/etc)
-    { path: ['spec', 'template', 'spec', 'containers', '*', 'livenessProbe', 'httpGet', 'port'], description: 'Pod template liveness HTTP probe port' },
-    { path: ['spec', 'template', 'spec', 'containers', '*', 'readinessProbe', 'httpGet', 'port'], description: 'Pod template readiness HTTP probe port' },
-    { path: ['spec', 'template', 'spec', 'containers', '*', 'startupProbe', 'httpGet', 'port'], description: 'Pod template startup HTTP probe port' },
-    { path: ['spec', 'template', 'spec', 'containers', '*', 'livenessProbe', 'tcpSocket', 'port'], description: 'Pod template liveness TCP probe port' },
-    { path: ['spec', 'template', 'spec', 'containers', '*', 'readinessProbe', 'tcpSocket', 'port'], description: 'Pod template readiness TCP probe port' },
-    { path: ['spec', 'template', 'spec', 'containers', '*', 'startupProbe', 'tcpSocket', 'port'], description: 'Pod template startup TCP probe port' },
-    
+    {
+      path: [
+        'spec',
+        'template',
+        'spec',
+        'containers',
+        '*',
+        'livenessProbe',
+        'httpGet',
+        'port'
+      ],
+      description: 'Pod template liveness HTTP probe port'
+    },
+    {
+      path: [
+        'spec',
+        'template',
+        'spec',
+        'containers',
+        '*',
+        'readinessProbe',
+        'httpGet',
+        'port'
+      ],
+      description: 'Pod template readiness HTTP probe port'
+    },
+    {
+      path: [
+        'spec',
+        'template',
+        'spec',
+        'containers',
+        '*',
+        'startupProbe',
+        'httpGet',
+        'port'
+      ],
+      description: 'Pod template startup HTTP probe port'
+    },
+    {
+      path: [
+        'spec',
+        'template',
+        'spec',
+        'containers',
+        '*',
+        'livenessProbe',
+        'tcpSocket',
+        'port'
+      ],
+      description: 'Pod template liveness TCP probe port'
+    },
+    {
+      path: [
+        'spec',
+        'template',
+        'spec',
+        'containers',
+        '*',
+        'readinessProbe',
+        'tcpSocket',
+        'port'
+      ],
+      description: 'Pod template readiness TCP probe port'
+    },
+    {
+      path: [
+        'spec',
+        'template',
+        'spec',
+        'containers',
+        '*',
+        'startupProbe',
+        'tcpSocket',
+        'port'
+      ],
+      description: 'Pod template startup TCP probe port'
+    },
+
     // Container ports
-    { path: ['spec', 'containers', '*', 'ports', '*', 'containerPort'], description: 'Container port' },
-    { path: ['spec', 'template', 'spec', 'containers', '*', 'ports', '*', 'containerPort'], description: 'Pod template container port' },
-    
+    {
+      path: ['spec', 'containers', '*', 'ports', '*', 'containerPort'],
+      description: 'Container port'
+    },
+    {
+      path: [
+        'spec',
+        'template',
+        'spec',
+        'containers',
+        '*',
+        'ports',
+        '*',
+        'containerPort'
+      ],
+      description: 'Pod template container port'
+    },
+
     // Rolling update strategies
-    { path: ['spec', 'strategy', 'rollingUpdate', 'maxSurge'], description: 'Deployment rolling update maxSurge' },
-    { path: ['spec', 'strategy', 'rollingUpdate', 'maxUnavailable'], description: 'Deployment rolling update maxUnavailable' },
-    { path: ['spec', 'updateStrategy', 'rollingUpdate', 'maxSurge'], description: 'StatefulSet rolling update maxSurge' },
-    { path: ['spec', 'updateStrategy', 'rollingUpdate', 'maxUnavailable'], description: 'StatefulSet rolling update maxUnavailable' },
-    
+    {
+      path: ['spec', 'strategy', 'rollingUpdate', 'maxSurge'],
+      description: 'Deployment rolling update maxSurge'
+    },
+    {
+      path: ['spec', 'strategy', 'rollingUpdate', 'maxUnavailable'],
+      description: 'Deployment rolling update maxUnavailable'
+    },
+    {
+      path: ['spec', 'updateStrategy', 'rollingUpdate', 'maxSurge'],
+      description: 'StatefulSet rolling update maxSurge'
+    },
+    {
+      path: ['spec', 'updateStrategy', 'rollingUpdate', 'maxUnavailable'],
+      description: 'StatefulSet rolling update maxUnavailable'
+    },
+
     // Pod disruption budgets
-    { path: ['spec', 'maxUnavailable'], description: 'PodDisruptionBudget maxUnavailable' },
-    { path: ['spec', 'minAvailable'], description: 'PodDisruptionBudget minAvailable' },
+    {
+      path: ['spec', 'maxUnavailable'],
+      description: 'PodDisruptionBudget maxUnavailable'
+    },
+    {
+      path: ['spec', 'minAvailable'],
+      description: 'PodDisruptionBudget minAvailable'
+    }
   ];
 
   /**
@@ -69,14 +193,18 @@ export class BuilderManager {
    */
   private isNumericString(value: string): boolean {
     const numericValue = Number(value);
-    return !isNaN(numericValue) && isFinite(numericValue) && value.trim() === String(numericValue);
+    return (
+      !isNaN(numericValue) &&
+      isFinite(numericValue) &&
+      value.trim() === String(numericValue)
+    );
   }
 
   /**
    * Check if a field path matches any of the known IntOrString patterns
    */
   private isIntOrStringField(currentPath: string[]): boolean {
-    return this.INT_OR_STRING_FIELDS.some(pattern => 
+    return this.INT_OR_STRING_FIELDS.some((pattern) =>
       this.pathMatches(currentPath, pattern.path)
     );
   }
@@ -88,11 +216,11 @@ export class BuilderManager {
     if (actualPath.length !== patternPath.length) {
       return false;
     }
-    
+
     for (let i = 0; i < patternPath.length; i++) {
       const pattern = patternPath[i];
       const actual = actualPath[i];
-      
+
       // '*' matches any array index (numeric string)
       if (pattern === '*') {
         if (isNaN(Number(actual))) {
@@ -100,13 +228,13 @@ export class BuilderManager {
         }
         continue;
       }
-      
+
       // Exact match required for non-wildcard segments
       if (pattern !== actual) {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -121,7 +249,7 @@ export class BuilderManager {
 
     // Handle arrays
     if (Array.isArray(obj)) {
-      return obj.map((item, index) => 
+      return obj.map((item, index) =>
         this.normalizeIntOrStringFields(item, [...path, String(index)])
       );
     }
@@ -135,7 +263,7 @@ export class BuilderManager {
     const result: any = {};
     for (const [key, value] of Object.entries(obj)) {
       const currentPath = [...path, key];
-      
+
       if (typeof value === 'string' && this.isIntOrStringField(currentPath)) {
         // This is a known IntOrString field with a string value
         if (this.isNumericString(value)) {
@@ -200,7 +328,7 @@ export class BuilderManager {
     // Configure YAML dump options for proper script formatting
     const yamlOptions: yaml.DumpOptions = {
       lineWidth: -1, // Disable line wrapping
-      noRefs: true,  // Avoid references
+      noRefs: true, // Avoid references
       styles: {
         '!!str': this.getStringStyle.bind(this)
       }
@@ -213,12 +341,14 @@ export class BuilderManager {
   /**
    * Determine the appropriate YAML string style based on content
    */
-  private getStringStyle(str: string): 'literal' | 'folded' | 'plain' | 'quoted' {
+  private getStringStyle(
+    str: string
+  ): 'literal' | 'folded' | 'plain' | 'quoted' {
     // Use literal style for shell scripts and multiline content that needs to preserve newlines
     if (this.isShellScript(str) || this.isMultilineWithSpecialFormatting(str)) {
       return 'literal';
     }
-    
+
     // Use plain style for simple strings
     return 'plain';
   }
@@ -228,25 +358,26 @@ export class BuilderManager {
    */
   private isShellScript(str: string): boolean {
     const lines = str.split('\n');
-    
+
     // Check for shell script indicators
     const shellIndicators = [
-      /^#!/,                    // Shebang
-      /^set\s+/,               // Shell options (set -e, set -x, etc.)
-      /^\s*echo\s+/,           // Echo commands
-      /^\s*if\s*\[/,           // Conditional statements
-      /^\s*for\s+\w+\s+in/,    // For loops
-      /^\s*while\s+/,          // While loops
-      /^\s*function\s+/,       // Function definitions
-      /\$\{?\w+\}?/,           // Variable references
-      /\|\s*\w+/,              // Pipes
-      /&&|\|\|/,               // Logical operators
+      /^#!/, // Shebang
+      /^set\s+/, // Shell options (set -e, set -x, etc.)
+      /^\s*echo\s+/, // Echo commands
+      /^\s*if\s*\[/, // Conditional statements
+      /^\s*for\s+\w+\s+in/, // For loops
+      /^\s*while\s+/, // While loops
+      /^\s*function\s+/, // Function definitions
+      /\$\{?\w+\}?/, // Variable references
+      /\|\s*\w+/, // Pipes
+      /&&|\|\|/ // Logical operators
     ];
 
     // Check if multiple lines contain shell patterns
     let shellPatternCount = 0;
-    for (const line of lines.slice(0, 10)) { // Check first 10 lines
-      if (shellIndicators.some(pattern => pattern.test(line))) {
+    for (const line of lines.slice(0, 10)) {
+      // Check first 10 lines
+      if (shellIndicators.some((pattern) => pattern.test(line))) {
         shellPatternCount++;
       }
     }
@@ -259,22 +390,24 @@ export class BuilderManager {
    */
   private isMultilineWithSpecialFormatting(str: string): boolean {
     const lines = str.split('\n');
-    
+
     // More than 3 lines with meaningful content
-    if (lines.filter(line => line.trim().length > 0).length <= 3) {
+    if (lines.filter((line) => line.trim().length > 0).length <= 3) {
       return false;
     }
 
     // Check for configuration files, scripts, or structured content
     const needsFormatting = [
-      /^\s*[A-Z_]+\s*=\s*/,      // Environment variables
-      /^\s*\[[^\]]+\]/,          // Config sections
-      /^\s*#\s*/,                // Comments
-      /^\s*\w+:\s*/,             // Key-value pairs
-      /^\s*-\s+/,                // List items
+      /^\s*[A-Z_]+\s*=\s*/, // Environment variables
+      /^\s*\[[^\]]+\]/, // Config sections
+      /^\s*#\s*/, // Comments
+      /^\s*\w+:\s*/, // Key-value pairs
+      /^\s*-\s+/ // List items
     ];
 
-    return lines.some(line => needsFormatting.some(pattern => pattern.test(line)));
+    return lines.some((line) =>
+      needsFormatting.some((pattern) => pattern.test(line))
+    );
   }
 
   private writeManifests(manifests: Manifest[], outputDir: string): void {

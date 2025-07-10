@@ -1,4 +1,4 @@
-import { StarshipConfig, Chain } from '@starship-ci/types';
+import { Chain, StarshipConfig } from '@starship-ci/types';
 import { ConfigMap, Deployment, Service } from 'kubernetesjs';
 
 import * as helpers from '../helpers';
@@ -17,7 +17,7 @@ export class RegistryConfigMapGenerator implements IGenerator {
 
   getChainAssetList(chain: Chain): Record<string, any> {
     const chainName = chain.name === 'custom' ? chain.id : chain.name;
-    
+
     let assets;
     if (chain.assets && chain.assets.length > 0) {
       assets = chain.assets;
@@ -45,7 +45,7 @@ export class RegistryConfigMapGenerator implements IGenerator {
     }
 
     return {
-      "$schema": "../assetlist.schema.json",
+      $schema: '../assetlist.schema.json',
       chain_name: chainName,
       assets: assets
     };
@@ -53,18 +53,18 @@ export class RegistryConfigMapGenerator implements IGenerator {
 
   getChainConfig(chain: Chain): Record<string, any> {
     const chainName = chain.name === 'custom' ? chain.id : chain.name;
-    
+
     const config: Record<string, any> = {
-      "$schema": "../chain.schema.json",
+      $schema: '../chain.schema.json',
       chain_name: chainName,
-      status: "live",
-      network_type: "devnet",
+      status: 'live',
+      network_type: 'devnet',
       chain_id: chain.id,
       pretty_name: `${chain.prettyName} Devnet`,
       bech32_prefix: chain.prefix,
       daemon_name: chain.binary,
       node_home: chain.home,
-      key_algos: ["secp256k1"],
+      key_algos: ['secp256k1'],
       slip44: String(chain.coinType),
       fees: {
         fee_tokens: [
@@ -84,7 +84,7 @@ export class RegistryConfigMapGenerator implements IGenerator {
           }
         ],
         lock_duration: {
-          time: "1209600s"
+          time: '1209600s'
         }
       },
       codebase: {
@@ -94,7 +94,7 @@ export class RegistryConfigMapGenerator implements IGenerator {
         ics_enabled: [],
         versions: [],
         consensus: {
-          type: "tendermint"
+          type: 'tendermint'
         }
       },
       peers: {
@@ -117,7 +117,7 @@ export class RegistryConfigMapGenerator implements IGenerator {
   }
 
   generate(): Array<ConfigMap> {
-    let configMaps: Array<ConfigMap> = [];
+    const configMaps: Array<ConfigMap> = [];
 
     this.config.chains.forEach((chain) => {
       const chainConfig = this.getChainConfig(chain);
@@ -136,8 +136,8 @@ export class RegistryConfigMapGenerator implements IGenerator {
           }
         },
         data: {
-          "chain.json": JSON.stringify(chainConfig, null, 2),
-          "assetlist.json": JSON.stringify(assetList, null, 2)
+          'chain.json': JSON.stringify(chainConfig, null, 2),
+          'assetlist.json': JSON.stringify(assetList, null, 2)
         }
       });
     });
@@ -268,16 +268,20 @@ export class RegistryDeploymentGenerator implements IGenerator {
                     },
                     {
                       name: 'REGISTRY_CHAIN_CLIENT_IDS',
-                      value: this.config.chains.map((chain) => String(chain.id)).join(',')
+                      value: this.config.chains
+                        .map((chain) => String(chain.id))
+                        .join(',')
                     },
                     {
                       name: 'REGISTRY_CHAIN_CLIENT_NAMES',
-                      value: this.config.chains.map((chain) => chain.name).join(',')
+                      value: this.config.chains
+                        .map((chain) => chain.name)
+                        .join(',')
                     },
                     {
                       name: 'REGISTRY_CHAIN_CLIENT_RPCS',
                       value: helpers.getChainInternalRpcAddrs(
-                        this.config.chains,
+                        this.config.chains
                       )
                     },
                     {
@@ -309,10 +313,11 @@ export class RegistryDeploymentGenerator implements IGenerator {
                       name: 'REGISTRY_CHAIN_REGISTRY',
                       value: '/chains'
                     }
-
                   ],
                   volumeMounts,
-                  resources: helpers.getResourceObject(this.config.registry?.resources),
+                  resources: helpers.getResourceObject(
+                    this.config.registry?.resources
+                  ),
                   readinessProbe: {
                     tcpSocket: {
                       port: '8080'
