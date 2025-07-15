@@ -179,11 +179,13 @@ export class RegistryServiceGenerator implements IGenerator {
             {
               name: 'http',
               port: 8080,
+              protocol: 'TCP',
               targetPort: '8080'
             },
             {
               name: 'grpc',
               port: 9090,
+              protocol: 'TCP',
               targetPort: '9090'
             }
           ]
@@ -231,6 +233,7 @@ export class RegistryDeploymentGenerator implements IGenerator {
         },
         spec: {
           replicas: 1,
+          revisionHistoryLimit: 3,
           selector: {
             matchLabels: {
               'app.kubernetes.io/name': 'registry'
@@ -238,6 +241,12 @@ export class RegistryDeploymentGenerator implements IGenerator {
           },
           template: {
             metadata: {
+              annotations: {
+                quality: 'release',
+                role: 'api-gateway',
+                sla: 'high',
+                tier: 'gateway'
+              },
               labels: {
                 ...helpers.getCommonLabels(this.config),
                 'app.kubernetes.io/component': 'registry',

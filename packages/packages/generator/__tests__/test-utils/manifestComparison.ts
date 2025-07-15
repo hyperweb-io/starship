@@ -38,10 +38,10 @@ export interface ChainTypeConfig {
 export interface ComparisonOptions {
   chainTypes?: ChainTypeConfig;
   allowExtraServices?: boolean; // Allow extra services for chains
-  strictMode?: boolean; // Fail on any difference
 }
 
 export class ManifestComparator {
+
   /**
    * Parse a YAML file containing multiple documents separated by ---
    */
@@ -483,57 +483,7 @@ export class ManifestComparator {
       return null;
     }
 
-    // Filter out insignificant differences
-    if (differences && this.isInsignificantDifference(differences)) {
-      return null;
-    }
-
     return differences || null;
-  }
-
-  /**
-   * Check if a difference is insignificant (formatting only)
-   */
-  private isInsignificantDifference(diffString: string): boolean {
-    // Split into lines and check if differences are only formatting
-    const lines = diffString.split('\n');
-    let hasSignificantDiff = false;
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-
-      // Skip metadata lines
-      if (
-        trimmedLine.startsWith('@@') ||
-        trimmedLine.includes('Expected (reference)') ||
-        trimmedLine.includes('Generated (actual)')
-      ) {
-        continue;
-      }
-
-      // Check for significant differences
-      if (trimmedLine.startsWith('-') || trimmedLine.startsWith('+')) {
-        const content = trimmedLine.substring(1).trim();
-
-        // Skip empty lines
-        if (content === '') continue;
-
-        // Skip lines that are just quotes or commas
-        if (content === '",' || content === '"' || content === ',') {
-          continue;
-        }
-
-        // Skip lines that only differ by trailing commas or quotes
-        const withoutTrailing = content.replace(/[",]*$/, '');
-        if (withoutTrailing === '') continue;
-
-        // If we get here, it's a significant difference
-        hasSignificantDiff = true;
-        break;
-      }
-    }
-
-    return !hasSignificantDiff;
   }
 
   /**
@@ -583,36 +533,6 @@ export class ManifestComparator {
 
     const content = readFileSync(manifestFile, 'utf-8');
     return this.parseManifestFile(content);
-  }
-
-  /**
-   * Analyze chain types from resources to create ChainTypeConfig
-   */
-  public analyzeChainTypes(resources: NormalizedResource[]): ChainTypeConfig {
-    const chainNames = new Set<string>();
-    let hasCosmosChains = false;
-    let hasEthereumChains = false;
-
-    for (const resource of resources) {
-      const labels = resource.metadata.labels || {};
-      const chainName = labels['starship.io/chain-name'];
-
-      if (chainName) {
-        chainNames.add(chainName);
-
-        if (chainName === 'ethereum' || chainName.startsWith('ethereum-')) {
-          hasEthereumChains = true;
-        } else {
-          hasCosmosChains = true;
-        }
-      }
-    }
-
-    return {
-      hasCosmosChains,
-      hasEthereumChains,
-      chainNames: Array.from(chainNames)
-    };
   }
 }
 

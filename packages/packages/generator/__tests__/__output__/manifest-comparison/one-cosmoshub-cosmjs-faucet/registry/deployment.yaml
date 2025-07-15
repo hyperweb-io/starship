@@ -11,11 +11,17 @@ metadata:
     app.kubernetes.io/name: registry
 spec:
   replicas: 1
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       app.kubernetes.io/name: registry
   template:
     metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
       labels:
         starship.io/name: starship-e2e-tests
         app.kubernetes.io/version: 4.0.0-alpha.0
