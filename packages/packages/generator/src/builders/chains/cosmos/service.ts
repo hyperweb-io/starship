@@ -7,17 +7,29 @@ import { IGenerator, Manifest } from '../../../types';
 class CosmosGenesisServiceGenerator implements IGenerator {
   private config: StarshipConfig;
   private chain: Chain;
+  private ports: string[];
 
   constructor(chain: Chain, config: StarshipConfig) {
     this.config = config;
     this.chain = chain;
+    this.ports = [
+      'p2p',
+      'address',
+      'grpc',
+      'grpc-web',
+      'rest',
+      'rpc',
+      'metrics',
+      'exposer',
+      'faucet'
+    ];
   }
 
   labels(): Record<string, string> {
     return {
       ...helpers.getCommonLabels(this.config),
       'app.kubernetes.io/component': 'chain',
-      'app.kubernetes.io/name': `${helpers.getHostname(this.chain)}-genesis`,
+      'app.kubernetes.io/name': `${helpers.getChainId(this.chain)}-genesis`,
       'app.kubernetes.io/type': `${helpers.getChainId(this.chain)}-service`,
       'app.kubernetes.io/role': 'genesis',
       'starship.io/chain-name': this.chain.name,
@@ -56,7 +68,7 @@ class CosmosGenesisServiceGenerator implements IGenerator {
           clusterIP: 'None',
           ports,
           selector: {
-            'app.kubernetes.io/name': `${helpers.getHostname(this.chain)}-genesis`
+            'app.kubernetes.io/name': `${helpers.getChainId(this.chain)}-genesis`
           }
         }
       }
@@ -77,7 +89,7 @@ class CosmosValidatorServiceGenerator implements IGenerator {
     return {
       ...helpers.getCommonLabels(this.config),
       'app.kubernetes.io/component': 'chain',
-      'app.kubernetes.io/name': `${helpers.getHostname(this.chain)}-validator`,
+      'app.kubernetes.io/name': `${helpers.getChainId(this.chain)}-validator`,
       'app.kubernetes.io/role': 'validator',
       'app.kubernetes.io/type': `${helpers.getChainId(this.chain)}-service`,
       'starship.io/chain-name': this.chain.name,
@@ -115,7 +127,7 @@ class CosmosValidatorServiceGenerator implements IGenerator {
           clusterIP: 'None',
           ports,
           selector: {
-            'app.kubernetes.io/name': `${helpers.getHostname(this.chain)}-validator`
+            'app.kubernetes.io/name': `${helpers.getChainId(this.chain)}-validator`
           }
         }
       }

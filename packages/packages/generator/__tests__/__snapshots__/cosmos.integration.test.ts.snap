@@ -89,7 +89,7 @@ exports[`Cosmos Integration Tests Resource Content Verification should generate 
 exports[`Cosmos Integration Tests Resource Content Verification should generate correct port mappings: port-mappings 1`] = `
 {
   "hasRpcPort": true,
-  "portCount": 10,
+  "portCount": 9,
 }
 `;
 
@@ -101,7 +101,7 @@ exports[`Cosmos Integration Tests Resource Content Verification should handle sp
   },
   "cometmock": {
     "hasGenesis": true,
-    "manifestCount": 4,
+    "manifestCount": 6,
   },
   "cosmjs-faucet": {
     "hasGenesis": true,

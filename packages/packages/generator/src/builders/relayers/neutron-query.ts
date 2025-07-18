@@ -247,28 +247,15 @@ export class NeutronQueryStatefulSetGenerator implements IGenerator {
   private generateInitContainers(): Container[] {
     const initContainers: Container[] = [];
 
-    // Add wait init containers for all chains
-    this.relayer.chains.forEach((chainId) => {
-      const chain = this.config.chains.find((c) => String(c.id) === chainId);
-      if (!chain) return;
-
-      const chainName = helpers.getChainName(String(chain.id));
-      initContainers.push({
-        name: `init-${chainName}`,
-        image: 'ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0',
-        imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
-        command: ['bash', '-c'],
-        args: [
-          `echo "Waiting for ${chainName} service..."\nwait-for-service ${chainName}-genesis.$(NAMESPACE).svc.cluster.local:26657`
-        ],
-        env: [
-          {
-            name: 'NAMESPACE',
-            valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } }
-          }
-        ]
-      });
-    });
+    // Add single wait init container for all chains
+    const exposerPort = this.config.exposer?.ports?.rest || 8081;
+    initContainers.push(
+      helpers.generateWaitInitContainer(
+        this.relayer.chains,
+        exposerPort,
+        this.config
+      )
+    );
 
     // Add neutron-query-relayer init container
     initContainers.push(this.generateNeutronQueryInitContainer());

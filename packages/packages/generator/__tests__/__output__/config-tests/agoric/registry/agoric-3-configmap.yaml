@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-agoric-3
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-agoric-3
+data:
+  chain.json: |-
+    {
+      "$schema": "../chain.schema.json",
+      "chain_name": "agoric",
+      "status": "live",
+      "network_type": "devnet",
+      "chain_id": "agoric-3",
+      "pretty_name": "Agoric Devnet",
+      "bech32_prefix": "agoric",
+      "daemon_name": "agd",
+      "node_home": "/root/.agoric",
+      "key_algos": [
+        "secp256k1"
+      ],
+      "slip44": "564",
+      "fees": {
+        "fee_tokens": [
+          {
+            "denom": "ubld",
+            "fixed_min_gas_price": 0,
+            "low_gas_price": 0,
+            "average_gas_price": 0.025,
+            "high_gas_price": 0.04
+          }
+        ]
+      },
+      "staking": {
+        "staking_tokens": [
+          {
+            "denom": "ubld"
+          }
+        ],
+        "lock_duration": {
+          "time": "1209600s"
+        }
+      },
+      "codebase": {
+        "git_repo": "https://github.com/Agoric/agoric-sdk",
+        "compatible_versions": [],
+        "binaries": {},
+        "ics_enabled": [],
+        "versions": [],
+        "consensus": {
+          "type": "tendermint"
+        }
+      },
+      "peers": {
+        "seeds": [],
+        "persistent_peers": []
+      }
+    }
+  assetlist.json: |-
+    {
+      "$schema": "../assetlist.schema.json",
+      "chain_name": "agoric",
+      "assets": [
+        {
+          "base": "ubld",
+          "description": "The native token of Agoric",
+          "name": "Agoric",
+          "display": "bld",
+          "symbol": "BLD",
+          "logo_URIs": {
+            "png": "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/bld.png",
+            "svg": "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/bld.svg"
+          },
+          "denom_units": [
+            {
+              "denom": "ubld",
+              "exponent": 0
+            },
+            {
+              "denom": "bld",
+              "exponent": 6
+            }
+          ],
+          "coingecko_id": "agoric",
+          "keywords": [
+            "agoric"
+          ]
+        },
+        {
+          "base": "uist",
+          "description": "IST is the stable token used by the Agoric chain for execution fees and commerce.",
+          "name": "Inter Stable Token",
+          "display": "ist",
+          "symbol": "IST",
+          "logo_URIs": {
+            "png": "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/ist.png",
+            "svg": "https://raw.githubusercontent.com/cosmos/chain-registry/master/agoric/images/ist.svg"
+          },
+          "denom_units": [
+            {
+              "denom": "uist",
+              "exponent": 0
+            },
+            {
+              "denom": "ist",
+              "exponent": 6
+            }
+          ],
+          "coingecko_id": "inter-stable-token",
+          "keywords": [
+            "inter-stable-token"
+          ]
+        }
+      ]
+    }

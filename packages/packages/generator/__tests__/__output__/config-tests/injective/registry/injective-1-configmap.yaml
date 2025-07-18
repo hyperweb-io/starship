@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-injective-1
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-injective-1
+data:
+  chain.json: |-
+    {
+      "$schema": "../chain.schema.json",
+      "chain_name": "injective",
+      "status": "live",
+      "network_type": "devnet",
+      "chain_id": "injective-1",
+      "pretty_name": "Injective Devnet",
+      "bech32_prefix": "inj",
+      "daemon_name": "injectived",
+      "node_home": "/root/.injectived",
+      "key_algos": [
+        "secp256k1"
+      ],
+      "slip44": "60",
+      "fees": {
+        "fee_tokens": [
+          {
+            "denom": "inj",
+            "fixed_min_gas_price": 0,
+            "low_gas_price": 0,
+            "average_gas_price": 0.025,
+            "high_gas_price": 0.04
+          }
+        ]
+      },
+      "staking": {
+        "staking_tokens": [
+          {
+            "denom": "inj"
+          }
+        ],
+        "lock_duration": {
+          "time": "1209600s"
+        }
+      },
+      "codebase": {
+        "git_repo": "https://github.com/InjectiveLabs/injective-chain-releases",
+        "compatible_versions": [],
+        "binaries": {},
+        "ics_enabled": [],
+        "versions": [],
+        "consensus": {
+          "type": "tendermint"
+        }
+      },
+      "peers": {
+        "seeds": [],
+        "persistent_peers": []
+      }
+    }
+  assetlist.json: |-
+    {
+      "$schema": "../assetlist.schema.json",
+      "chain_name": "injective",
+      "assets": [
+        {
+          "base": "inj",
+          "description": "The INJ token is the native governance token for the Injective chain.",
+          "denom_units": [
+            {
+              "denom": "inj",
+              "exponent": 0
+            },
+            {
+              "denom": "INJ",
+              "exponent": 18
+            }
+          ],
+          "name": "Injective",
+          "display": "INJ",
+          "symbol": "INJ",
+          "logo_URIs": {
+            "png": "https://raw.githubusercontent.com/cosmos/chain-registry/master/injective/images/inj.png",
+            "svg": "https://raw.githubusercontent.com/cosmos/chain-registry/master/injective/images/inj.svg"
+          },
+          "coingecko_id": "injective-protocol"
+        }
+      ]
+    }

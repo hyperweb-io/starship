@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-juno-2
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-juno-2
+data:
+  chain.json: |-
+    {
+      "$schema": "../chain.schema.json",
+      "chain_name": "juno",
+      "status": "live",
+      "network_type": "devnet",
+      "chain_id": "juno-2",
+      "pretty_name": "Juno Devnet",
+      "bech32_prefix": "juno",
+      "daemon_name": "junod",
+      "node_home": "/root/.juno",
+      "key_algos": [
+        "secp256k1"
+      ],
+      "slip44": "118",
+      "fees": {
+        "fee_tokens": [
+          {
+            "denom": "ujuno",
+            "fixed_min_gas_price": 0,
+            "low_gas_price": 0,
+            "average_gas_price": 0.025,
+            "high_gas_price": 0.04
+          }
+        ]
+      },
+      "staking": {
+        "staking_tokens": [
+          {
+            "denom": "ujuno"
+          }
+        ],
+        "lock_duration": {
+          "time": "1209600s"
+        }
+      },
+      "codebase": {
+        "git_repo": "https://github.com/CosmosContracts/juno",
+        "compatible_versions": [],
+        "binaries": {},
+        "ics_enabled": [],
+        "versions": [],
+        "consensus": {
+          "type": "tendermint"
+        }
+      },
+      "peers": {
+        "seeds": [],
+        "persistent_peers": []
+      }
+    }
+  assetlist.json: |-
+    {
+      "$schema": "../assetlist.schema.json",
+      "chain_name": "juno",
+      "assets": [
+        {
+          "base": "ujuno",
+          "description": "The native token of JUNO Chain",
+          "name": "Juno",
+          "display": "juno",
+          "symbol": "JUNO",
+          "logo_URIs": {
+            "png": "https://raw.githubusercontent.com/cosmos/chain-registry/master/juno/images/juno.png",
+            "svg": "https://raw.githubusercontent.com/cosmos/chain-registry/master/juno/images/juno.svg"
+          },
+          "denom_units": [
+            {
+              "denom": "ujuno",
+              "exponent": 0
+            },
+            {
+              "denom": "juno",
+              "exponent": 6
+            }
+          ],
+          "coingecko_id": "juno-network"
+        }
+      ]
+    }

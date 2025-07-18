@@ -78,20 +78,29 @@ export class GlobalScriptsConfigMapGenerator implements IGenerator {
       return [];
     }
 
+    // Only include specific scripts that should be in setup-scripts configmap
+    const requiredScripts = [
+      'transfer-tokens.sh',
+      'ibc-connection.sh',
+      'create-ics.sh'
+    ];
+
     const data: { [key: string]: string } = {};
     try {
-      const scriptFiles = fs
-        .readdirSync(scriptsDir)
-        .filter((file) => file.endsWith('.sh'));
+      requiredScripts.forEach((fileName) => {
+        const filePath = path.join(scriptsDir, fileName);
+        if (fs.existsSync(filePath)) {
+          data[fileName] = fs.readFileSync(filePath, 'utf-8');
+        } else {
+          console.warn(
+            `Warning: Required script ${fileName} not found in ${scriptsDir}. Skipping.`
+          );
+        }
+      });
 
-      if (scriptFiles.length === 0) {
+      if (Object.keys(data).length === 0) {
         return [];
       }
-
-      scriptFiles.forEach((fileName) => {
-        const filePath = path.join(scriptsDir, fileName);
-        data[fileName] = fs.readFileSync(filePath, 'utf-8');
-      });
     } catch (error) {
       console.warn(
         `Warning: Could not read global scripts directory. Error: ${(error as Error).message}. Skipping.`

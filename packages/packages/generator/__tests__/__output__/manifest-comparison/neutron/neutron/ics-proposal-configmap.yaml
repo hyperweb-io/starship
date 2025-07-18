@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consumer-proposal-neutron-1
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/name: neutron
+    app.kubernetes.io/part-of: neutron-1
+    app.kubernetes.io/role: ics-proposal
+    starship.io/chain-name: neutron
+    starship.io/chain-id: neutron-1
+data:
+  proposal.json: |-
+    {
+      "title": "Add neutron consumer chain",
+      "summary": "Add neutron consumer chain with id neutron-1",
+      "chain_id": "neutron-1",
+      "initial_height": {
+        "revision_height": 1,
+        "revision_number": 1
+      },
+      "genesis_hash": "d86d756e10118e66e6805e9cc476949da2e750098fcc7634fd0cc77f57a0b2b0",
+      "binary_hash": "376cdbd3a222a3d5c730c9637454cd4dd925e2f9e2e0d0f3702fc922928583f1",
+      "spawn_time": "2023-02-28T20:40:00.000000Z",
+      "unbonding_period": 294000000000,
+      "ccv_timeout_period": 259920000000,
+      "transfer_timeout_period": 18000000000,
+      "consumer_redistribution_fraction": "0.75",
+      "blocks_per_distribution_transmission": 10,
+      "historical_entries": 100,
+      "distribution_transmission_channel": "",
+      "top_N": 95,
+      "validators_power_cap": 0,
+      "validator_set_cap": 0,
+      "allowlist": [],
+      "denylist": [],
+      "deposit": "10000uatom"
+    }

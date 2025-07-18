@@ -103,26 +103,14 @@ export class BaseRelayerBuilder implements IGenerator {
    * Generate wait init containers for all chains
    */
   protected generateWaitInitContainers(): Container[] {
-    return this.relayer.chains.map((chainId) => {
-      const chain = this.getChainConfig(chainId);
-      const chainName = helpers.getChainName(String(chain.id));
-
-      return {
-        name: `init-${chainName}`,
-        image: 'ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0',
-        imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
-        command: ['bash', '-c'],
-        args: [
-          `echo "Waiting for ${chainName} service..."\nwait-for-service ${chainName}-genesis.$(NAMESPACE).svc.cluster.local:26657`
-        ],
-        env: [
-          {
-            name: 'NAMESPACE',
-            valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } }
-          }
-        ]
-      };
-    });
+    const exposerPort = this.config.exposer?.ports?.rest || 8081;
+    return [
+      helpers.generateWaitInitContainer(
+        this.relayer.chains,
+        exposerPort,
+        this.config
+      )
+    ];
   }
 
   /**

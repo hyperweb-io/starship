@@ -18,14 +18,14 @@ spec:
     - name: http
       port: 8545
       protocol: TCP
-      targetPort: '8545'
+      targetPort: 8545
     - name: ws
       port: 8546
       protocol: TCP
-      targetPort: '8546'
+      targetPort: 8546
     - name: rpc
       port: 8551
       protocol: TCP
-      targetPort: '8551'
+      targetPort: 8551
   selector:
     app.kubernetes.io/name: ethereum-1337

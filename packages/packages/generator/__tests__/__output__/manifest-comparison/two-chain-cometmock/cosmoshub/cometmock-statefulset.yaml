@@ -1,0 +1,209 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cosmoshub-4-cometmock
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/part-of: cosmoshub-4
+    app.kubernetes.io/id: cosmoshub-4
+    app.kubernetes.io/name: cosmoshub-4-cometmock
+    app.kubernetes.io/type: cosmoshub-4-statefulset
+    app.kubernetes.io/role: cometmock
+    starship.io/chain-name: cosmoshub
+spec:
+  serviceName: cosmoshub-4-cometmock
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: cosmoshub
+      app.kubernetes.io/name: cosmoshub-4-cometmock
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: cosmoshub
+        app.kubernetes.io/type: cometmock
+        app.kubernetes.io/name: cosmoshub-4-cometmock
+        app.kubernetes.io/rawname: cosmoshub-4-cometmock
+        app.kubernetes.io/version: 4.0.0-alpha.0
+    spec:
+      initContainers:
+        - name: init-wait
+          image: curlimages/curl
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - '-c'
+            - |-
+              while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+                echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys"
+                sleep 10;
+              done
+                  
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
+        - name: init-comet
+          image: ghcr.io/informalsystems/cometmock:v0.37.x
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uatom
+            - name: COINS
+              value: 100000000000000uatom
+            - name: CHAIN_BIN
+              value: gaiad
+            - name: CHAIN_DIR
+              value: /root/.gaia
+            - name: CODE_REPO
+              value: https://github.com/cosmos/gaia
+            - name: DAEMON_HOME
+              value: /root/.gaia
+            - name: DAEMON_NAME
+              value: gaiad
+            - name: CHAIN_ID
+              value: cosmoshub-4
+            - name: GENESIS_HOST
+              value: cosmoshub-4-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: TIME_IOTA_MS
+              value: '10'
+            - name: TIMEOUT_PROPOSE
+              value: 400ms
+            - name: TIMEOUT_PROPOSE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PREVOTE
+              value: 400ms
+            - name: TIMEOUT_PREVOTE_DELTA
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT
+              value: 400ms
+            - name: TIMEOUT_PRECOMMIT_DELTA
+              value: 400ms
+            - name: TIMEOUT_COMMIT
+              value: 800ms
+          command:
+            - bash
+            - '-c'
+            - |-
+              mkdir -p /chain/genesis/config
+              mkdir -p /chain/genesis/data
+              curl http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/genesis -o /chain/genesis/config/genesis.json
+              echo "Genesis file that we got....."
+              cat /chain/genesis/config/genesis.json
+
+              ## fetch priv_validator and priv_validator_state of all validators
+              curl http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /chain/genesis/config/priv_validator_key.json
+              echo '{"height":"0","round":0,"step":0}' > /chain/genesis/data/priv_validator_state.json
+                  
+              echo "copy cometmock binary to shared dir"
+              cp /usr/local/bin/cometmock /chain/cometmock
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /chain
+              name: node
+            - mountPath: /scripts
+              name: scripts
+            - mountPath: /configs
+              name: addresses
+      containers:
+        - name: comet
+          image: ghcr.io/cosmology-tech/starship/gaia:v18.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DENOM
+              value: uatom
+            - name: COINS
+              value: 100000000000000uatom
+            - name: CHAIN_BIN
+              value: gaiad
+            - name: CHAIN_DIR
+              value: /root/.gaia
+            - name: CODE_REPO
+              value: https://github.com/cosmos/gaia
+            - name: DAEMON_HOME
+              value: /root/.gaia
+            - name: DAEMON_NAME
+              value: gaiad
+            - name: CHAIN_ID
+              value: cosmoshub-4
+            - name: GENESIS_HOST
+              value: cosmoshub-4-genesis
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+          command:
+            - bash
+            - '-c'
+            - |-
+              NODE_LISTEN_ADDR_STR="tcp://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26658"
+              NODE_HOME_STR="/chain/genesis"
+                  
+              /chain/cometmock --block-time=800 $NODE_LISTEN_ADDR_STR /chain/genesis/config/genesis.json tcp://0.0.0.0:22331 $NODE_HOME_STR grpc
+          resources:
+            limits:
+              cpu: '0.5'
+              memory: 500M
+            requests:
+              cpu: '0.5'
+              memory: 500M
+          volumeMounts:
+            - mountPath: /chain
+              name: node
+            - mountPath: /scripts
+              name: scripts
+            - mountPath: /configs
+              name: addresses
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 22331
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: node
+          emptyDir: {}
+        - name: addresses
+          configMap:
+            name: keys
+        - name: scripts
+          configMap:
+            name: setup-scripts-cosmoshub-4

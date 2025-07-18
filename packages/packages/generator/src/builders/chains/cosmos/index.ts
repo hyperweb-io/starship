@@ -1,5 +1,6 @@
 import { ScriptManager } from '../../../scripts';
 import { GeneratorConfig, IGenerator, Manifest } from '../../../types';
+import { CometMockGenerator } from './cometmock';
 import {
   CosmosConfigMapGenerator,
   GlobalConfigMapGenerator
@@ -48,6 +49,9 @@ export class CosmosBuilder implements IGenerator {
       this.generators.push(
         new CosmosConfigMapGenerator(chain, this.config, this.scriptManager)
       );
+
+      // CometMock (if enabled)
+      this.generators.push(new CometMockGenerator(chain, this.config));
     });
   }
 

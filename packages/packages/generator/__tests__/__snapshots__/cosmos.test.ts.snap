@@ -181,178 +181,6 @@ exports[`Cosmos Generator Tests Manifest Generation should generate all manifest
   {
     "apiVersion": "v1",
     "data": {
-      "build-chain.sh": "#!/bin/bash
-
-set -euxo pipefail
-
-mkdir -p /tmp/chains $UPGRADE_DIR
-
-echo "Fetching code from tag"
-mkdir -p /tmp/chains/$CHAIN_NAME
-cd /tmp/chains/$CHAIN_NAME
-
-if [[ $CODE_TAG =~ ^[0-9a-fA-F]{40}$ ]]; then
-  echo "Trying to fetch code from commit hash"
-  curl -LO $CODE_REPO/archive/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG}
-elif [[ $CODE_TAG = v* ]]; then
-  echo "Trying to fetch code from tag with 'v' prefix"
-  curl -LO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG#"v"}
-else
-  echo "Trying to fetch code from tag or branch"
-  if curl -fsLO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip; then
-    unzip $CODE_TAG.zip
-    code_dir=\${CODE_REPO##*/}-$CODE_TAG
-  elif curl -fsLO $CODE_REPO/archive/refs/heads/$CODE_TAG.zip; then
-    unzip $(echo $CODE_TAG | rev | cut -d "/" -f 1 | rev).zip
-    code_dir=\${CODE_REPO##*/}-\${CODE_TAG/\\//-}
-  else
-    echo "Tag or branch '$CODE_TAG' not found"
-    exit 1
-  fi
-fi
-
-echo "Fetch wasmvm if needed"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-WASM_VERSION=$(cat go.mod | grep -oe "github.com/CosmWasm/wasmvm v[0-9.]*" | cut -d ' ' -f 2)
-if [[ WASM_VERSION != "" ]]; then
-  mkdir -p /tmp/chains/libwasmvm_muslc
-  cd /tmp/chains/libwasmvm_muslc
-  curl -LO https://github.com/CosmWasm/wasmvm/releases/download/$WASM_VERSION/libwasmvm_muslc.x86_64.a
-  cp libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.a
-fi
-
-echo "Build chain binary"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-CGO_ENABLED=1 BUILD_TAGS="muslc linkstatic" LINK_STATICALLY=true LEDGER_ENABLED=false make install
-
-echo "Copy created binary to the upgrade directories"
-if [[ $UPGRADE_NAME == "genesis" ]]; then
-  mkdir -p $UPGRADE_DIR/genesis/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/genesis/bin
-else
-  mkdir -p $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-fi
-
-echo "Cleanup"
-rm -rf /tmp/chains/$CHAIN_NAME
-",
-      "chain-rpc-ready.sh": "#!/bin/bash
-# chain-rpc-ready.sh - Check if a CometBFT or Tendermint RPC service is ready
-# Usage: chain-rpc-ready.sh [RPC_URL]
-
-set -euo pipefail
-
-RPC_URL=\${1:-"http://localhost:26657"}
-
-echo 1>&2 "Checking if $RPC_URL is ready..."
-
-# Check if the RPC URL is reachable,
-json=$(curl -s --connect-timeout 2 "$RPC_URL/status")
-
-# and the bootstrap block state has been validated,
-if [ "$(echo "$json" | jq -r '.result.sync_info | (.earliest_block_height < .latest_block_height)')" != true ]; then
-  echo 1>&2 "$RPC_URL is not ready: bootstrap block state has not been validated"
-  exit 1
-fi
-
-# and the node is not catching up.
-if [ "$(echo "$json" | jq -r .result.sync_info.catching_up)" != false ]; then
-  echo 1>&2 "$RPC_URL is not ready: node is catching up"
-  exit 1
-fi
-
-echo "$json" | jq -r .result
-exit 0
-",
-      "create-genesis.sh": "#!/bin/bash
-
-set -eux
-
-DENOM="\${DENOM:=uosmo}"
-COINS="\${COINS:=100000000000000000uosmo}"
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-FAUCET_ENABLED="\${FAUCET_ENABLED:=true}"
-NUM_VALIDATORS="\${NUM_VALIDATORS:=1}"
-NUM_RELAYERS="\${NUM_RELAYERS:=0}"
-
-# check if the binary has genesis subcommand or not, if not, set CHAIN_GENESIS_CMD to empty
-CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && echo "genesis" || echo "")
-
-CHAIN_INIT_ID="$CHAIN_ID"
-if [ "$CHAIN_BIN" == "osmosisd" ]; then
-  CHAIN_INIT_ID="test-1"
-fi
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN init $CHAIN_ID --chain-id $CHAIN_INIT_ID --recover
-sed -i -e "s/$CHAIN_INIT_ID/$CHAIN_ID/g" $CHAIN_DIR/config/genesis.json
-
-# Add genesis keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".genesis[0].name" $KEYS_CONFIG)
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".genesis[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .genesis[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add faucet key to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".faucet[0].name" $KEYS_CONFIG)
-jq -r ".faucet[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".faucet[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .faucet[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add test keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".keys[0].name" $KEYS_CONFIG)
-jq -r ".keys[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".keys[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .keys[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-if [[ $FAUCET_ENABLED == "false" && $NUM_RELAYERS -gt "-1" ]];
-then
-  ## Add relayers keys and delegate tokens
-  for i in $(seq 0 $NUM_RELAYERS);
-  do
-    # Add relayer key and delegate tokens
-    RELAYER_KEY_NAME="$(jq -r ".relayers[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer key.... $RELAYER_KEY_NAME"
-    jq -r ".relayers[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-    # Add relayer-cli key and delegate tokens
-    RELAYER_CLI_KEY_NAME="$(jq -r ".relayers_cli[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer-cli key.... $RELAYER_CLI_KEY_NAME"
-    jq -r ".relayers_cli[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_CLI_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_CLI_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-## if faucet not enabled then add validator and relayer with index as keys and into gentx
-if [[ $FAUCET_ENABLED == "false" && $NUM_VALIDATORS -gt "1" ]];
-then
-  ## Add validators key and delegate tokens
-  for i in $(seq 0 $NUM_VALIDATORS);
-  do
-    VAL_KEY_NAME="$(jq -r '.validators[0].name' $KEYS_CONFIG)-$i"
-    echo "Adding validator key.... $VAL_KEY_NAME"
-    jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $VAL_KEY_NAME --index $i --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $VAL_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-echo "Creating gentx..."
-COIN=$(echo $COINS | cut -d ',' -f1)
-AMT=$(echo \${COIN//[!0-9]/} | sed -e "s/0000$//")
-$CHAIN_BIN $CHAIN_GENESIS_CMD gentx $(jq -r ".genesis[0].name" $KEYS_CONFIG) $AMT$DENOM --keyring-backend="test" --chain-id $CHAIN_ID
-
-echo "Output of gentx"
-cat $CHAIN_DIR/config/gentx/*.json | jq
-
-echo "Running collect-gentxs"
-$CHAIN_BIN $CHAIN_GENESIS_CMD collect-gentxs
-
-ls $CHAIN_DIR/config
-",
       "create-ics.sh": "#!/bin/bash
 
 set -euxo pipefail
@@ -496,118 +324,6 @@ main() {
 
 main
 ",
-      "create-validator.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-VAL_NAME="\${VAL_NAME:=osmosis}"
-NODE_URL="\${NODE_URL:=http://0.0.0.0:26657}"
-NODE_ARGS="\${NODE_ARGS}"
-GAS="\${GAS:=auto}"
-
-set -eux
-
-# Wait for the node to be synced
-max_tries=10
-while [[ $($CHAIN_BIN status --output json --node $NODE_URL 2>&1 | jq ".SyncInfo.catching_up") == true ]]
-do
-  if [[ max_tries -lt 0 ]]; then echo "Not able to sync with genesis node"; exit 1; fi
-  echo "Still syncing... Sleeping for 15 secs. Tries left $max_tries"
-  ((max_tries--))
-  sleep 30
-done
-
-# Function to compare version numbers
-version_compare() {
-    version1="$1"
-    version2="$2"
-    if [[ "$(printf '%s\\n' "$version1" "$version2" | sort -V | head -n 1)" == "$version1" ]]; then
-        return 1 # version1 is greater
-    else
-        return 0 # version2 is greater or equal
-    fi
-}
-
-# Check if cosmos_sdk_version is greater than a specified version
-is_greater() {
-    version_compare "$1" "$2"
-    return $?
-}
-
-function cosmos-sdk-version-v50() {
-  # Content for the validator.json file
-  json_content='{
-    "pubkey": '$($CHAIN_BIN tendermint show-validator $NODE_ARGS)',
-    "amount": "5000000000'$DENOM'",
-    "moniker": "'$VAL_NAME'",
-    "commission-rate": "0.1",
-    "commission-max-rate": "0.2",
-    "commission-max-change-rate": "0.01",
-    "min-self-delegation": "1000000"
-  }'
-  echo "$json_content" > /validator.json
-  cat /validator.json
-
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  $CHAIN_BIN tx staking create-validator /validator.json \\
-    --node $NODE_URL \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --fees 100000$DENOM \\
-    --keyring-backend="test" \\
-    --output json \\
-    --gas $GAS \\
-    --gas-adjustment 1.5 $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-function cosmos-sdk-version-default() {
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  args=''
-  if [[ $($CHAIN_BIN tx staking create-validator --help | grep -c "min-self-delegation") -gt 0 ]];
-  then
-    args+='--min-self-delegation=1000000'
-  fi
-  $CHAIN_BIN keys list --keyring-backend test --output json --home $CHAIN_DIR | jq
-  $CHAIN_BIN tx staking create-validator \\
-    --node $NODE_URL \\
-    --pubkey=$($CHAIN_BIN tendermint show-validator $NODE_ARGS) \\
-    --moniker $VAL_NAME \\
-    --amount 5000000000$DENOM \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --commission-rate="0.10" \\
-    --commission-max-rate="0.20" \\
-    --commission-max-change-rate="0.01" \\
-    --keyring-backend test \\
-    --home $CHAIN_DIR \\
-    --fees 100000$DENOM \\
-    --gas $GAS \\
-    --output json \\
-    --gas-adjustment 1.5 $args $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-set +e
-# Fetch the cosmos-sdk version to be able to perform the create-validator tx
-cosmos_sdk_version=$($CHAIN_BIN version --long | sed -n 's/cosmos_sdk_version: \\(.*\\)/\\1/p')
-echo "cosmos_sdk_version: $cosmos_sdk_version"
-set -e
-
-if is_greater "$cosmos_sdk_version" "v0.50.0"; then
-  echo "cosmos_sdk_version is greater than v0.50.0, running create-validator tx with new format"
-  cosmos-sdk-version-v50
-else
-  echo "cosmos_sdk_version is less than v0.50.0, running create-validator tx with old format"
-  cosmos-sdk-version-default
-fi
-",
       "ibc-connection.sh": "#!/bin/bash
 
 REGISTRY_URL="$1"
@@ -672,128 +388,6 @@ do
   sleep 2
 done
 ",
-      "update-config.sh": "#!/bin/bash
-
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-set -eux
-
-ls $CHAIN_DIR
-
-
-echo "Update config.toml file"
-sed -i -e 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:26657"#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/seeds = ".*"/seeds = ""/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's#cors_allowed_origins = \\[\\]#cors_allowed_origins = \\["*"\\]#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-
-echo "Update client.toml file"
-sed -i -e 's#keyring-backend = "os"#keyring-backend = "test"#g' $CHAIN_DIR/config/client.toml
-sed -i -e 's#output = "text"#output = "json"#g' $CHAIN_DIR/config/client.toml
-sed -i -e "s#chain-id = \\"\\"#chain-id = \\"$CHAIN_ID\\"#g" $CHAIN_DIR/config/client.toml
-
-
-echo "Update app.toml file"
-sed -i -e "s#minimum-gas-prices = \\".*\\"#minimum-gas-prices = \\"0$DENOM\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e "s#pruning = \\".*\\"#pruning = \\"default\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/swagger = false/swagger = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled = false/enabled = true/g' $CHAIN_DIR/config/app.toml
-
-
-function get_next_line_number() {
-  local txt=$1
-  local file=$2
-  local line_number=$(grep -n "$txt" $file | cut -d: -f1 | head -1)
-  echo $((line_number + 1))
-}
-
-line_number=$(get_next_line_number "Address defines the API server to listen on." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"tcp://0.0.0.0:1317\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9090\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC-web server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9091\\"#g" $CHAIN_DIR/config/app.toml
-
-if [ "$METRICS" == "true" ]; then
-  sed -i -e "s/prometheus = false/prometheus = true/g" $CHAIN_DIR/config/config.toml
-
-  line_number=$(get_next_line_number "PrometheusRetentionTime, when positive, enables a Prometheus metrics sink." $CHAIN_DIR/config/app.toml)
-  sed -i -e "\${line_number}s/prometheus-retention-time = 0/prometheus-retention-time = 3600/g" $CHAIN_DIR/config/app.toml
-fi
-
-echo "Update consensus params in config.toml"
-sed -i -e "s#timeout_propose = \\".*\\"#timeout_propose = \\"$TIMEOUT_PROPOSE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_propose_delta = \\".*\\"#timeout_propose_delta = \\"$TIMEOUT_PROPOSE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote = \\".*\\"#timeout_prevote = \\"$TIMEOUT_PREVOTE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote_delta = \\".*\\"#timeout_prevote_delta = \\"$TIMEOUT_PREVOTE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit = \\".*\\"#timeout_precommit = \\"$TIMEOUT_PRECOMMIT\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit_delta = \\".*\\"#timeout_precommit_delta = \\"$TIMEOUT_PRECOMMIT_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_commit = \\".*\\"#timeout_commit = \\"$TIMEOUT_COMMIT\\"#g" $CHAIN_DIR/config/config.toml
-",
-      "update-genesis.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-
-set -eux
-
-ls $CHAIN_DIR/config
-
-echo "Update genesis.json file with updated local params"
-sed -i -e "s/\\"stake\\"/\\"$DENOM\\"/g" $CHAIN_DIR/config/genesis.json
-sed -i "s/\\"time_iota_ms\\": \\".*\\"/\\"time_iota_ms\\": \\"$TIME_IOTA_MS\\"/" $CHAIN_DIR/config/genesis.json
-
-echo "Update max gas param"
-jq -r '.consensus_params.block.max_gas |= "100000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-echo "Update staking unbonding time and slashing jail time"
-jq -r '.app_state.staking.params.unbonding_time |= "300s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-jq -r '.app_state.slashing.params.downtime_jail_duration |= "60s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-# overrides for older sdk versions, before 0.47
-function gov_overrides_sdk_v46() {
-  jq -r '.app_state.gov.deposit_params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.deposit_params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.voting_params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-# overrides for newer sdk versions, post 0.47
-function gov_overrides_sdk_v47() {
-  jq -r '.app_state.gov.params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-if [ "$(jq -r '.app_state.feemarket.params' $CHAIN_DIR/config/genesis.json)" != "null" ]; then
-  jq -r '.app_state.feemarket.params.min_base_gas_price |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.params.beta |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.state.base_gas_price |= "0.0025"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-fi
-
-if [ "$(jq -r '.app_state.gov.params' $CHAIN_DIR/config/genesis.json)" == "null" ]; then
-  gov_overrides_sdk_v46
-else
-  gov_overrides_sdk_v47
-fi
-
-$CHAIN_BIN tendermint show-node-id
-",
     },
     "kind": "ConfigMap",
     "metadata": {
@@ -829,12 +423,6 @@ $CHAIN_BIN tendermint show-node-id
       "clusterIP": "None",
       "ports": [
         {
-          "name": "p2p",
-          "port": 26656,
-          "protocol": "TCP",
-          "targetPort": "26656",
-        },
-        {
           "name": "address",
           "port": 26658,
           "protocol": "TCP",
@@ -853,6 +441,12 @@ $CHAIN_BIN tendermint show-node-id
           "targetPort": "9091",
         },
         {
+          "name": "p2p",
+          "port": 26656,
+          "protocol": "TCP",
+          "targetPort": "26656",
+        },
+        {
           "name": "rest",
           "port": 1317,
           "protocol": "TCP",
@@ -863,12 +457,6 @@ $CHAIN_BIN tendermint show-node-id
           "port": 26657,
           "protocol": "TCP",
           "targetPort": "26657",
-        },
-        {
-          "name": "metrics",
-          "port": 26660,
-          "protocol": "TCP",
-          "targetPort": "26660",
         },
         {
           "name": "exposer",
@@ -909,12 +497,6 @@ $CHAIN_BIN tendermint show-node-id
       "clusterIP": "None",
       "ports": [
         {
-          "name": "p2p",
-          "port": 26656,
-          "protocol": "TCP",
-          "targetPort": "26656",
-        },
-        {
           "name": "address",
           "port": 26658,
           "protocol": "TCP",
@@ -933,6 +515,12 @@ $CHAIN_BIN tendermint show-node-id
           "targetPort": "9091",
         },
         {
+          "name": "p2p",
+          "port": 26656,
+          "protocol": "TCP",
+          "targetPort": "26656",
+        },
+        {
           "name": "rest",
           "port": 1317,
           "protocol": "TCP",
@@ -943,12 +531,6 @@ $CHAIN_BIN tendermint show-node-id
           "port": 26657,
           "protocol": "TCP",
           "targetPort": "26657",
-        },
-        {
-          "name": "metrics",
-          "port": 26660,
-          "protocol": "TCP",
-          "targetPort": "26660",
         },
         {
           "name": "exposer",
@@ -1164,17 +746,17 @@ $CHAIN_BIN start $START_ARGS",
                   "value": "/root/.osmosisd/data/priv_validator_state.json",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/exposer:latest",
+              "image": "ghcr.io/hyperweb-io/starship/exposer:20250205-544757d",
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
                 "limits": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
                 "requests": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
               },
               "volumeMounts": [
@@ -1348,6 +930,38 @@ CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && e
                   "value": "osmosis-1",
                 },
                 {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
+                },
+                {
                   "name": "KEYS_CONFIG",
                   "value": "/configs/keys.json",
                 },
@@ -1435,6 +1049,38 @@ bash -e /scripts/update-config.sh",
                 {
                   "name": "CHAIN_ID",
                   "value": "osmosis-1",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "KEYS_CONFIG",
@@ -1797,17 +1443,17 @@ VAL_NAME=$VAL_NAME bash -e /scripts/create-validator.sh",
                   "value": "/root/.osmosisd/data/priv_validator_state.json",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/exposer:latest",
+              "image": "ghcr.io/hyperweb-io/starship/exposer:20250205-544757d",
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
                 "limits": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
                 "requests": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
               },
               "volumeMounts": [
@@ -1828,11 +1474,11 @@ VAL_NAME=$VAL_NAME bash -e /scripts/create-validator.sh",
                 "/bin/sh",
                 "-c",
                 "
-      while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
-        echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
-        echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
-        sleep 10;
-      done
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
 echo "Ready to start"
 exit 0",
               ],
@@ -1856,11 +1502,11 @@ exit 0",
               "resources": {
                 "limits": {
                   "cpu": "0.1",
-                  "memory": "128M",
+                  "memory": "100M",
                 },
                 "requests": {
                   "cpu": "0.1",
-                  "memory": "128M",
+                  "memory": "100M",
                 },
               },
             },
@@ -1924,6 +1570,38 @@ echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json",
                 {
                   "name": "CHAIN_ID",
                   "value": "osmosis-1",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "GENESIS_HOST",
@@ -2039,6 +1717,38 @@ cat $CHAIN_DIR/config/config.toml",
                 {
                   "name": "CHAIN_ID",
                   "value": "osmosis-1",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "GENESIS_HOST",
@@ -2873,178 +2583,6 @@ exports[`Cosmos Generator Tests Manifest Generation should generate all manifest
   {
     "apiVersion": "v1",
     "data": {
-      "build-chain.sh": "#!/bin/bash
-
-set -euxo pipefail
-
-mkdir -p /tmp/chains $UPGRADE_DIR
-
-echo "Fetching code from tag"
-mkdir -p /tmp/chains/$CHAIN_NAME
-cd /tmp/chains/$CHAIN_NAME
-
-if [[ $CODE_TAG =~ ^[0-9a-fA-F]{40}$ ]]; then
-  echo "Trying to fetch code from commit hash"
-  curl -LO $CODE_REPO/archive/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG}
-elif [[ $CODE_TAG = v* ]]; then
-  echo "Trying to fetch code from tag with 'v' prefix"
-  curl -LO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG#"v"}
-else
-  echo "Trying to fetch code from tag or branch"
-  if curl -fsLO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip; then
-    unzip $CODE_TAG.zip
-    code_dir=\${CODE_REPO##*/}-$CODE_TAG
-  elif curl -fsLO $CODE_REPO/archive/refs/heads/$CODE_TAG.zip; then
-    unzip $(echo $CODE_TAG | rev | cut -d "/" -f 1 | rev).zip
-    code_dir=\${CODE_REPO##*/}-\${CODE_TAG/\\//-}
-  else
-    echo "Tag or branch '$CODE_TAG' not found"
-    exit 1
-  fi
-fi
-
-echo "Fetch wasmvm if needed"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-WASM_VERSION=$(cat go.mod | grep -oe "github.com/CosmWasm/wasmvm v[0-9.]*" | cut -d ' ' -f 2)
-if [[ WASM_VERSION != "" ]]; then
-  mkdir -p /tmp/chains/libwasmvm_muslc
-  cd /tmp/chains/libwasmvm_muslc
-  curl -LO https://github.com/CosmWasm/wasmvm/releases/download/$WASM_VERSION/libwasmvm_muslc.x86_64.a
-  cp libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.a
-fi
-
-echo "Build chain binary"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-CGO_ENABLED=1 BUILD_TAGS="muslc linkstatic" LINK_STATICALLY=true LEDGER_ENABLED=false make install
-
-echo "Copy created binary to the upgrade directories"
-if [[ $UPGRADE_NAME == "genesis" ]]; then
-  mkdir -p $UPGRADE_DIR/genesis/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/genesis/bin
-else
-  mkdir -p $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-fi
-
-echo "Cleanup"
-rm -rf /tmp/chains/$CHAIN_NAME
-",
-      "chain-rpc-ready.sh": "#!/bin/bash
-# chain-rpc-ready.sh - Check if a CometBFT or Tendermint RPC service is ready
-# Usage: chain-rpc-ready.sh [RPC_URL]
-
-set -euo pipefail
-
-RPC_URL=\${1:-"http://localhost:26657"}
-
-echo 1>&2 "Checking if $RPC_URL is ready..."
-
-# Check if the RPC URL is reachable,
-json=$(curl -s --connect-timeout 2 "$RPC_URL/status")
-
-# and the bootstrap block state has been validated,
-if [ "$(echo "$json" | jq -r '.result.sync_info | (.earliest_block_height < .latest_block_height)')" != true ]; then
-  echo 1>&2 "$RPC_URL is not ready: bootstrap block state has not been validated"
-  exit 1
-fi
-
-# and the node is not catching up.
-if [ "$(echo "$json" | jq -r .result.sync_info.catching_up)" != false ]; then
-  echo 1>&2 "$RPC_URL is not ready: node is catching up"
-  exit 1
-fi
-
-echo "$json" | jq -r .result
-exit 0
-",
-      "create-genesis.sh": "#!/bin/bash
-
-set -eux
-
-DENOM="\${DENOM:=uosmo}"
-COINS="\${COINS:=100000000000000000uosmo}"
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-FAUCET_ENABLED="\${FAUCET_ENABLED:=true}"
-NUM_VALIDATORS="\${NUM_VALIDATORS:=1}"
-NUM_RELAYERS="\${NUM_RELAYERS:=0}"
-
-# check if the binary has genesis subcommand or not, if not, set CHAIN_GENESIS_CMD to empty
-CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && echo "genesis" || echo "")
-
-CHAIN_INIT_ID="$CHAIN_ID"
-if [ "$CHAIN_BIN" == "osmosisd" ]; then
-  CHAIN_INIT_ID="test-1"
-fi
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN init $CHAIN_ID --chain-id $CHAIN_INIT_ID --recover
-sed -i -e "s/$CHAIN_INIT_ID/$CHAIN_ID/g" $CHAIN_DIR/config/genesis.json
-
-# Add genesis keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".genesis[0].name" $KEYS_CONFIG)
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".genesis[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .genesis[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add faucet key to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".faucet[0].name" $KEYS_CONFIG)
-jq -r ".faucet[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".faucet[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .faucet[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add test keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".keys[0].name" $KEYS_CONFIG)
-jq -r ".keys[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".keys[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .keys[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-if [[ $FAUCET_ENABLED == "false" && $NUM_RELAYERS -gt "-1" ]];
-then
-  ## Add relayers keys and delegate tokens
-  for i in $(seq 0 $NUM_RELAYERS);
-  do
-    # Add relayer key and delegate tokens
-    RELAYER_KEY_NAME="$(jq -r ".relayers[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer key.... $RELAYER_KEY_NAME"
-    jq -r ".relayers[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-    # Add relayer-cli key and delegate tokens
-    RELAYER_CLI_KEY_NAME="$(jq -r ".relayers_cli[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer-cli key.... $RELAYER_CLI_KEY_NAME"
-    jq -r ".relayers_cli[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_CLI_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_CLI_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-## if faucet not enabled then add validator and relayer with index as keys and into gentx
-if [[ $FAUCET_ENABLED == "false" && $NUM_VALIDATORS -gt "1" ]];
-then
-  ## Add validators key and delegate tokens
-  for i in $(seq 0 $NUM_VALIDATORS);
-  do
-    VAL_KEY_NAME="$(jq -r '.validators[0].name' $KEYS_CONFIG)-$i"
-    echo "Adding validator key.... $VAL_KEY_NAME"
-    jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $VAL_KEY_NAME --index $i --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $VAL_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-echo "Creating gentx..."
-COIN=$(echo $COINS | cut -d ',' -f1)
-AMT=$(echo \${COIN//[!0-9]/} | sed -e "s/0000$//")
-$CHAIN_BIN $CHAIN_GENESIS_CMD gentx $(jq -r ".genesis[0].name" $KEYS_CONFIG) $AMT$DENOM --keyring-backend="test" --chain-id $CHAIN_ID
-
-echo "Output of gentx"
-cat $CHAIN_DIR/config/gentx/*.json | jq
-
-echo "Running collect-gentxs"
-$CHAIN_BIN $CHAIN_GENESIS_CMD collect-gentxs
-
-ls $CHAIN_DIR/config
-",
       "create-ics.sh": "#!/bin/bash
 
 set -euxo pipefail
@@ -3188,118 +2726,6 @@ main() {
 
 main
 ",
-      "create-validator.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-VAL_NAME="\${VAL_NAME:=osmosis}"
-NODE_URL="\${NODE_URL:=http://0.0.0.0:26657}"
-NODE_ARGS="\${NODE_ARGS}"
-GAS="\${GAS:=auto}"
-
-set -eux
-
-# Wait for the node to be synced
-max_tries=10
-while [[ $($CHAIN_BIN status --output json --node $NODE_URL 2>&1 | jq ".SyncInfo.catching_up") == true ]]
-do
-  if [[ max_tries -lt 0 ]]; then echo "Not able to sync with genesis node"; exit 1; fi
-  echo "Still syncing... Sleeping for 15 secs. Tries left $max_tries"
-  ((max_tries--))
-  sleep 30
-done
-
-# Function to compare version numbers
-version_compare() {
-    version1="$1"
-    version2="$2"
-    if [[ "$(printf '%s\\n' "$version1" "$version2" | sort -V | head -n 1)" == "$version1" ]]; then
-        return 1 # version1 is greater
-    else
-        return 0 # version2 is greater or equal
-    fi
-}
-
-# Check if cosmos_sdk_version is greater than a specified version
-is_greater() {
-    version_compare "$1" "$2"
-    return $?
-}
-
-function cosmos-sdk-version-v50() {
-  # Content for the validator.json file
-  json_content='{
-    "pubkey": '$($CHAIN_BIN tendermint show-validator $NODE_ARGS)',
-    "amount": "5000000000'$DENOM'",
-    "moniker": "'$VAL_NAME'",
-    "commission-rate": "0.1",
-    "commission-max-rate": "0.2",
-    "commission-max-change-rate": "0.01",
-    "min-self-delegation": "1000000"
-  }'
-  echo "$json_content" > /validator.json
-  cat /validator.json
-
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  $CHAIN_BIN tx staking create-validator /validator.json \\
-    --node $NODE_URL \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --fees 100000$DENOM \\
-    --keyring-backend="test" \\
-    --output json \\
-    --gas $GAS \\
-    --gas-adjustment 1.5 $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-function cosmos-sdk-version-default() {
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  args=''
-  if [[ $($CHAIN_BIN tx staking create-validator --help | grep -c "min-self-delegation") -gt 0 ]];
-  then
-    args+='--min-self-delegation=1000000'
-  fi
-  $CHAIN_BIN keys list --keyring-backend test --output json --home $CHAIN_DIR | jq
-  $CHAIN_BIN tx staking create-validator \\
-    --node $NODE_URL \\
-    --pubkey=$($CHAIN_BIN tendermint show-validator $NODE_ARGS) \\
-    --moniker $VAL_NAME \\
-    --amount 5000000000$DENOM \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --commission-rate="0.10" \\
-    --commission-max-rate="0.20" \\
-    --commission-max-change-rate="0.01" \\
-    --keyring-backend test \\
-    --home $CHAIN_DIR \\
-    --fees 100000$DENOM \\
-    --gas $GAS \\
-    --output json \\
-    --gas-adjustment 1.5 $args $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-set +e
-# Fetch the cosmos-sdk version to be able to perform the create-validator tx
-cosmos_sdk_version=$($CHAIN_BIN version --long | sed -n 's/cosmos_sdk_version: \\(.*\\)/\\1/p')
-echo "cosmos_sdk_version: $cosmos_sdk_version"
-set -e
-
-if is_greater "$cosmos_sdk_version" "v0.50.0"; then
-  echo "cosmos_sdk_version is greater than v0.50.0, running create-validator tx with new format"
-  cosmos-sdk-version-v50
-else
-  echo "cosmos_sdk_version is less than v0.50.0, running create-validator tx with old format"
-  cosmos-sdk-version-default
-fi
-",
       "ibc-connection.sh": "#!/bin/bash
 
 REGISTRY_URL="$1"
@@ -3364,128 +2790,6 @@ do
   sleep 2
 done
 ",
-      "update-config.sh": "#!/bin/bash
-
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-set -eux
-
-ls $CHAIN_DIR
-
-
-echo "Update config.toml file"
-sed -i -e 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:26657"#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/seeds = ".*"/seeds = ""/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's#cors_allowed_origins = \\[\\]#cors_allowed_origins = \\["*"\\]#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-
-echo "Update client.toml file"
-sed -i -e 's#keyring-backend = "os"#keyring-backend = "test"#g' $CHAIN_DIR/config/client.toml
-sed -i -e 's#output = "text"#output = "json"#g' $CHAIN_DIR/config/client.toml
-sed -i -e "s#chain-id = \\"\\"#chain-id = \\"$CHAIN_ID\\"#g" $CHAIN_DIR/config/client.toml
-
-
-echo "Update app.toml file"
-sed -i -e "s#minimum-gas-prices = \\".*\\"#minimum-gas-prices = \\"0$DENOM\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e "s#pruning = \\".*\\"#pruning = \\"default\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/swagger = false/swagger = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled = false/enabled = true/g' $CHAIN_DIR/config/app.toml
-
-
-function get_next_line_number() {
-  local txt=$1
-  local file=$2
-  local line_number=$(grep -n "$txt" $file | cut -d: -f1 | head -1)
-  echo $((line_number + 1))
-}
-
-line_number=$(get_next_line_number "Address defines the API server to listen on." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"tcp://0.0.0.0:1317\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9090\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC-web server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9091\\"#g" $CHAIN_DIR/config/app.toml
-
-if [ "$METRICS" == "true" ]; then
-  sed -i -e "s/prometheus = false/prometheus = true/g" $CHAIN_DIR/config/config.toml
-
-  line_number=$(get_next_line_number "PrometheusRetentionTime, when positive, enables a Prometheus metrics sink." $CHAIN_DIR/config/app.toml)
-  sed -i -e "\${line_number}s/prometheus-retention-time = 0/prometheus-retention-time = 3600/g" $CHAIN_DIR/config/app.toml
-fi
-
-echo "Update consensus params in config.toml"
-sed -i -e "s#timeout_propose = \\".*\\"#timeout_propose = \\"$TIMEOUT_PROPOSE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_propose_delta = \\".*\\"#timeout_propose_delta = \\"$TIMEOUT_PROPOSE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote = \\".*\\"#timeout_prevote = \\"$TIMEOUT_PREVOTE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote_delta = \\".*\\"#timeout_prevote_delta = \\"$TIMEOUT_PREVOTE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit = \\".*\\"#timeout_precommit = \\"$TIMEOUT_PRECOMMIT\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit_delta = \\".*\\"#timeout_precommit_delta = \\"$TIMEOUT_PRECOMMIT_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_commit = \\".*\\"#timeout_commit = \\"$TIMEOUT_COMMIT\\"#g" $CHAIN_DIR/config/config.toml
-",
-      "update-genesis.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-
-set -eux
-
-ls $CHAIN_DIR/config
-
-echo "Update genesis.json file with updated local params"
-sed -i -e "s/\\"stake\\"/\\"$DENOM\\"/g" $CHAIN_DIR/config/genesis.json
-sed -i "s/\\"time_iota_ms\\": \\".*\\"/\\"time_iota_ms\\": \\"$TIME_IOTA_MS\\"/" $CHAIN_DIR/config/genesis.json
-
-echo "Update max gas param"
-jq -r '.consensus_params.block.max_gas |= "100000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-echo "Update staking unbonding time and slashing jail time"
-jq -r '.app_state.staking.params.unbonding_time |= "300s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-jq -r '.app_state.slashing.params.downtime_jail_duration |= "60s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-# overrides for older sdk versions, before 0.47
-function gov_overrides_sdk_v46() {
-  jq -r '.app_state.gov.deposit_params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.deposit_params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.voting_params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-# overrides for newer sdk versions, post 0.47
-function gov_overrides_sdk_v47() {
-  jq -r '.app_state.gov.params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-if [ "$(jq -r '.app_state.feemarket.params' $CHAIN_DIR/config/genesis.json)" != "null" ]; then
-  jq -r '.app_state.feemarket.params.min_base_gas_price |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.params.beta |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.state.base_gas_price |= "0.0025"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-fi
-
-if [ "$(jq -r '.app_state.gov.params' $CHAIN_DIR/config/genesis.json)" == "null" ]; then
-  gov_overrides_sdk_v46
-else
-  gov_overrides_sdk_v47
-fi
-
-$CHAIN_BIN tendermint show-node-id
-",
     },
     "kind": "ConfigMap",
     "metadata": {
@@ -3521,12 +2825,6 @@ $CHAIN_BIN tendermint show-node-id
       "clusterIP": "None",
       "ports": [
         {
-          "name": "p2p",
-          "port": 26656,
-          "protocol": "TCP",
-          "targetPort": "26656",
-        },
-        {
           "name": "address",
           "port": 26658,
           "protocol": "TCP",
@@ -3545,6 +2843,12 @@ $CHAIN_BIN tendermint show-node-id
           "targetPort": "9091",
         },
         {
+          "name": "p2p",
+          "port": 26656,
+          "protocol": "TCP",
+          "targetPort": "26656",
+        },
+        {
           "name": "rest",
           "port": 1317,
           "protocol": "TCP",
@@ -3555,12 +2859,6 @@ $CHAIN_BIN tendermint show-node-id
           "port": 26657,
           "protocol": "TCP",
           "targetPort": "26657",
-        },
-        {
-          "name": "metrics",
-          "port": 26660,
-          "protocol": "TCP",
-          "targetPort": "26660",
         },
         {
           "name": "exposer",
@@ -3782,17 +3080,17 @@ $CHAIN_BIN start $START_ARGS",
                   "value": "/root/.osmosisd/data/priv_validator_state.json",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/exposer:latest",
+              "image": "ghcr.io/hyperweb-io/starship/exposer:20250205-544757d",
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
                 "limits": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
                 "requests": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
               },
               "volumeMounts": [
@@ -3969,6 +3267,38 @@ $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account osmo1e9ucjn5fjmetky5wezzcsccp7
                   "value": "osmosis-1",
                 },
                 {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
+                },
+                {
                   "name": "KEYS_CONFIG",
                   "value": "/configs/keys.json",
                 },
@@ -4058,6 +3388,38 @@ bash -e /scripts/update-config.sh",
                 {
                   "name": "CHAIN_ID",
                   "value": "osmosis-1",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "KEYS_CONFIG",
@@ -4993,178 +4355,6 @@ exports[`Cosmos Generator Tests Manifest Generation should handle cometmock conf
   {
     "apiVersion": "v1",
     "data": {
-      "build-chain.sh": "#!/bin/bash
-
-set -euxo pipefail
-
-mkdir -p /tmp/chains $UPGRADE_DIR
-
-echo "Fetching code from tag"
-mkdir -p /tmp/chains/$CHAIN_NAME
-cd /tmp/chains/$CHAIN_NAME
-
-if [[ $CODE_TAG =~ ^[0-9a-fA-F]{40}$ ]]; then
-  echo "Trying to fetch code from commit hash"
-  curl -LO $CODE_REPO/archive/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG}
-elif [[ $CODE_TAG = v* ]]; then
-  echo "Trying to fetch code from tag with 'v' prefix"
-  curl -LO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG#"v"}
-else
-  echo "Trying to fetch code from tag or branch"
-  if curl -fsLO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip; then
-    unzip $CODE_TAG.zip
-    code_dir=\${CODE_REPO##*/}-$CODE_TAG
-  elif curl -fsLO $CODE_REPO/archive/refs/heads/$CODE_TAG.zip; then
-    unzip $(echo $CODE_TAG | rev | cut -d "/" -f 1 | rev).zip
-    code_dir=\${CODE_REPO##*/}-\${CODE_TAG/\\//-}
-  else
-    echo "Tag or branch '$CODE_TAG' not found"
-    exit 1
-  fi
-fi
-
-echo "Fetch wasmvm if needed"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-WASM_VERSION=$(cat go.mod | grep -oe "github.com/CosmWasm/wasmvm v[0-9.]*" | cut -d ' ' -f 2)
-if [[ WASM_VERSION != "" ]]; then
-  mkdir -p /tmp/chains/libwasmvm_muslc
-  cd /tmp/chains/libwasmvm_muslc
-  curl -LO https://github.com/CosmWasm/wasmvm/releases/download/$WASM_VERSION/libwasmvm_muslc.x86_64.a
-  cp libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.a
-fi
-
-echo "Build chain binary"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-CGO_ENABLED=1 BUILD_TAGS="muslc linkstatic" LINK_STATICALLY=true LEDGER_ENABLED=false make install
-
-echo "Copy created binary to the upgrade directories"
-if [[ $UPGRADE_NAME == "genesis" ]]; then
-  mkdir -p $UPGRADE_DIR/genesis/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/genesis/bin
-else
-  mkdir -p $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-fi
-
-echo "Cleanup"
-rm -rf /tmp/chains/$CHAIN_NAME
-",
-      "chain-rpc-ready.sh": "#!/bin/bash
-# chain-rpc-ready.sh - Check if a CometBFT or Tendermint RPC service is ready
-# Usage: chain-rpc-ready.sh [RPC_URL]
-
-set -euo pipefail
-
-RPC_URL=\${1:-"http://localhost:26657"}
-
-echo 1>&2 "Checking if $RPC_URL is ready..."
-
-# Check if the RPC URL is reachable,
-json=$(curl -s --connect-timeout 2 "$RPC_URL/status")
-
-# and the bootstrap block state has been validated,
-if [ "$(echo "$json" | jq -r '.result.sync_info | (.earliest_block_height < .latest_block_height)')" != true ]; then
-  echo 1>&2 "$RPC_URL is not ready: bootstrap block state has not been validated"
-  exit 1
-fi
-
-# and the node is not catching up.
-if [ "$(echo "$json" | jq -r .result.sync_info.catching_up)" != false ]; then
-  echo 1>&2 "$RPC_URL is not ready: node is catching up"
-  exit 1
-fi
-
-echo "$json" | jq -r .result
-exit 0
-",
-      "create-genesis.sh": "#!/bin/bash
-
-set -eux
-
-DENOM="\${DENOM:=uosmo}"
-COINS="\${COINS:=100000000000000000uosmo}"
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-FAUCET_ENABLED="\${FAUCET_ENABLED:=true}"
-NUM_VALIDATORS="\${NUM_VALIDATORS:=1}"
-NUM_RELAYERS="\${NUM_RELAYERS:=0}"
-
-# check if the binary has genesis subcommand or not, if not, set CHAIN_GENESIS_CMD to empty
-CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && echo "genesis" || echo "")
-
-CHAIN_INIT_ID="$CHAIN_ID"
-if [ "$CHAIN_BIN" == "osmosisd" ]; then
-  CHAIN_INIT_ID="test-1"
-fi
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN init $CHAIN_ID --chain-id $CHAIN_INIT_ID --recover
-sed -i -e "s/$CHAIN_INIT_ID/$CHAIN_ID/g" $CHAIN_DIR/config/genesis.json
-
-# Add genesis keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".genesis[0].name" $KEYS_CONFIG)
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".genesis[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .genesis[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add faucet key to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".faucet[0].name" $KEYS_CONFIG)
-jq -r ".faucet[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".faucet[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .faucet[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add test keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".keys[0].name" $KEYS_CONFIG)
-jq -r ".keys[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".keys[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .keys[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-if [[ $FAUCET_ENABLED == "false" && $NUM_RELAYERS -gt "-1" ]];
-then
-  ## Add relayers keys and delegate tokens
-  for i in $(seq 0 $NUM_RELAYERS);
-  do
-    # Add relayer key and delegate tokens
-    RELAYER_KEY_NAME="$(jq -r ".relayers[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer key.... $RELAYER_KEY_NAME"
-    jq -r ".relayers[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-    # Add relayer-cli key and delegate tokens
-    RELAYER_CLI_KEY_NAME="$(jq -r ".relayers_cli[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer-cli key.... $RELAYER_CLI_KEY_NAME"
-    jq -r ".relayers_cli[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_CLI_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_CLI_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-## if faucet not enabled then add validator and relayer with index as keys and into gentx
-if [[ $FAUCET_ENABLED == "false" && $NUM_VALIDATORS -gt "1" ]];
-then
-  ## Add validators key and delegate tokens
-  for i in $(seq 0 $NUM_VALIDATORS);
-  do
-    VAL_KEY_NAME="$(jq -r '.validators[0].name' $KEYS_CONFIG)-$i"
-    echo "Adding validator key.... $VAL_KEY_NAME"
-    jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $VAL_KEY_NAME --index $i --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $VAL_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-echo "Creating gentx..."
-COIN=$(echo $COINS | cut -d ',' -f1)
-AMT=$(echo \${COIN//[!0-9]/} | sed -e "s/0000$//")
-$CHAIN_BIN $CHAIN_GENESIS_CMD gentx $(jq -r ".genesis[0].name" $KEYS_CONFIG) $AMT$DENOM --keyring-backend="test" --chain-id $CHAIN_ID
-
-echo "Output of gentx"
-cat $CHAIN_DIR/config/gentx/*.json | jq
-
-echo "Running collect-gentxs"
-$CHAIN_BIN $CHAIN_GENESIS_CMD collect-gentxs
-
-ls $CHAIN_DIR/config
-",
       "create-ics.sh": "#!/bin/bash
 
 set -euxo pipefail
@@ -5308,118 +4498,6 @@ main() {
 
 main
 ",
-      "create-validator.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-VAL_NAME="\${VAL_NAME:=osmosis}"
-NODE_URL="\${NODE_URL:=http://0.0.0.0:26657}"
-NODE_ARGS="\${NODE_ARGS}"
-GAS="\${GAS:=auto}"
-
-set -eux
-
-# Wait for the node to be synced
-max_tries=10
-while [[ $($CHAIN_BIN status --output json --node $NODE_URL 2>&1 | jq ".SyncInfo.catching_up") == true ]]
-do
-  if [[ max_tries -lt 0 ]]; then echo "Not able to sync with genesis node"; exit 1; fi
-  echo "Still syncing... Sleeping for 15 secs. Tries left $max_tries"
-  ((max_tries--))
-  sleep 30
-done
-
-# Function to compare version numbers
-version_compare() {
-    version1="$1"
-    version2="$2"
-    if [[ "$(printf '%s\\n' "$version1" "$version2" | sort -V | head -n 1)" == "$version1" ]]; then
-        return 1 # version1 is greater
-    else
-        return 0 # version2 is greater or equal
-    fi
-}
-
-# Check if cosmos_sdk_version is greater than a specified version
-is_greater() {
-    version_compare "$1" "$2"
-    return $?
-}
-
-function cosmos-sdk-version-v50() {
-  # Content for the validator.json file
-  json_content='{
-    "pubkey": '$($CHAIN_BIN tendermint show-validator $NODE_ARGS)',
-    "amount": "5000000000'$DENOM'",
-    "moniker": "'$VAL_NAME'",
-    "commission-rate": "0.1",
-    "commission-max-rate": "0.2",
-    "commission-max-change-rate": "0.01",
-    "min-self-delegation": "1000000"
-  }'
-  echo "$json_content" > /validator.json
-  cat /validator.json
-
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  $CHAIN_BIN tx staking create-validator /validator.json \\
-    --node $NODE_URL \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --fees 100000$DENOM \\
-    --keyring-backend="test" \\
-    --output json \\
-    --gas $GAS \\
-    --gas-adjustment 1.5 $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-function cosmos-sdk-version-default() {
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  args=''
-  if [[ $($CHAIN_BIN tx staking create-validator --help | grep -c "min-self-delegation") -gt 0 ]];
-  then
-    args+='--min-self-delegation=1000000'
-  fi
-  $CHAIN_BIN keys list --keyring-backend test --output json --home $CHAIN_DIR | jq
-  $CHAIN_BIN tx staking create-validator \\
-    --node $NODE_URL \\
-    --pubkey=$($CHAIN_BIN tendermint show-validator $NODE_ARGS) \\
-    --moniker $VAL_NAME \\
-    --amount 5000000000$DENOM \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --commission-rate="0.10" \\
-    --commission-max-rate="0.20" \\
-    --commission-max-change-rate="0.01" \\
-    --keyring-backend test \\
-    --home $CHAIN_DIR \\
-    --fees 100000$DENOM \\
-    --gas $GAS \\
-    --output json \\
-    --gas-adjustment 1.5 $args $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-set +e
-# Fetch the cosmos-sdk version to be able to perform the create-validator tx
-cosmos_sdk_version=$($CHAIN_BIN version --long | sed -n 's/cosmos_sdk_version: \\(.*\\)/\\1/p')
-echo "cosmos_sdk_version: $cosmos_sdk_version"
-set -e
-
-if is_greater "$cosmos_sdk_version" "v0.50.0"; then
-  echo "cosmos_sdk_version is greater than v0.50.0, running create-validator tx with new format"
-  cosmos-sdk-version-v50
-else
-  echo "cosmos_sdk_version is less than v0.50.0, running create-validator tx with old format"
-  cosmos-sdk-version-default
-fi
-",
       "ibc-connection.sh": "#!/bin/bash
 
 REGISTRY_URL="$1"
@@ -5484,128 +4562,6 @@ do
   sleep 2
 done
 ",
-      "update-config.sh": "#!/bin/bash
-
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-set -eux
-
-ls $CHAIN_DIR
-
-
-echo "Update config.toml file"
-sed -i -e 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:26657"#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/seeds = ".*"/seeds = ""/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's#cors_allowed_origins = \\[\\]#cors_allowed_origins = \\["*"\\]#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-
-echo "Update client.toml file"
-sed -i -e 's#keyring-backend = "os"#keyring-backend = "test"#g' $CHAIN_DIR/config/client.toml
-sed -i -e 's#output = "text"#output = "json"#g' $CHAIN_DIR/config/client.toml
-sed -i -e "s#chain-id = \\"\\"#chain-id = \\"$CHAIN_ID\\"#g" $CHAIN_DIR/config/client.toml
-
-
-echo "Update app.toml file"
-sed -i -e "s#minimum-gas-prices = \\".*\\"#minimum-gas-prices = \\"0$DENOM\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e "s#pruning = \\".*\\"#pruning = \\"default\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/swagger = false/swagger = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled = false/enabled = true/g' $CHAIN_DIR/config/app.toml
-
-
-function get_next_line_number() {
-  local txt=$1
-  local file=$2
-  local line_number=$(grep -n "$txt" $file | cut -d: -f1 | head -1)
-  echo $((line_number + 1))
-}
-
-line_number=$(get_next_line_number "Address defines the API server to listen on." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"tcp://0.0.0.0:1317\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9090\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC-web server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9091\\"#g" $CHAIN_DIR/config/app.toml
-
-if [ "$METRICS" == "true" ]; then
-  sed -i -e "s/prometheus = false/prometheus = true/g" $CHAIN_DIR/config/config.toml
-
-  line_number=$(get_next_line_number "PrometheusRetentionTime, when positive, enables a Prometheus metrics sink." $CHAIN_DIR/config/app.toml)
-  sed -i -e "\${line_number}s/prometheus-retention-time = 0/prometheus-retention-time = 3600/g" $CHAIN_DIR/config/app.toml
-fi
-
-echo "Update consensus params in config.toml"
-sed -i -e "s#timeout_propose = \\".*\\"#timeout_propose = \\"$TIMEOUT_PROPOSE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_propose_delta = \\".*\\"#timeout_propose_delta = \\"$TIMEOUT_PROPOSE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote = \\".*\\"#timeout_prevote = \\"$TIMEOUT_PREVOTE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote_delta = \\".*\\"#timeout_prevote_delta = \\"$TIMEOUT_PREVOTE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit = \\".*\\"#timeout_precommit = \\"$TIMEOUT_PRECOMMIT\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit_delta = \\".*\\"#timeout_precommit_delta = \\"$TIMEOUT_PRECOMMIT_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_commit = \\".*\\"#timeout_commit = \\"$TIMEOUT_COMMIT\\"#g" $CHAIN_DIR/config/config.toml
-",
-      "update-genesis.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-
-set -eux
-
-ls $CHAIN_DIR/config
-
-echo "Update genesis.json file with updated local params"
-sed -i -e "s/\\"stake\\"/\\"$DENOM\\"/g" $CHAIN_DIR/config/genesis.json
-sed -i "s/\\"time_iota_ms\\": \\".*\\"/\\"time_iota_ms\\": \\"$TIME_IOTA_MS\\"/" $CHAIN_DIR/config/genesis.json
-
-echo "Update max gas param"
-jq -r '.consensus_params.block.max_gas |= "100000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-echo "Update staking unbonding time and slashing jail time"
-jq -r '.app_state.staking.params.unbonding_time |= "300s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-jq -r '.app_state.slashing.params.downtime_jail_duration |= "60s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-# overrides for older sdk versions, before 0.47
-function gov_overrides_sdk_v46() {
-  jq -r '.app_state.gov.deposit_params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.deposit_params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.voting_params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-# overrides for newer sdk versions, post 0.47
-function gov_overrides_sdk_v47() {
-  jq -r '.app_state.gov.params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-if [ "$(jq -r '.app_state.feemarket.params' $CHAIN_DIR/config/genesis.json)" != "null" ]; then
-  jq -r '.app_state.feemarket.params.min_base_gas_price |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.params.beta |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.state.base_gas_price |= "0.0025"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-fi
-
-if [ "$(jq -r '.app_state.gov.params' $CHAIN_DIR/config/genesis.json)" == "null" ]; then
-  gov_overrides_sdk_v46
-else
-  gov_overrides_sdk_v47
-fi
-
-$CHAIN_BIN tendermint show-node-id
-",
     },
     "kind": "ConfigMap",
     "metadata": {
@@ -5641,12 +4597,6 @@ $CHAIN_BIN tendermint show-node-id
       "clusterIP": "None",
       "ports": [
         {
-          "name": "p2p",
-          "port": 26656,
-          "protocol": "TCP",
-          "targetPort": "26656",
-        },
-        {
           "name": "address",
           "port": 26658,
           "protocol": "TCP",
@@ -5665,6 +4615,12 @@ $CHAIN_BIN tendermint show-node-id
           "targetPort": "9091",
         },
         {
+          "name": "p2p",
+          "port": 26656,
+          "protocol": "TCP",
+          "targetPort": "26656",
+        },
+        {
           "name": "rest",
           "port": 1317,
           "protocol": "TCP",
@@ -5675,12 +4631,6 @@ $CHAIN_BIN tendermint show-node-id
           "port": 26657,
           "protocol": "TCP",
           "targetPort": "26657",
-        },
-        {
-          "name": "metrics",
-          "port": 26660,
-          "protocol": "TCP",
-          "targetPort": "26660",
         },
         {
           "name": "exposer",
@@ -5883,17 +4833,17 @@ $CHAIN_BIN start $START_ARGS",
                   "value": "/root/.gaia/data/priv_validator_state.json",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/exposer:latest",
+              "image": "ghcr.io/hyperweb-io/starship/exposer:20250205-544757d",
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
                 "limits": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
                 "requests": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
               },
               "volumeMounts": [
@@ -5968,6 +4918,38 @@ CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && e
                 {
                   "name": "CHAIN_ID",
                   "value": "cosmoshub-4",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "KEYS_CONFIG",
@@ -6057,6 +5039,38 @@ bash -e /scripts/update-config.sh",
                 {
                   "name": "CHAIN_ID",
                   "value": "cosmoshub-4",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "KEYS_CONFIG",
@@ -6751,6 +5765,376 @@ $CHAIN_BIN tendermint show-node-id
       "name": "setup-scripts-cosmoshub-4",
     },
   },
+  {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/component": "chain",
+        "app.kubernetes.io/managed-by": "starship",
+        "app.kubernetes.io/name": "cosmoshub-4-cometmock",
+        "app.kubernetes.io/role": "cometmock",
+        "app.kubernetes.io/type": "cosmoshub-4-service",
+        "app.kubernetes.io/version": "4.0.0-alpha.0",
+        "starship.io/chain-id": "cosmoshub-4",
+        "starship.io/chain-name": "cosmoshub",
+        "starship.io/name": "starship-generator-test",
+      },
+      "name": "cosmoshub-4-cometmock",
+    },
+    "spec": {
+      "clusterIP": "None",
+      "ports": [
+        {
+          "name": "rpc",
+          "port": 22331,
+          "protocol": "TCP",
+          "targetPort": "22331",
+        },
+      ],
+      "selector": {
+        "app.kubernetes.io/name": "cosmoshub-4-cometmock",
+      },
+    },
+  },
+  {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": {
+      "labels": {
+        "app.kubernetes.io/component": "chain",
+        "app.kubernetes.io/id": "cosmoshub-4",
+        "app.kubernetes.io/managed-by": "starship",
+        "app.kubernetes.io/name": "cosmoshub-4-cometmock",
+        "app.kubernetes.io/part-of": "cosmoshub-4",
+        "app.kubernetes.io/role": "cometmock",
+        "app.kubernetes.io/type": "cosmoshub-4-statefulset",
+        "app.kubernetes.io/version": "4.0.0-alpha.0",
+        "starship.io/chain-name": "cosmoshub",
+        "starship.io/name": "starship-generator-test",
+      },
+      "name": "cosmoshub-4-cometmock",
+    },
+    "spec": {
+      "replicas": 1,
+      "revisionHistoryLimit": 3,
+      "selector": {
+        "matchLabels": {
+          "app.kubernetes.io/instance": "cosmoshub",
+          "app.kubernetes.io/name": "cosmoshub-4-cometmock",
+        },
+      },
+      "serviceName": "cosmoshub-4-cometmock",
+      "template": {
+        "metadata": {
+          "annotations": {
+            "quality": "release",
+            "role": "api-gateway",
+            "sla": "high",
+            "tier": "gateway",
+          },
+          "labels": {
+            "app.kubernetes.io/instance": "cosmoshub",
+            "app.kubernetes.io/name": "cosmoshub-4-cometmock",
+            "app.kubernetes.io/rawname": "cosmoshub-4-cometmock",
+            "app.kubernetes.io/type": "cometmock",
+            "app.kubernetes.io/version": "4.0.0-alpha.0",
+          },
+        },
+        "spec": {
+          "containers": [
+            {
+              "command": [
+                "bash",
+                "-c",
+                "NODE_LISTEN_ADDR_STR="tcp://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26658"
+NODE_HOME_STR="/chain/genesis"
+    
+/chain/cometmock --block-time=800 $NODE_LISTEN_ADDR_STR /chain/genesis/config/genesis.json tcp://0.0.0.0:22331 $NODE_HOME_STR grpc",
+              ],
+              "env": [
+                {
+                  "name": "DENOM",
+                  "value": "uatom",
+                },
+                {
+                  "name": "COINS",
+                  "value": "100000000000000uatom",
+                },
+                {
+                  "name": "CHAIN_BIN",
+                  "value": "gaiad",
+                },
+                {
+                  "name": "CHAIN_DIR",
+                  "value": "/root/.gaia",
+                },
+                {
+                  "name": "CODE_REPO",
+                  "value": "https://github.com/cosmos/gaia",
+                },
+                {
+                  "name": "DAEMON_HOME",
+                  "value": "/root/.gaia",
+                },
+                {
+                  "name": "DAEMON_NAME",
+                  "value": "gaiad",
+                },
+                {
+                  "name": "CHAIN_ID",
+                  "value": "cosmoshub-4",
+                },
+                {
+                  "name": "GENESIS_HOST",
+                  "value": "cosmoshub-4-genesis",
+                },
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
+                {
+                  "name": "KEYS_CONFIG",
+                  "value": "/configs/keys.json",
+                },
+              ],
+              "image": "ghcr.io/cosmology-tech/starship/gaia:v18.0.0",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "comet",
+              "readinessProbe": {
+                "httpGet": {
+                  "path": "/status",
+                  "port": "22331",
+                },
+                "initialDelaySeconds": 10,
+                "periodSeconds": 10,
+              },
+              "resources": {
+                "limits": {
+                  "cpu": "0.3",
+                  "memory": "300M",
+                },
+                "requests": {
+                  "cpu": "0.3",
+                  "memory": "300M",
+                },
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/chain",
+                  "name": "node",
+                },
+                {
+                  "mountPath": "/scripts",
+                  "name": "scripts",
+                },
+                {
+                  "mountPath": "/configs",
+                  "name": "addresses",
+                },
+              ],
+            },
+          ],
+          "initContainers": [
+            {
+              "command": [
+                "/bin/sh",
+                "-c",
+                "while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys"
+  sleep 10;
+done
+    
+echo "Ready to start"
+exit 0",
+              ],
+              "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
+              ],
+              "image": "curlimages/curl",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "init-wait",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "100M",
+                },
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "100M",
+                },
+              },
+            },
+            {
+              "command": [
+                "bash",
+                "-c",
+                "mkdir -p /chain/genesis/config
+mkdir -p /chain/genesis/data
+curl http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/genesis -o /chain/genesis/config/genesis.json
+echo "Genesis file that we got....."
+cat /chain/genesis/config/genesis.json
+
+## fetch priv_validator and priv_validator_state of all validators
+curl http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/priv_keys -o /chain/genesis/config/priv_validator_key.json
+echo '{"height":"0","round":0,"step":0}' > /chain/genesis/data/priv_validator_state.json
+    
+echo "copy cometmock binary to shared dir"
+cp /usr/local/bin/cometmock /chain/cometmock",
+              ],
+              "env": [
+                {
+                  "name": "DENOM",
+                  "value": "uatom",
+                },
+                {
+                  "name": "COINS",
+                  "value": "100000000000000uatom",
+                },
+                {
+                  "name": "CHAIN_BIN",
+                  "value": "gaiad",
+                },
+                {
+                  "name": "CHAIN_DIR",
+                  "value": "/root/.gaia",
+                },
+                {
+                  "name": "CODE_REPO",
+                  "value": "https://github.com/cosmos/gaia",
+                },
+                {
+                  "name": "DAEMON_HOME",
+                  "value": "/root/.gaia",
+                },
+                {
+                  "name": "DAEMON_NAME",
+                  "value": "gaiad",
+                },
+                {
+                  "name": "CHAIN_ID",
+                  "value": "cosmoshub-4",
+                },
+                {
+                  "name": "GENESIS_HOST",
+                  "value": "cosmoshub-4-genesis",
+                },
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
+                },
+              ],
+              "image": "ghcr.io/informalsystems/cometmock:v0.37.x",
+              "imagePullPolicy": "IfNotPresent",
+              "name": "init-comet",
+              "resources": {
+                "limits": {
+                  "cpu": "0.3",
+                  "memory": "300M",
+                },
+                "requests": {
+                  "cpu": "0.3",
+                  "memory": "300M",
+                },
+              },
+              "volumeMounts": [
+                {
+                  "mountPath": "/chain",
+                  "name": "node",
+                },
+                {
+                  "mountPath": "/scripts",
+                  "name": "scripts",
+                },
+                {
+                  "mountPath": "/configs",
+                  "name": "addresses",
+                },
+              ],
+            },
+          ],
+          "volumes": [
+            {
+              "emptyDir": {},
+              "name": "node",
+            },
+            {
+              "configMap": {
+                "name": "keys",
+              },
+              "name": "addresses",
+            },
+            {
+              "configMap": {
+                "name": "setup-scripts-cosmoshub-4",
+              },
+              "name": "scripts",
+            },
+          ],
+        },
+      },
+    },
+  },
 ]
 `;
 
@@ -6880,178 +6264,6 @@ exports[`Cosmos Generator Tests Manifest Generation should handle different fauc
   {
     "apiVersion": "v1",
     "data": {
-      "build-chain.sh": "#!/bin/bash
-
-set -euxo pipefail
-
-mkdir -p /tmp/chains $UPGRADE_DIR
-
-echo "Fetching code from tag"
-mkdir -p /tmp/chains/$CHAIN_NAME
-cd /tmp/chains/$CHAIN_NAME
-
-if [[ $CODE_TAG =~ ^[0-9a-fA-F]{40}$ ]]; then
-  echo "Trying to fetch code from commit hash"
-  curl -LO $CODE_REPO/archive/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG}
-elif [[ $CODE_TAG = v* ]]; then
-  echo "Trying to fetch code from tag with 'v' prefix"
-  curl -LO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG#"v"}
-else
-  echo "Trying to fetch code from tag or branch"
-  if curl -fsLO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip; then
-    unzip $CODE_TAG.zip
-    code_dir=\${CODE_REPO##*/}-$CODE_TAG
-  elif curl -fsLO $CODE_REPO/archive/refs/heads/$CODE_TAG.zip; then
-    unzip $(echo $CODE_TAG | rev | cut -d "/" -f 1 | rev).zip
-    code_dir=\${CODE_REPO##*/}-\${CODE_TAG/\\//-}
-  else
-    echo "Tag or branch '$CODE_TAG' not found"
-    exit 1
-  fi
-fi
-
-echo "Fetch wasmvm if needed"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-WASM_VERSION=$(cat go.mod | grep -oe "github.com/CosmWasm/wasmvm v[0-9.]*" | cut -d ' ' -f 2)
-if [[ WASM_VERSION != "" ]]; then
-  mkdir -p /tmp/chains/libwasmvm_muslc
-  cd /tmp/chains/libwasmvm_muslc
-  curl -LO https://github.com/CosmWasm/wasmvm/releases/download/$WASM_VERSION/libwasmvm_muslc.x86_64.a
-  cp libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.a
-fi
-
-echo "Build chain binary"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-CGO_ENABLED=1 BUILD_TAGS="muslc linkstatic" LINK_STATICALLY=true LEDGER_ENABLED=false make install
-
-echo "Copy created binary to the upgrade directories"
-if [[ $UPGRADE_NAME == "genesis" ]]; then
-  mkdir -p $UPGRADE_DIR/genesis/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/genesis/bin
-else
-  mkdir -p $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-fi
-
-echo "Cleanup"
-rm -rf /tmp/chains/$CHAIN_NAME
-",
-      "chain-rpc-ready.sh": "#!/bin/bash
-# chain-rpc-ready.sh - Check if a CometBFT or Tendermint RPC service is ready
-# Usage: chain-rpc-ready.sh [RPC_URL]
-
-set -euo pipefail
-
-RPC_URL=\${1:-"http://localhost:26657"}
-
-echo 1>&2 "Checking if $RPC_URL is ready..."
-
-# Check if the RPC URL is reachable,
-json=$(curl -s --connect-timeout 2 "$RPC_URL/status")
-
-# and the bootstrap block state has been validated,
-if [ "$(echo "$json" | jq -r '.result.sync_info | (.earliest_block_height < .latest_block_height)')" != true ]; then
-  echo 1>&2 "$RPC_URL is not ready: bootstrap block state has not been validated"
-  exit 1
-fi
-
-# and the node is not catching up.
-if [ "$(echo "$json" | jq -r .result.sync_info.catching_up)" != false ]; then
-  echo 1>&2 "$RPC_URL is not ready: node is catching up"
-  exit 1
-fi
-
-echo "$json" | jq -r .result
-exit 0
-",
-      "create-genesis.sh": "#!/bin/bash
-
-set -eux
-
-DENOM="\${DENOM:=uosmo}"
-COINS="\${COINS:=100000000000000000uosmo}"
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-FAUCET_ENABLED="\${FAUCET_ENABLED:=true}"
-NUM_VALIDATORS="\${NUM_VALIDATORS:=1}"
-NUM_RELAYERS="\${NUM_RELAYERS:=0}"
-
-# check if the binary has genesis subcommand or not, if not, set CHAIN_GENESIS_CMD to empty
-CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && echo "genesis" || echo "")
-
-CHAIN_INIT_ID="$CHAIN_ID"
-if [ "$CHAIN_BIN" == "osmosisd" ]; then
-  CHAIN_INIT_ID="test-1"
-fi
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN init $CHAIN_ID --chain-id $CHAIN_INIT_ID --recover
-sed -i -e "s/$CHAIN_INIT_ID/$CHAIN_ID/g" $CHAIN_DIR/config/genesis.json
-
-# Add genesis keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".genesis[0].name" $KEYS_CONFIG)
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".genesis[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .genesis[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add faucet key to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".faucet[0].name" $KEYS_CONFIG)
-jq -r ".faucet[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".faucet[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .faucet[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add test keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".keys[0].name" $KEYS_CONFIG)
-jq -r ".keys[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".keys[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .keys[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-if [[ $FAUCET_ENABLED == "false" && $NUM_RELAYERS -gt "-1" ]];
-then
-  ## Add relayers keys and delegate tokens
-  for i in $(seq 0 $NUM_RELAYERS);
-  do
-    # Add relayer key and delegate tokens
-    RELAYER_KEY_NAME="$(jq -r ".relayers[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer key.... $RELAYER_KEY_NAME"
-    jq -r ".relayers[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-    # Add relayer-cli key and delegate tokens
-    RELAYER_CLI_KEY_NAME="$(jq -r ".relayers_cli[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer-cli key.... $RELAYER_CLI_KEY_NAME"
-    jq -r ".relayers_cli[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_CLI_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_CLI_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-## if faucet not enabled then add validator and relayer with index as keys and into gentx
-if [[ $FAUCET_ENABLED == "false" && $NUM_VALIDATORS -gt "1" ]];
-then
-  ## Add validators key and delegate tokens
-  for i in $(seq 0 $NUM_VALIDATORS);
-  do
-    VAL_KEY_NAME="$(jq -r '.validators[0].name' $KEYS_CONFIG)-$i"
-    echo "Adding validator key.... $VAL_KEY_NAME"
-    jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $VAL_KEY_NAME --index $i --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $VAL_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-echo "Creating gentx..."
-COIN=$(echo $COINS | cut -d ',' -f1)
-AMT=$(echo \${COIN//[!0-9]/} | sed -e "s/0000$//")
-$CHAIN_BIN $CHAIN_GENESIS_CMD gentx $(jq -r ".genesis[0].name" $KEYS_CONFIG) $AMT$DENOM --keyring-backend="test" --chain-id $CHAIN_ID
-
-echo "Output of gentx"
-cat $CHAIN_DIR/config/gentx/*.json | jq
-
-echo "Running collect-gentxs"
-$CHAIN_BIN $CHAIN_GENESIS_CMD collect-gentxs
-
-ls $CHAIN_DIR/config
-",
       "create-ics.sh": "#!/bin/bash
 
 set -euxo pipefail
@@ -7195,118 +6407,6 @@ main() {
 
 main
 ",
-      "create-validator.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-VAL_NAME="\${VAL_NAME:=osmosis}"
-NODE_URL="\${NODE_URL:=http://0.0.0.0:26657}"
-NODE_ARGS="\${NODE_ARGS}"
-GAS="\${GAS:=auto}"
-
-set -eux
-
-# Wait for the node to be synced
-max_tries=10
-while [[ $($CHAIN_BIN status --output json --node $NODE_URL 2>&1 | jq ".SyncInfo.catching_up") == true ]]
-do
-  if [[ max_tries -lt 0 ]]; then echo "Not able to sync with genesis node"; exit 1; fi
-  echo "Still syncing... Sleeping for 15 secs. Tries left $max_tries"
-  ((max_tries--))
-  sleep 30
-done
-
-# Function to compare version numbers
-version_compare() {
-    version1="$1"
-    version2="$2"
-    if [[ "$(printf '%s\\n' "$version1" "$version2" | sort -V | head -n 1)" == "$version1" ]]; then
-        return 1 # version1 is greater
-    else
-        return 0 # version2 is greater or equal
-    fi
-}
-
-# Check if cosmos_sdk_version is greater than a specified version
-is_greater() {
-    version_compare "$1" "$2"
-    return $?
-}
-
-function cosmos-sdk-version-v50() {
-  # Content for the validator.json file
-  json_content='{
-    "pubkey": '$($CHAIN_BIN tendermint show-validator $NODE_ARGS)',
-    "amount": "5000000000'$DENOM'",
-    "moniker": "'$VAL_NAME'",
-    "commission-rate": "0.1",
-    "commission-max-rate": "0.2",
-    "commission-max-change-rate": "0.01",
-    "min-self-delegation": "1000000"
-  }'
-  echo "$json_content" > /validator.json
-  cat /validator.json
-
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  $CHAIN_BIN tx staking create-validator /validator.json \\
-    --node $NODE_URL \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --fees 100000$DENOM \\
-    --keyring-backend="test" \\
-    --output json \\
-    --gas $GAS \\
-    --gas-adjustment 1.5 $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-function cosmos-sdk-version-default() {
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  args=''
-  if [[ $($CHAIN_BIN tx staking create-validator --help | grep -c "min-self-delegation") -gt 0 ]];
-  then
-    args+='--min-self-delegation=1000000'
-  fi
-  $CHAIN_BIN keys list --keyring-backend test --output json --home $CHAIN_DIR | jq
-  $CHAIN_BIN tx staking create-validator \\
-    --node $NODE_URL \\
-    --pubkey=$($CHAIN_BIN tendermint show-validator $NODE_ARGS) \\
-    --moniker $VAL_NAME \\
-    --amount 5000000000$DENOM \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --commission-rate="0.10" \\
-    --commission-max-rate="0.20" \\
-    --commission-max-change-rate="0.01" \\
-    --keyring-backend test \\
-    --home $CHAIN_DIR \\
-    --fees 100000$DENOM \\
-    --gas $GAS \\
-    --output json \\
-    --gas-adjustment 1.5 $args $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-set +e
-# Fetch the cosmos-sdk version to be able to perform the create-validator tx
-cosmos_sdk_version=$($CHAIN_BIN version --long | sed -n 's/cosmos_sdk_version: \\(.*\\)/\\1/p')
-echo "cosmos_sdk_version: $cosmos_sdk_version"
-set -e
-
-if is_greater "$cosmos_sdk_version" "v0.50.0"; then
-  echo "cosmos_sdk_version is greater than v0.50.0, running create-validator tx with new format"
-  cosmos-sdk-version-v50
-else
-  echo "cosmos_sdk_version is less than v0.50.0, running create-validator tx with old format"
-  cosmos-sdk-version-default
-fi
-",
       "ibc-connection.sh": "#!/bin/bash
 
 REGISTRY_URL="$1"
@@ -7371,128 +6471,6 @@ do
   sleep 2
 done
 ",
-      "update-config.sh": "#!/bin/bash
-
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-set -eux
-
-ls $CHAIN_DIR
-
-
-echo "Update config.toml file"
-sed -i -e 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:26657"#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/seeds = ".*"/seeds = ""/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's#cors_allowed_origins = \\[\\]#cors_allowed_origins = \\["*"\\]#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-
-echo "Update client.toml file"
-sed -i -e 's#keyring-backend = "os"#keyring-backend = "test"#g' $CHAIN_DIR/config/client.toml
-sed -i -e 's#output = "text"#output = "json"#g' $CHAIN_DIR/config/client.toml
-sed -i -e "s#chain-id = \\"\\"#chain-id = \\"$CHAIN_ID\\"#g" $CHAIN_DIR/config/client.toml
-
-
-echo "Update app.toml file"
-sed -i -e "s#minimum-gas-prices = \\".*\\"#minimum-gas-prices = \\"0$DENOM\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e "s#pruning = \\".*\\"#pruning = \\"default\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/swagger = false/swagger = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled = false/enabled = true/g' $CHAIN_DIR/config/app.toml
-
-
-function get_next_line_number() {
-  local txt=$1
-  local file=$2
-  local line_number=$(grep -n "$txt" $file | cut -d: -f1 | head -1)
-  echo $((line_number + 1))
-}
-
-line_number=$(get_next_line_number "Address defines the API server to listen on." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"tcp://0.0.0.0:1317\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9090\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC-web server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9091\\"#g" $CHAIN_DIR/config/app.toml
-
-if [ "$METRICS" == "true" ]; then
-  sed -i -e "s/prometheus = false/prometheus = true/g" $CHAIN_DIR/config/config.toml
-
-  line_number=$(get_next_line_number "PrometheusRetentionTime, when positive, enables a Prometheus metrics sink." $CHAIN_DIR/config/app.toml)
-  sed -i -e "\${line_number}s/prometheus-retention-time = 0/prometheus-retention-time = 3600/g" $CHAIN_DIR/config/app.toml
-fi
-
-echo "Update consensus params in config.toml"
-sed -i -e "s#timeout_propose = \\".*\\"#timeout_propose = \\"$TIMEOUT_PROPOSE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_propose_delta = \\".*\\"#timeout_propose_delta = \\"$TIMEOUT_PROPOSE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote = \\".*\\"#timeout_prevote = \\"$TIMEOUT_PREVOTE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote_delta = \\".*\\"#timeout_prevote_delta = \\"$TIMEOUT_PREVOTE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit = \\".*\\"#timeout_precommit = \\"$TIMEOUT_PRECOMMIT\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit_delta = \\".*\\"#timeout_precommit_delta = \\"$TIMEOUT_PRECOMMIT_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_commit = \\".*\\"#timeout_commit = \\"$TIMEOUT_COMMIT\\"#g" $CHAIN_DIR/config/config.toml
-",
-      "update-genesis.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-
-set -eux
-
-ls $CHAIN_DIR/config
-
-echo "Update genesis.json file with updated local params"
-sed -i -e "s/\\"stake\\"/\\"$DENOM\\"/g" $CHAIN_DIR/config/genesis.json
-sed -i "s/\\"time_iota_ms\\": \\".*\\"/\\"time_iota_ms\\": \\"$TIME_IOTA_MS\\"/" $CHAIN_DIR/config/genesis.json
-
-echo "Update max gas param"
-jq -r '.consensus_params.block.max_gas |= "100000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-echo "Update staking unbonding time and slashing jail time"
-jq -r '.app_state.staking.params.unbonding_time |= "300s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-jq -r '.app_state.slashing.params.downtime_jail_duration |= "60s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-# overrides for older sdk versions, before 0.47
-function gov_overrides_sdk_v46() {
-  jq -r '.app_state.gov.deposit_params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.deposit_params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.voting_params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-# overrides for newer sdk versions, post 0.47
-function gov_overrides_sdk_v47() {
-  jq -r '.app_state.gov.params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-if [ "$(jq -r '.app_state.feemarket.params' $CHAIN_DIR/config/genesis.json)" != "null" ]; then
-  jq -r '.app_state.feemarket.params.min_base_gas_price |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.params.beta |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.state.base_gas_price |= "0.0025"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-fi
-
-if [ "$(jq -r '.app_state.gov.params' $CHAIN_DIR/config/genesis.json)" == "null" ]; then
-  gov_overrides_sdk_v46
-else
-  gov_overrides_sdk_v47
-fi
-
-$CHAIN_BIN tendermint show-node-id
-",
     },
     "kind": "ConfigMap",
     "metadata": {
@@ -7528,12 +6506,6 @@ $CHAIN_BIN tendermint show-node-id
       "clusterIP": "None",
       "ports": [
         {
-          "name": "p2p",
-          "port": 26656,
-          "protocol": "TCP",
-          "targetPort": "26656",
-        },
-        {
           "name": "address",
           "port": 26658,
           "protocol": "TCP",
@@ -7552,6 +6524,12 @@ $CHAIN_BIN tendermint show-node-id
           "targetPort": "9091",
         },
         {
+          "name": "p2p",
+          "port": 26656,
+          "protocol": "TCP",
+          "targetPort": "26656",
+        },
+        {
           "name": "rest",
           "port": 1317,
           "protocol": "TCP",
@@ -7562,12 +6540,6 @@ $CHAIN_BIN tendermint show-node-id
           "port": 26657,
           "protocol": "TCP",
           "targetPort": "26657",
-        },
-        {
-          "name": "metrics",
-          "port": 26660,
-          "protocol": "TCP",
-          "targetPort": "26660",
         },
         {
           "name": "exposer",
@@ -7783,17 +6755,17 @@ $CHAIN_BIN start $START_ARGS",
                   "value": "/root/.osmosisd/data/priv_validator_state.json",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/exposer:latest",
+              "image": "ghcr.io/hyperweb-io/starship/exposer:20250205-544757d",
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
                 "limits": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
                 "requests": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
               },
               "volumeMounts": [
@@ -7983,6 +6955,38 @@ CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && e
                   "value": "osmosis-1",
                 },
                 {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
+                },
+                {
                   "name": "KEYS_CONFIG",
                   "value": "/configs/keys.json",
                 },
@@ -8070,6 +7074,38 @@ bash -e /scripts/update-config.sh",
                 {
                   "name": "CHAIN_ID",
                   "value": "osmosis-1",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "KEYS_CONFIG",
@@ -8884,178 +7920,6 @@ exports[`Cosmos Generator Tests Manifest Generation should handle different fauc
   {
     "apiVersion": "v1",
     "data": {
-      "build-chain.sh": "#!/bin/bash
-
-set -euxo pipefail
-
-mkdir -p /tmp/chains $UPGRADE_DIR
-
-echo "Fetching code from tag"
-mkdir -p /tmp/chains/$CHAIN_NAME
-cd /tmp/chains/$CHAIN_NAME
-
-if [[ $CODE_TAG =~ ^[0-9a-fA-F]{40}$ ]]; then
-  echo "Trying to fetch code from commit hash"
-  curl -LO $CODE_REPO/archive/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG}
-elif [[ $CODE_TAG = v* ]]; then
-  echo "Trying to fetch code from tag with 'v' prefix"
-  curl -LO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip
-  unzip $CODE_TAG.zip
-  code_dir=\${CODE_REPO##*/}-\${CODE_TAG#"v"}
-else
-  echo "Trying to fetch code from tag or branch"
-  if curl -fsLO $CODE_REPO/archive/refs/tags/$CODE_TAG.zip; then
-    unzip $CODE_TAG.zip
-    code_dir=\${CODE_REPO##*/}-$CODE_TAG
-  elif curl -fsLO $CODE_REPO/archive/refs/heads/$CODE_TAG.zip; then
-    unzip $(echo $CODE_TAG | rev | cut -d "/" -f 1 | rev).zip
-    code_dir=\${CODE_REPO##*/}-\${CODE_TAG/\\//-}
-  else
-    echo "Tag or branch '$CODE_TAG' not found"
-    exit 1
-  fi
-fi
-
-echo "Fetch wasmvm if needed"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-WASM_VERSION=$(cat go.mod | grep -oe "github.com/CosmWasm/wasmvm v[0-9.]*" | cut -d ' ' -f 2)
-if [[ WASM_VERSION != "" ]]; then
-  mkdir -p /tmp/chains/libwasmvm_muslc
-  cd /tmp/chains/libwasmvm_muslc
-  curl -LO https://github.com/CosmWasm/wasmvm/releases/download/$WASM_VERSION/libwasmvm_muslc.x86_64.a
-  cp libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.a
-fi
-
-echo "Build chain binary"
-cd /tmp/chains/$CHAIN_NAME/$code_dir
-CGO_ENABLED=1 BUILD_TAGS="muslc linkstatic" LINK_STATICALLY=true LEDGER_ENABLED=false make install
-
-echo "Copy created binary to the upgrade directories"
-if [[ $UPGRADE_NAME == "genesis" ]]; then
-  mkdir -p $UPGRADE_DIR/genesis/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/genesis/bin
-else
-  mkdir -p $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-  cp $GOBIN/$CHAIN_BIN $UPGRADE_DIR/upgrades/$UPGRADE_NAME/bin
-fi
-
-echo "Cleanup"
-rm -rf /tmp/chains/$CHAIN_NAME
-",
-      "chain-rpc-ready.sh": "#!/bin/bash
-# chain-rpc-ready.sh - Check if a CometBFT or Tendermint RPC service is ready
-# Usage: chain-rpc-ready.sh [RPC_URL]
-
-set -euo pipefail
-
-RPC_URL=\${1:-"http://localhost:26657"}
-
-echo 1>&2 "Checking if $RPC_URL is ready..."
-
-# Check if the RPC URL is reachable,
-json=$(curl -s --connect-timeout 2 "$RPC_URL/status")
-
-# and the bootstrap block state has been validated,
-if [ "$(echo "$json" | jq -r '.result.sync_info | (.earliest_block_height < .latest_block_height)')" != true ]; then
-  echo 1>&2 "$RPC_URL is not ready: bootstrap block state has not been validated"
-  exit 1
-fi
-
-# and the node is not catching up.
-if [ "$(echo "$json" | jq -r .result.sync_info.catching_up)" != false ]; then
-  echo 1>&2 "$RPC_URL is not ready: node is catching up"
-  exit 1
-fi
-
-echo "$json" | jq -r .result
-exit 0
-",
-      "create-genesis.sh": "#!/bin/bash
-
-set -eux
-
-DENOM="\${DENOM:=uosmo}"
-COINS="\${COINS:=100000000000000000uosmo}"
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-FAUCET_ENABLED="\${FAUCET_ENABLED:=true}"
-NUM_VALIDATORS="\${NUM_VALIDATORS:=1}"
-NUM_RELAYERS="\${NUM_RELAYERS:=0}"
-
-# check if the binary has genesis subcommand or not, if not, set CHAIN_GENESIS_CMD to empty
-CHAIN_GENESIS_CMD=$($CHAIN_BIN 2>&1 | grep -q "genesis-related subcommands" && echo "genesis" || echo "")
-
-CHAIN_INIT_ID="$CHAIN_ID"
-if [ "$CHAIN_BIN" == "osmosisd" ]; then
-  CHAIN_INIT_ID="test-1"
-fi
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN init $CHAIN_ID --chain-id $CHAIN_INIT_ID --recover
-sed -i -e "s/$CHAIN_INIT_ID/$CHAIN_ID/g" $CHAIN_DIR/config/genesis.json
-
-# Add genesis keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".genesis[0].name" $KEYS_CONFIG)
-jq -r ".genesis[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".genesis[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .genesis[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add faucet key to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".faucet[0].name" $KEYS_CONFIG)
-jq -r ".faucet[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".faucet[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .faucet[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-# Add test keys to the keyring and self delegate initial coins
-echo "Adding key...." $(jq -r ".keys[0].name" $KEYS_CONFIG)
-jq -r ".keys[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $(jq -r ".keys[0].name" $KEYS_CONFIG) --recover --keyring-backend="test"
-$CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $(jq -r .keys[0].name $KEYS_CONFIG) --keyring-backend="test") $COINS --keyring-backend="test"
-
-if [[ $FAUCET_ENABLED == "false" && $NUM_RELAYERS -gt "-1" ]];
-then
-  ## Add relayers keys and delegate tokens
-  for i in $(seq 0 $NUM_RELAYERS);
-  do
-    # Add relayer key and delegate tokens
-    RELAYER_KEY_NAME="$(jq -r ".relayers[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer key.... $RELAYER_KEY_NAME"
-    jq -r ".relayers[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-    # Add relayer-cli key and delegate tokens
-    RELAYER_CLI_KEY_NAME="$(jq -r ".relayers_cli[$i].name" $KEYS_CONFIG)"
-    echo "Adding relayer-cli key.... $RELAYER_CLI_KEY_NAME"
-    jq -r ".relayers_cli[$i].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $RELAYER_CLI_KEY_NAME --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $RELAYER_CLI_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-## if faucet not enabled then add validator and relayer with index as keys and into gentx
-if [[ $FAUCET_ENABLED == "false" && $NUM_VALIDATORS -gt "1" ]];
-then
-  ## Add validators key and delegate tokens
-  for i in $(seq 0 $NUM_VALIDATORS);
-  do
-    VAL_KEY_NAME="$(jq -r '.validators[0].name' $KEYS_CONFIG)-$i"
-    echo "Adding validator key.... $VAL_KEY_NAME"
-    jq -r ".validators[0].mnemonic" $KEYS_CONFIG | $CHAIN_BIN keys add $VAL_KEY_NAME --index $i --recover --keyring-backend="test"
-    $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account $($CHAIN_BIN keys show -a $VAL_KEY_NAME --keyring-backend="test") $COINS --keyring-backend="test"
-  done
-fi
-
-echo "Creating gentx..."
-COIN=$(echo $COINS | cut -d ',' -f1)
-AMT=$(echo \${COIN//[!0-9]/} | sed -e "s/0000$//")
-$CHAIN_BIN $CHAIN_GENESIS_CMD gentx $(jq -r ".genesis[0].name" $KEYS_CONFIG) $AMT$DENOM --keyring-backend="test" --chain-id $CHAIN_ID
-
-echo "Output of gentx"
-cat $CHAIN_DIR/config/gentx/*.json | jq
-
-echo "Running collect-gentxs"
-$CHAIN_BIN $CHAIN_GENESIS_CMD collect-gentxs
-
-ls $CHAIN_DIR/config
-",
       "create-ics.sh": "#!/bin/bash
 
 set -euxo pipefail
@@ -9199,118 +8063,6 @@ main() {
 
 main
 ",
-      "create-validator.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-VAL_NAME="\${VAL_NAME:=osmosis}"
-NODE_URL="\${NODE_URL:=http://0.0.0.0:26657}"
-NODE_ARGS="\${NODE_ARGS}"
-GAS="\${GAS:=auto}"
-
-set -eux
-
-# Wait for the node to be synced
-max_tries=10
-while [[ $($CHAIN_BIN status --output json --node $NODE_URL 2>&1 | jq ".SyncInfo.catching_up") == true ]]
-do
-  if [[ max_tries -lt 0 ]]; then echo "Not able to sync with genesis node"; exit 1; fi
-  echo "Still syncing... Sleeping for 15 secs. Tries left $max_tries"
-  ((max_tries--))
-  sleep 30
-done
-
-# Function to compare version numbers
-version_compare() {
-    version1="$1"
-    version2="$2"
-    if [[ "$(printf '%s\\n' "$version1" "$version2" | sort -V | head -n 1)" == "$version1" ]]; then
-        return 1 # version1 is greater
-    else
-        return 0 # version2 is greater or equal
-    fi
-}
-
-# Check if cosmos_sdk_version is greater than a specified version
-is_greater() {
-    version_compare "$1" "$2"
-    return $?
-}
-
-function cosmos-sdk-version-v50() {
-  # Content for the validator.json file
-  json_content='{
-    "pubkey": '$($CHAIN_BIN tendermint show-validator $NODE_ARGS)',
-    "amount": "5000000000'$DENOM'",
-    "moniker": "'$VAL_NAME'",
-    "commission-rate": "0.1",
-    "commission-max-rate": "0.2",
-    "commission-max-change-rate": "0.01",
-    "min-self-delegation": "1000000"
-  }'
-  echo "$json_content" > /validator.json
-  cat /validator.json
-
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  $CHAIN_BIN tx staking create-validator /validator.json \\
-    --node $NODE_URL \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --fees 100000$DENOM \\
-    --keyring-backend="test" \\
-    --output json \\
-    --gas $GAS \\
-    --gas-adjustment 1.5 $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-function cosmos-sdk-version-default() {
-  # Run create validator tx command
-  echo "Running txn for create-validator"
-  args=''
-  if [[ $($CHAIN_BIN tx staking create-validator --help | grep -c "min-self-delegation") -gt 0 ]];
-  then
-    args+='--min-self-delegation=1000000'
-  fi
-  $CHAIN_BIN keys list --keyring-backend test --output json --home $CHAIN_DIR | jq
-  $CHAIN_BIN tx staking create-validator \\
-    --node $NODE_URL \\
-    --pubkey=$($CHAIN_BIN tendermint show-validator $NODE_ARGS) \\
-    --moniker $VAL_NAME \\
-    --amount 5000000000$DENOM \\
-    --chain-id $CHAIN_ID \\
-    --from $VAL_NAME \\
-    --commission-rate="0.10" \\
-    --commission-max-rate="0.20" \\
-    --commission-max-change-rate="0.01" \\
-    --keyring-backend test \\
-    --home $CHAIN_DIR \\
-    --fees 100000$DENOM \\
-    --gas $GAS \\
-    --output json \\
-    --gas-adjustment 1.5 $args $NODE_ARGS --yes > /validator.log
-
-  cat /validator.log | jq
-}
-
-set +e
-# Fetch the cosmos-sdk version to be able to perform the create-validator tx
-cosmos_sdk_version=$($CHAIN_BIN version --long | sed -n 's/cosmos_sdk_version: \\(.*\\)/\\1/p')
-echo "cosmos_sdk_version: $cosmos_sdk_version"
-set -e
-
-if is_greater "$cosmos_sdk_version" "v0.50.0"; then
-  echo "cosmos_sdk_version is greater than v0.50.0, running create-validator tx with new format"
-  cosmos-sdk-version-v50
-else
-  echo "cosmos_sdk_version is less than v0.50.0, running create-validator tx with old format"
-  cosmos-sdk-version-default
-fi
-",
       "ibc-connection.sh": "#!/bin/bash
 
 REGISTRY_URL="$1"
@@ -9375,128 +8127,6 @@ do
   sleep 2
 done
 ",
-      "update-config.sh": "#!/bin/bash
-
-CHAIN_ID="\${CHAIN_ID:=osmosis}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-KEYS_CONFIG="\${KEYS_CONFIG:=configs/keys.json}"
-
-set -eux
-
-ls $CHAIN_DIR
-
-
-echo "Update config.toml file"
-sed -i -e 's#"tcp://127.0.0.1:26657"#"tcp://0.0.0.0:26657"#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/seeds = ".*"/seeds = ""/g' $CHAIN_DIR/config/config.toml
-sed -i -e 's#cors_allowed_origins = \\[\\]#cors_allowed_origins = \\["*"\\]#g' $CHAIN_DIR/config/config.toml
-sed -i -e 's/index_all_keys = false/index_all_keys = true/g' $CHAIN_DIR/config/config.toml
-
-echo "Update client.toml file"
-sed -i -e 's#keyring-backend = "os"#keyring-backend = "test"#g' $CHAIN_DIR/config/client.toml
-sed -i -e 's#output = "text"#output = "json"#g' $CHAIN_DIR/config/client.toml
-sed -i -e "s#chain-id = \\"\\"#chain-id = \\"$CHAIN_ID\\"#g" $CHAIN_DIR/config/client.toml
-
-
-echo "Update app.toml file"
-sed -i -e "s#minimum-gas-prices = \\".*\\"#minimum-gas-prices = \\"0$DENOM\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e "s#pruning = \\".*\\"#pruning = \\"default\\"#g" $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable-unsafe-cors = false/enable-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/swagger = false/swagger = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enable = false/enable = true/g' $CHAIN_DIR/config/app.toml
-sed -i -e 's/enabled = false/enabled = true/g' $CHAIN_DIR/config/app.toml
-
-
-function get_next_line_number() {
-  local txt=$1
-  local file=$2
-  local line_number=$(grep -n "$txt" $file | cut -d: -f1 | head -1)
-  echo $((line_number + 1))
-}
-
-line_number=$(get_next_line_number "Address defines the API server to listen on." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"tcp://0.0.0.0:1317\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9090\\"#g" $CHAIN_DIR/config/app.toml
-
-line_number=$(get_next_line_number "Address defines the gRPC-web server address to bind to." $CHAIN_DIR/config/app.toml)
-sed -i -e "\${line_number}s#address = \\".*\\"#address = \\"0.0.0.0:9091\\"#g" $CHAIN_DIR/config/app.toml
-
-if [ "$METRICS" == "true" ]; then
-  sed -i -e "s/prometheus = false/prometheus = true/g" $CHAIN_DIR/config/config.toml
-
-  line_number=$(get_next_line_number "PrometheusRetentionTime, when positive, enables a Prometheus metrics sink." $CHAIN_DIR/config/app.toml)
-  sed -i -e "\${line_number}s/prometheus-retention-time = 0/prometheus-retention-time = 3600/g" $CHAIN_DIR/config/app.toml
-fi
-
-echo "Update consensus params in config.toml"
-sed -i -e "s#timeout_propose = \\".*\\"#timeout_propose = \\"$TIMEOUT_PROPOSE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_propose_delta = \\".*\\"#timeout_propose_delta = \\"$TIMEOUT_PROPOSE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote = \\".*\\"#timeout_prevote = \\"$TIMEOUT_PREVOTE\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_prevote_delta = \\".*\\"#timeout_prevote_delta = \\"$TIMEOUT_PREVOTE_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit = \\".*\\"#timeout_precommit = \\"$TIMEOUT_PRECOMMIT\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_precommit_delta = \\".*\\"#timeout_precommit_delta = \\"$TIMEOUT_PRECOMMIT_DELTA\\"#g" $CHAIN_DIR/config/config.toml
-sed -i -e "s#timeout_commit = \\".*\\"#timeout_commit = \\"$TIMEOUT_COMMIT\\"#g" $CHAIN_DIR/config/config.toml
-",
-      "update-genesis.sh": "#!/bin/bash
-
-DENOM="\${DENOM:=uosmo}"
-CHAIN_BIN="\${CHAIN_BIN:=osmosisd}"
-CHAIN_DIR="\${CHAIN_DIR:=$HOME/.osmosisd}"
-
-set -eux
-
-ls $CHAIN_DIR/config
-
-echo "Update genesis.json file with updated local params"
-sed -i -e "s/\\"stake\\"/\\"$DENOM\\"/g" $CHAIN_DIR/config/genesis.json
-sed -i "s/\\"time_iota_ms\\": \\".*\\"/\\"time_iota_ms\\": \\"$TIME_IOTA_MS\\"/" $CHAIN_DIR/config/genesis.json
-
-echo "Update max gas param"
-jq -r '.consensus_params.block.max_gas |= "100000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-echo "Update staking unbonding time and slashing jail time"
-jq -r '.app_state.staking.params.unbonding_time |= "300s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-jq -r '.app_state.slashing.params.downtime_jail_duration |= "60s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-
-# overrides for older sdk versions, before 0.47
-function gov_overrides_sdk_v46() {
-  jq -r '.app_state.gov.deposit_params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.deposit_params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.voting_params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.tally_params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-# overrides for newer sdk versions, post 0.47
-function gov_overrides_sdk_v47() {
-  jq -r '.app_state.gov.params.max_deposit_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.min_deposit[0].amount |= "10"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.voting_period |= "30s"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.quorum |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.gov.params.veto_threshold |= "0.000000000000000000"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-}
-
-if [ "$(jq -r '.app_state.feemarket.params' $CHAIN_DIR/config/genesis.json)" != "null" ]; then
-  jq -r '.app_state.feemarket.params.min_base_gas_price |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.params.beta |= "0"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-  jq -r '.app_state.feemarket.state.base_gas_price |= "0.0025"' $CHAIN_DIR/config/genesis.json > /tmp/genesis.json; mv /tmp/genesis.json $CHAIN_DIR/config/genesis.json
-fi
-
-if [ "$(jq -r '.app_state.gov.params' $CHAIN_DIR/config/genesis.json)" == "null" ]; then
-  gov_overrides_sdk_v46
-else
-  gov_overrides_sdk_v47
-fi
-
-$CHAIN_BIN tendermint show-node-id
-",
     },
     "kind": "ConfigMap",
     "metadata": {
@@ -9532,12 +8162,6 @@ $CHAIN_BIN tendermint show-node-id
       "clusterIP": "None",
       "ports": [
         {
-          "name": "p2p",
-          "port": 26656,
-          "protocol": "TCP",
-          "targetPort": "26656",
-        },
-        {
           "name": "address",
           "port": 26658,
           "protocol": "TCP",
@@ -9556,6 +8180,12 @@ $CHAIN_BIN tendermint show-node-id
           "targetPort": "9091",
         },
         {
+          "name": "p2p",
+          "port": 26656,
+          "protocol": "TCP",
+          "targetPort": "26656",
+        },
+        {
           "name": "rest",
           "port": 1317,
           "protocol": "TCP",
@@ -9566,12 +8196,6 @@ $CHAIN_BIN tendermint show-node-id
           "port": 26657,
           "protocol": "TCP",
           "targetPort": "26657",
-        },
-        {
-          "name": "metrics",
-          "port": 26660,
-          "protocol": "TCP",
-          "targetPort": "26660",
         },
         {
           "name": "exposer",
@@ -9793,17 +8417,17 @@ $CHAIN_BIN start $START_ARGS",
                   "value": "/root/.osmosisd/data/priv_validator_state.json",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/exposer:latest",
+              "image": "ghcr.io/hyperweb-io/starship/exposer:20250205-544757d",
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
                 "limits": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
                 "requests": {
-                  "cpu": "0.1",
-                  "memory": "128M",
+                  "cpu": "0.2",
+                  "memory": "200M",
                 },
               },
               "volumeMounts": [
@@ -9980,6 +8604,38 @@ $CHAIN_BIN $CHAIN_GENESIS_CMD add-genesis-account osmo1e9ucjn5fjmetky5wezzcsccp7
                   "value": "osmosis-1",
                 },
                 {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
+                },
+                {
                   "name": "KEYS_CONFIG",
                   "value": "/configs/keys.json",
                 },
@@ -10069,6 +8725,38 @@ bash -e /scripts/update-config.sh",
                 {
                   "name": "CHAIN_ID",
                   "value": "osmosis-1",
+                },
+                {
+                  "name": "TIME_IOTA_MS",
+                  "value": "10",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PROPOSE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PREVOTE_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_PRECOMMIT_DELTA",
+                  "value": "400ms",
+                },
+                {
+                  "name": "TIMEOUT_COMMIT",
+                  "value": "800ms",
                 },
                 {
                   "name": "KEYS_CONFIG",

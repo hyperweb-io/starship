@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: grafana-datasources
+data:
+  prometheus.yaml: |-
+    {
+      "apiVersion": 1,
+      "datasources": [
+        {
+          "access": "proxy",
+          "editable": true,
+          "name": "prometheus",
+          "orgId": 1,
+          "type": "prometheus",
+          "url": "http://prometheus.aws-starship.svc:9090",
+          "version": 1
+        }
+      ]
+    }

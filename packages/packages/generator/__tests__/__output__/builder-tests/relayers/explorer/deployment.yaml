@@ -32,8 +32,7 @@ spec:
     spec:
       containers:
         - name: explorer
-          image: >-
-            ghcr.io/cosmology-tech/starship/ping-pub:6b7b0d096946b6bcd75d15350c7345da0d4576db
+          image: ghcr.io/cosmology-tech/starship/ping-pub:6b7b0d096946b6bcd75d15350c7345da0d4576db
           imagePullPolicy: IfNotPresent
           env:
             - name: CHAINS_CONFIG_PATH

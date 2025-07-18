@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-neutron-1
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-neutron-1
+data:
+  chain.json: |-
+    {
+      "$schema": "../chain.schema.json",
+      "chain_name": "neutron",
+      "status": "live",
+      "network_type": "devnet",
+      "chain_id": "neutron-1",
+      "pretty_name": "Neutron Devnet",
+      "bech32_prefix": "neutron",
+      "daemon_name": "neutrond",
+      "node_home": "/root/.neutrond",
+      "key_algos": [
+        "secp256k1"
+      ],
+      "slip44": "118",
+      "fees": {
+        "fee_tokens": [
+          {
+            "denom": "untrn",
+            "fixed_min_gas_price": 0,
+            "low_gas_price": 0,
+            "average_gas_price": 0.025,
+            "high_gas_price": 0.04
+          }
+        ]
+      },
+      "staking": {
+        "staking_tokens": [
+          {
+            "denom": "untrn"
+          }
+        ],
+        "lock_duration": {
+          "time": "1209600s"
+        }
+      },
+      "codebase": {
+        "git_repo": "https://github.com/neutron-org/neutron",
+        "compatible_versions": [],
+        "binaries": {},
+        "ics_enabled": [],
+        "versions": [],
+        "consensus": {
+          "type": "tendermint"
+        }
+      },
+      "peers": {
+        "seeds": [],
+        "persistent_peers": []
+      }
+    }
+  assetlist.json: |-
+    {
+      "$schema": "../assetlist.schema.json",
+      "chain_name": "neutron",
+      "assets": [
+        {
+          "description": "The native token of Neutron chain.",
+          "denom_units": [
+            {
+              "denom": "untrn",
+              "exponent": 0
+            },
+            {
+              "denom": "ntrn",
+              "exponent": 6
+            }
+          ],
+          "base": "untrn",
+          "name": "Neutron",
+          "display": "ntrn",
+          "symbol": "NTRN",
+          "logo_URIs": {
+            "png": "https://raw.githubusercontent.com/cosmos/chain-registry/master/neutron/images/ntrn.png",
+            "svg": "https://raw.githubusercontent.com/cosmos/chain-registry/master/neutron/images/ntrn.svg"
+          },
+          "coingecko_id": "neutron"
+        }
+      ]
+    }

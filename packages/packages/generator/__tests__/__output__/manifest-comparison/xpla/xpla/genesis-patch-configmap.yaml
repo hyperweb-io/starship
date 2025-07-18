@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: patch-xpla-1-1
+  labels:
+    starship.io/name: xpla
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/name: xpla
+    app.kubernetes.io/part-of: xpla_1-1
+    app.kubernetes.io/role: genesis-patch
+    starship.io/chain-name: xpla
+    starship.io/chain-id: xpla_1-1
+data:
+  genesis.json: |-
+    {
+      "app_state": {
+        "staking": {
+          "params": {
+            "unbonding_time": "300s"
+          }
+        }
+      }
+    }

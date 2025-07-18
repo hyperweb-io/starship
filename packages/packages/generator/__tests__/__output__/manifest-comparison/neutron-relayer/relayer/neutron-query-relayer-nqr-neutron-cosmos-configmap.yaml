@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neutron-query-relayer-nqr-neutron-cosmos
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: relayer
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/role: neutron-query-relayer
+    app.kubernetes.io/name: neutron-query-relayer-nqr-neutron-cosmos
+data:
+  config.json: |-
+    {
+      "relayer": {
+        "neutron_chain": {
+          "chain_id": "neutron-1",
+          "rpc_addr": "http://neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
+          "grpc_addr": "http://neutron-1-genesis.$(NAMESPACE).svc.cluster.local:9090",
+          "websocket_addr": "ws://neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket",
+          "account_prefix": "neutron",
+          "keyring_backend": "test",
+          "gas_prices": "0.025untrn",
+          "gas_adjustment": 1.5,
+          "connection_id": "connection-0",
+          "debug": false,
+          "timeout": "10s",
+          "tx_memo": "neutron-query-relayer"
+        },
+        "target_chain": {
+          "chain_id": "cosmoshub-4",
+          "rpc_addr": "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
+          "grpc_addr": "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090",
+          "websocket_addr": "ws://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket",
+          "account_prefix": "cosmos",
+          "keyring_backend": "test",
+          "gas_prices": "0.025uatom",
+          "gas_adjustment": 1.5,
+          "connection_id": "connection-0",
+          "debug": false,
+          "timeout": "10s",
+          "tx_memo": "neutron-query-relayer"
+        },
+        "queries_file": "/configs/queries.json",
+        "check_submitted_tx": true,
+        "storage_path": "./storage",
+        "log_level": "info"
+      }
+    }
