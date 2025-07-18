@@ -1,0 +1,103 @@
+{{- range $chain := .Values.chains }}
+{{- if eq $chain.name "solana" }}
+{{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
+{{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $chain.hostname }}-genesis
+spec:
+  serviceName: {{ $chain.hostname }}-genesis
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $chain.name }}
+      app.kubernetes.io/name: {{ $chain.id }}-genesis
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: {{ $chain.name }}
+        app.kubernetes.io/type: {{ $chain.id }}
+        app.kubernetes.io/name: {{ $chain.id }}-genesis
+        app.kubernetes.io/rawname: {{ $chain.id }}
+        app.kubernetes.io/version: {{ $.Chart.AppVersion }}
+    spec:
+      {{- include "imagePullSecrets" $chain | indent 6 }}
+      initContainers:
+        - name: init-genesis
+          image: {{ $chain.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
+            {{- include "devnet.evnVars" $chain | indent 12 }}
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: FAUCET_ENABLED
+              value: "{{ $chain.faucet.enabled }}"
+            - name: NUM_VALIDATORS
+              value: "{{ $chain.numValidators }}"
+            - name: SOLANA_CONFIG_DIR
+              value: {{ $chain.home }}
+          command:
+            - bash
+            - "-c"
+            - |
+              VAL_INDEX=${HOSTNAME##*-}
+              echo "Validator Index: $VAL_INDEX"
+
+              echo "Move scripts to config dir"
+              mkdir -p {{ $chain.home }}/scripts/
+              cp -L /scripts/* {{ $chain.home }}/scripts/
+              chmod +x {{ $chain.home }}/scripts/*
+
+              echo "Running setup genesis script..."
+              bash -e {{ $chain.home }}/scripts/setup.sh
+          resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+            - mountPath: /scripts
+              name: scripts
+      containers:
+        - name: validator
+          image: {{ $chain.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
+            {{- include "devnet.evnVars" $chain | indent 12 }}
+            - name: FAUCET_ENABLED
+              value: "{{ $chain.faucet.enabled }}"
+            - name: SOLANA_CONFIG_DIR
+              value: {{ $chain.home }}
+            {{- range $env := $chain.env }}
+            - name: {{ $env.name }}
+              value: {{ $env.value | quote }}
+            {{- end }}
+          command:
+            - bash
+            - "-c"
+            - |
+              echo "Running bootstrap validator script..."
+              bash -e {{ $chain.home }}/scripts/bootstrap-validator.sh
+          resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+            - mountPath: /scripts
+              name: scripts
+      volumes:
+        - name: node
+          emptyDir: { }
+        - name: scripts
+          configMap:
+            name: setup-scripts-{{- include "devnet.chain.name" $chain.id }}
+---
+{{- end }}
+{{- end }} 

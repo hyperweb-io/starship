@@ -1,0 +1,40 @@
+{{- range $chain := .Values.chains }}
+{{- if eq $chain.name "solana" }}
+{{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
+{{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $chain.hostname }}-validator
+spec:
+  serviceName: {{ $chain.hostname }}-validator
+  replicas: {{ sub $chain.numValidators 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $chain.name }}
+      app.kubernetes.io/name: {{ $chain.id }}-validator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ $chain.name }}
+        app.kubernetes.io/name: {{ $chain.id }}-validator
+    spec:
+      containers:
+      - name: validator
+        image: {{ $chain.image }}
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            VAL_INDEX=${HOSTNAME##*-}
+            /scripts/validator-x.sh $VAL_INDEX
+        volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      volumes:
+      - name: scripts
+        configMap:
+          name: setup-scripts-{{ $chain.hostname }}
+          defaultMode: 0777
+{{- end }}
+{{- end }} 
