@@ -12,3 +12,11 @@ chains:
   resources:
     cpu: 2000m
     memory: 2048Mi
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+  resources:
+    cpu: "0.1"
+    memory: "100M"
