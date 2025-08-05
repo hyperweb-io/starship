@@ -1,6 +1,5 @@
-{{ $portMap := dict "p2p" 26656 "address" 26658 "grpc" 9090 "grpc-web" 9091 "rest" 1317 }}
 {{- range $chain := .Values.chains }}
-{{- if not (or (hasPrefix "ethereum" $chain.name) (hasPrefix "solana" $chain.name)) }}
+{{- if (eq $chain.name "solana") }}
 {{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
 
 {{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
@@ -14,16 +13,18 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    {{- range $name, $port := $portMap }}
-    - name: {{ $name }}
-      port: {{ $port }}
-      protocol: TCP
-      targetPort: {{ $port }}
-    {{- end }}
     - name: rpc
-      port: 26657
+      port: 8899
       protocol: TCP
-      targetPort: 26657
+      targetPort: 8899
+    - name: ws
+      port: 8900
+      protocol: TCP
+      targetPort: 8900
+    - name: p2p-udp
+      port: 8001
+      protocol: UDP
+      targetPort: 8001
     {{- if $chain.metrics }}
     - name: metrics
       port: 26660
@@ -35,9 +36,9 @@ spec:
       protocol: TCP
       targetPort: {{ $.Values.exposer.ports.rest | default 8081 }}
     - name: faucet
-      port: 8000
+      port: 9900
       protocol: TCP
-      targetPort: 8000
+      targetPort: 9900
   selector:
     app.kubernetes.io/name: {{ $chain.id }}-genesis
 ---
@@ -52,16 +53,10 @@ metadata:
 spec:
   clusterIP: None
   ports:
-    {{- range $name, $port := $portMap }}
-    - name: {{ $name }}
-      port: {{ $port }}
-      protocol: TCP
-      targetPort: {{ $port }}
-    {{- end }}
     - name: rpc
-      port: 26657
+      port: 8899
       protocol: TCP
-      targetPort: 26657
+      targetPort: 8899
     {{- if $chain.metrics }}
     - name: metrics
       port: 26660

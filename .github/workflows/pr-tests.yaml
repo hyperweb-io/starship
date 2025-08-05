@@ -45,6 +45,7 @@ jobs:
           - "one-chain-cometmock.yaml"
           - "one-cosmoshub-cosmjs-faucet.yaml"
           - "eth-lite.yaml"
+          - "solana-lite.yaml"
       fail-fast: true
       max-parallel: 3
 

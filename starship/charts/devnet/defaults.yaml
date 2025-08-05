@@ -803,6 +803,37 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/xpla/images/xpla.png
           svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/xpla/images/xpla.svg
         coingecko_id: xpla
+  solana:
+    type: solana
+    image: ghcr.io/hyperweb-io/starship/solana-agave:v2.3.4
+    home: /root/.solana
+    binary: solana-validator
+    prefix: sol
+    denom: lamports
+    prettyName: Solana
+    coins: 1000000000000000lamports
+    hdPath: m/44'/501'/0'/0'
+    coinType: 501
+    repo: https://github.com/anzaxyz/agave
+    faucet:
+      enabled: true
+      type: solana-faucet
+    assets:
+      - base: lamports
+        description: "The native token of Solana"
+        name: Solana
+        display: sol
+        symbol: SOL
+        logo_URIs:
+          png: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+          svg: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.svg"
+        denom_units:
+          - denom: lamports
+            exponent: 0
+          - denom: sol
+            exponent: 9
+        coingecko_id: solana
+        keywords: ["layer1"]
   ethereum:
     image: ghcr.io/hyperweb-io/starship/ethereum/client-go:v1.14.12
     home: /ethereum
@@ -1007,6 +1038,9 @@ defaultFaucet:
     concurrency: 5
   starship:
     image: ghcr.io/hyperweb-io/starship/faucet:20250325-2207109
+    concurrency: 5
+  solana-faucet:
+    image: ghcr.io/hyperweb-io/starship/solana-agave:v2.3.4
     concurrency: 5
 
 defaultCometmock:

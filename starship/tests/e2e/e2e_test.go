@@ -66,7 +66,7 @@ func (s *TestSuite) TestChains_Status() {
 	s.T().Log("running test for /status endpoint for each chain")
 
 	for _, chain := range s.config.Chains {
-		if chain.Name == "neutron" || chain.Name == "ethereum" {
+		if chain.Name == "neutron" || chain.Name == "ethereum" || chain.Name == "solana" {
 			s.T().Skip("skip tests for neutron")
 		}
 		url := fmt.Sprintf("http://0.0.0.0:%d/status", chain.Ports.Rpc)
@@ -88,7 +88,7 @@ func (s *TestSuite) TestChains_StakingParams() {
 		s.T().Skip("skip staking params test for non rest endpoint")
 	}
 	s.T().Log("running test for /staking/parameters endpoint for each chain")
-	if s.config.Chains[0].Name == "neutron" || s.config.Chains[0].Name == "ethereum" {
+	if s.config.Chains[0].Name == "neutron" || s.config.Chains[0].Name == "ethereum" || s.config.Chains[0].Name == "solana" {
 		s.T().Skip("skip tests for neutron")
 	}
 
@@ -176,7 +176,7 @@ func (s *TestSuite) TestChainsEth_Block() {
 	s.T().Log("Running test for eth_blockNumber endpoint")
 
 	for _, chain := range s.config.Chains {
-		if !strings.HasPrefix(chain.Name, "ethereum") {
+		if !strings.HasPrefix(chain.Name, "ethereum") || chain.Name == "solana" {
 			continue
 		}
 

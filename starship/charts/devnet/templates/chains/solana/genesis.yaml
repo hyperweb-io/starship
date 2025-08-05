@@ -1,0 +1,216 @@
+{{- range $chain := .Values.chains }}
+{{- if eq $chain.name "solana" }}
+{{ $dataExposer := dict "chain" $chain.id "port" ($.Values.exposer.ports.rest | quote | default "8081") }}
+{{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
+{{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
+{{ $dataPublicRPC := dict "chain" $chain.id "port" "'8899'" }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $chain.hostname }}-genesis
+spec:
+  serviceName: {{ $chain.hostname }}-genesis
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $chain.name }}
+      app.kubernetes.io/name: {{ $chain.id }}-genesis
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: {{ $chain.name }}
+        app.kubernetes.io/type: {{ $chain.id }}
+        app.kubernetes.io/name: {{ $chain.id }}-genesis
+        app.kubernetes.io/rawname: {{ $chain.id }}
+        app.kubernetes.io/version: {{ $.Chart.AppVersion }}
+    spec:
+      {{- include "imagePullSecrets" $chain | indent 6 }}
+      initContainers:
+        - name: init-genesis
+          image: {{ $chain.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
+            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.timeoutVars" $.Values | indent 12 }}
+            {{- include "devnet.genesisVars" $dataPublicRPC | indent 12 }}
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: FAUCET_ENABLED
+              value: "{{ $chain.faucet.enabled }}"
+            - name: NUM_VALIDATORS
+              value: "{{ $chain.numValidators }}"
+            - name: SOLANA_CONFIG_DIR
+              value: {{ $chain.home }}
+          command:
+            - bash
+            - "-c"
+            - |
+              VAL_INDEX=${HOSTNAME##*-}
+              echo "Validator Index: $VAL_INDEX"
+
+              echo "Move scripts to config dir"
+              mkdir -p {{ $chain.home }}/scripts/
+              cp -L /scripts/* {{ $chain.home }}/scripts/
+              chmod +x {{ $chain.home }}/scripts/*
+
+              echo "Running setup genesis script..."
+              bash -e {{ $chain.home }}/scripts/setup.sh
+
+              echo "Create node id json file"
+              mkdir -p $CHAIN_DIR/config/
+              NODE_ID=$(solana address --keypair $CHAIN_DIR/bootstrap-validator/identity.json)
+              NODE_PUBKEY=$(solana-keygen pubkey $CHAIN_DIR/bootstrap-validator/identity.json)
+              echo '{"node_id":"'$NODE_ID'"}' > $CHAIN_DIR/config/node_id.json
+              echo '{"priv_key":{"type":"solana","value":"'$NODE_PUBKEY'"}}' > $CHAIN_DIR/config/node_key.json
+
+              echo "Set config"
+              solana config set --url localhost
+              solana config set --keypair $CHAIN_DIR/bootstrap-validator/identity.json
+              cp /root/.config/solana/cli/config.yml $CHAIN_DIR/config/config.yml
+          resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+            - mountPath: /scripts
+              name: scripts
+      containers:
+        - name: validator
+          image: {{ $chain.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
+            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.timeoutVars" $.Values | indent 12 }}
+            {{- include "devnet.genesisVars" $dataPublicRPC | indent 12 }}
+            - name: FAUCET_ENABLED
+              value: "{{ $chain.faucet.enabled }}"
+            - name: SOLANA_CONFIG_DIR
+              value: {{ $chain.home }}
+            {{- range $env := $chain.env }}
+            - name: {{ $env.name }}
+              value: {{ $env.value | quote }}
+            {{- end }}
+          command:
+            - bash
+            - "-c"
+            - |
+              set -ex
+
+              mkdir -p /root/.config/solana/cli/
+              cp $CHAIN_DIR/config/config.yml /root/.config/solana/cli/config.yml
+
+              echo "Running bootstrap validator script..."
+              bash -e {{ $chain.home }}/scripts/bootstrap-validator.sh
+          resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+            - mountPath: /scripts
+              name: scripts
+          startupProbe:
+            exec:
+              command:
+                - bash
+                - -e
+                - /scripts/chain-rpc-ready.sh
+                - http://0.0.0.0:8899
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 10
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -e
+                - /scripts/chain-rpc-ready.sh
+                - http://0.0.0.0:8899
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 15
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -e
+                - /scripts/chain-rpc-ready.sh
+                - http://0.0.0.0:8899
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 5
+        - name: exposer
+          image: {{ $.Values.exposer.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.genesisVars" $dataExposer | indent 12}}
+            - name: EXPOSER_HTTP_PORT
+              value: "8081"
+            - name: EXPOSER_GRPC_PORT
+              value: "9099"
+            - name: EXPOSER_GENESIS_FILE
+              value: {{ $chain.home }}/bootstrap-validator/genesis.bin
+            - name: EXPOSER_NODE_ID_FILE
+              value: {{ $chain.home }}/config/node_id.json
+            - name: EXPOSER_CONFIG_FILE
+              value: {{ $chain.home }}/config/config.yml
+            - name: EXPOSER_NODE_KEY_FILE
+              value: {{ $chain.home }}/config/node_key.json
+          command: [ "exposer" ]
+          resources: {{- include "getResourceObject" $.Values.exposer.resources | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+        {{- if $chain.faucet.enabled }}
+        {{- if eq $chain.faucet.type "solana-faucet" }}
+        - name: faucet
+          image: {{ $chain.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.genesisVars" $dataExposer | indent 12}}
+            - name: SOLANA_CONFIG_DIR
+              value: {{ $chain.home }}
+            - name: SOLANA_FAUCET_PORT
+              value: "9900"
+            - name: SOLANA_FAUCET_ALLOW_IP
+              value: "0.0.0.0/0"
+            - name: SOLANA_FAUCET_PER_TIME_CAP
+              value: "1000000000000000000"
+            - name: SOLANA_FAUCET_PER_REQUEST_CAP
+              value: "1000000000000000000"
+          command:
+            - bash
+            - -c
+            - |
+              set -ex
+              solana-faucet \
+                --keypair $SOLANA_CONFIG_DIR/faucet.json \
+                --allow-ip $SOLANA_FAUCET_ALLOW_IP \
+                --per-time-cap $SOLANA_FAUCET_PER_TIME_CAP \
+                --per-request-cap $SOLANA_FAUCET_PER_REQUEST_CAP
+          resources: {{- include "getResourceObject" $chain.faucet.resources | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+            - mountPath: /scripts
+              name: scripts
+        {{- end }}
+        {{- end }}
+      volumes:
+        - name: node
+          emptyDir: { }
+        - name: scripts
+          configMap:
+            name: setup-scripts-{{- include "devnet.chain.name" $chain.id }}
+---
+{{- end }}
+{{- end }} 

@@ -1,0 +1,222 @@
+{{- range $chain := .Values.chains }}
+{{- if eq $chain.name "solana" }}
+{{- if gt $chain.numValidators 1.0 }}
+{{- $dataExposer := dict "chain" $chain.id "port" ($.Values.exposer.ports.rest | quote | default "8081") }}
+{{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
+{{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
+{{ $initParams := dict "chains" (list $chain.id) "port" $.Values.exposer.ports.rest "context" $ }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $chain.hostname }}-validator
+spec:
+  serviceName: {{ $chain.hostname }}-validator
+  replicas: {{ sub $chain.numValidators 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $chain.name }}
+      app.kubernetes.io/name: {{ $chain.id }}-validator
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: {{ $chain.name }}
+        app.kubernetes.io/type: {{ $chain.id }}
+        app.kubernetes.io/name: {{ $chain.id }}-validator
+        app.kubernetes.io/rawname: {{ $chain.id }}
+        app.kubernetes.io/version: {{ $.Chart.AppVersion }}
+    spec:
+      {{- include "imagePullSecrets" $chain | indent 6 }}
+      initContainers:
+        {{- include "devnet.init.wait" $initParams | indent 8 }}
+        - name: init-validator
+          image: {{ $chain.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
+            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.timeoutVars" $.Values | indent 12 }}
+            {{- include "devnet.genesisVars" $dataExposer | indent 12 }}
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: FAUCET_ENABLED
+              value: "{{ $chain.faucet.enabled }}"
+            - name: NUM_VALIDATORS
+              value: "{{ $chain.numValidators }}"
+            - name: SOLANA_CONFIG_DIR
+              value: {{ $chain.home }}
+          command:
+            - bash
+            - "-c"
+            - |
+              set -ex
+
+              VAL_INDEX=${HOSTNAME##*-}
+              echo "Validator Index: $VAL_INDEX"
+
+              echo "Move scripts to config dir"
+              mkdir -p $SOLANA_CONFIG_DIR/scripts/
+              cp -L /scripts/* $SOLANA_CONFIG_DIR/scripts/
+              chmod +x $SOLANA_CONFIG_DIR/scripts/*
+
+              # Run validator setup
+              if [ ! -f $SOLANA_CONFIG_DIR/identity.json ]; then
+                solana-keygen new --no-passphrase -so $SOLANA_CONFIG_DIR/identity.json
+              fi
+              if [ ! -f $SOLANA_CONFIG_DIR/vote-account.json ]; then
+                solana-keygen new --no-passphrase -so $SOLANA_CONFIG_DIR/vote-account.json
+              fi
+              if [ ! -f $SOLANA_CONFIG_DIR/authorized-voter.json ]; then
+                solana-keygen new --no-passphrase -so $SOLANA_CONFIG_DIR/authorized-voter.json
+              fi
+              if [ ! -f $SOLANA_CONFIG_DIR/authorized-withdrawer.json ]; then
+                solana-keygen new --no-passphrase -so $SOLANA_CONFIG_DIR/authorized-withdrawer.json
+              fi
+              if [ ! -f $SOLANA_CONFIG_DIR/stake-account.json ]; then
+                solana-keygen new --no-passphrase -so $SOLANA_CONFIG_DIR/stake-account.json
+              fi
+
+              # Set config
+              solana config set --url http://solana-genesis.$NAMESPACE.svc.cluster.local:8899
+              solana config set --keypair $SOLANA_CONFIG_DIR/identity.json
+
+              echo "Create node id json file"
+              mkdir -p $SOLANA_CONFIG_DIR/config/
+              NODE_ID=$(solana address --keypair $SOLANA_CONFIG_DIR/identity.json)
+              echo '{"node_id":"'$NODE_ID'"}' > $SOLANA_CONFIG_DIR/config/node_id.json
+
+              # Setup validator accounts (like multinode-demo)
+              VALIDATOR_PUBKEY=$(solana-keygen pubkey $SOLANA_CONFIG_DIR/identity.json)
+              STAKE_ACCOUNT_PUBKEY=$(solana-keygen pubkey $SOLANA_CONFIG_DIR/stake-account.json)
+              VOTE_ACCOUNT_PUBKEY=$(solana-keygen pubkey $SOLANA_CONFIG_DIR/vote-account.json)
+              AUTHORIZED_WITHDRAWER_PUBKEY=$(solana-keygen pubkey $SOLANA_CONFIG_DIR/authorized-withdrawer.json)
+
+              # Fund validator identity account
+              echo "Funding validator identity account with 500 SOL"
+              solana airdrop 500 $VALIDATOR_PUBKEY
+
+              # Create vote account with both authorities
+              echo "Creating validator vote account"
+              solana create-vote-account $SOLANA_CONFIG_DIR/vote-account.json $SOLANA_CONFIG_DIR/identity.json $AUTHORIZED_WITHDRAWER_PUBKEY
+
+              # Vote for the vote account
+              echo "Voting for the vote account"
+              solana vote-account $VOTE_ACCOUNT_PUBKEY
+
+              # Verify balance
+              echo "Validator identity account balance:"
+              solana balance $VALIDATOR_PUBKEY
+
+              # Create stake account
+              echo "Creating stake account"
+              solana create-stake-account $SOLANA_CONFIG_DIR/stake-account.json 10
+              solana delegate-stake $STAKE_ACCOUNT_PUBKEY $VOTE_ACCOUNT_PUBKEY
+
+              # Get bootstrap validator's public key
+              BOOTSTRAP_PUBKEY=$(curl -s http://solana-genesis.$NAMESPACE.svc.cluster.local:8081/node_key | jq -r '.priv_key.value')
+              echo "Bootstrap validator public key: $BOOTSTRAP_PUBKEY"
+
+              POD_IP=$(hostname -i | awk '{print $1}')
+              echo "Pod IP: $POD_IP"
+
+              cp /root/.config/solana/cli/config.yml $SOLANA_CONFIG_DIR/config/config.yml
+          resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+            - mountPath: /scripts
+              name: scripts
+      containers:
+        - name: validator
+          image: {{ $chain.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          #securityContext:
+          #  runAsUser: 0  # Run as root to set ulimit
+          #  fsGroup: 0
+          env:
+            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
+            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.timeoutVars" $.Values | indent 12 }}
+            {{- include "devnet.genesisVars" $dataExposer | indent 12 }}
+            - name: KEYS_CONFIG
+              value: /configs/keys.json
+            - name: FAUCET_ENABLED
+              value: "{{ $chain.faucet.enabled }}"
+            - name: NUM_VALIDATORS
+              value: "{{ $chain.numValidators }}"
+            - name: SOLANA_CONFIG_DIR
+              value: {{ $chain.home }}
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -ex
+
+              # Copy config
+              mkdir -p /root/.config/solana/cli/
+              cp $SOLANA_CONFIG_DIR/config/config.yml /root/.config/solana/cli/config.yml
+
+              # Get bootstrap validator's public key
+              BOOTSTRAP_PUBKEY=$(curl -s http://solana-genesis.$NAMESPACE.svc.cluster.local:8081/node_key | jq -r '.priv_key.value')
+              echo "Bootstrap validator public key: $BOOTSTRAP_PUBKEY"
+
+              POD_IP=$(hostname -i | awk '{print $1}')
+              
+              agave-validator \
+                --identity $SOLANA_CONFIG_DIR/identity.json \
+                --max-genesis-archive-unpacked-size 1073741824 \
+                --vote-account $SOLANA_CONFIG_DIR/vote-account.json \
+                --bind-address 0.0.0.0 \
+                --rpc-bind-address 0.0.0.0 \
+                --rpc-port 8899 \
+                --gossip-port 8001 \
+                --public-rpc-address $POD_IP:8899 \
+                --rpc-faucet-address solana-genesis.$NAMESPACE.svc.cluster.local:9900 \
+                --allow-private-addr \
+                --entrypoint solana-genesis.$NAMESPACE.svc.cluster.local:8001 \
+                --known-validator $BOOTSTRAP_PUBKEY \
+                --no-os-network-limits-test \
+                --log - \
+                --full-rpc-api \
+                --no-incremental-snapshots \
+                --require-tower
+          resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+            - mountPath: /scripts
+              name: scripts
+        - name: exposer
+          image: {{ $.Values.exposer.image }}
+          imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
+          env:
+            {{- include "devnet.genesisVars" $dataExposer | indent 12}}
+            - name: EXPOSER_HTTP_PORT
+              value: "8081"
+            - name: EXPOSER_GRPC_PORT
+              value: "9099"
+            - name: EXPOSER_GENESIS_FILE
+              value: {{ $chain.home }}/genesis.bin
+            - name: EXPOSER_NODE_ID_FILE
+              value: {{ $chain.home }}/config/node_id.json
+            - name: EXPOSER_CONFIG_FILE
+              value: {{ $chain.home }}/config/config.yml
+          command: [ "exposer" ]
+          resources: {{- include "getResourceObject" $.Values.exposer.resources | trim | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ $chain.home }}
+              name: node
+      volumes:
+      - name: node
+        emptyDir: { }
+      - name: scripts
+        configMap:
+          name: setup-scripts-{{ $chain.hostname }}
+          defaultMode: 0777
+{{- end }}
+{{- end }}
+{{- end }}
