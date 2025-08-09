@@ -13,45 +13,89 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: registry
+      app.kubernetes.io/name: registry
   template:
     metadata:
       labels:
-        app: registry
         starship.io/name: starship-e2e-tests
         app.kubernetes.io/version: 4.0.0-alpha.0
         app.kubernetes.io/managed-by: starship
+        app.kubernetes.io/component: registry
+        app.kubernetes.io/part-of: starship
+        app.kubernetes.io/name: registry
     spec:
+      initContainers:
+        - name: wait-for-chains
+          image: curlimages/curl:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - '-c'
+            - |-
+
+              while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+                echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+
+              while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+                echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+
+              while [ $(curl -sw '%{http_code}' http://juno-2-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: juno-2. Waiting for it to start..."
+                echo "Checking: http://juno-2-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
       containers:
         - name: registry
           image: ghcr.io/hyperweb-io/starship/registry:20250205-544757d
-          ports:
-            - name: http
-              containerPort: 8080
-            - name: grpc
-              containerPort: 9090
           env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: REGISTRY_CHAIN_CLIENT_IDS
+              value: osmosis-1,cosmoshub-4,juno-2
+            - name: REGISTRY_CHAIN_CLIENT_NAMES
+              value: osmosis,cosmoshub,juno
             - name: REGISTRY_CHAIN_CLIENT_RPCS
-              value: >-
-                http://localhost:26653,http://localhost:26657,http://localhost:26658
+              value: http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657,http://juno-2-genesis.$(NAMESPACE).svc.cluster.local:26657
             - name: REGISTRY_CHAIN_API_RPCS
-              value: >-
-                http://localhost:26653,http://localhost:26657,http://localhost:26658
+              value: http://localhost:26653,http://localhost:26657,http://localhost:26658
             - name: REGISTRY_CHAIN_API_GRPCS
-              value: >-
-                http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9091,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9091,http://juno-2-genesis.$(NAMESPACE).svc.cluster.local:9091
+              value: http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9091,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9091,http://juno-2-genesis.$(NAMESPACE).svc.cluster.local:9091
             - name: REGISTRY_CHAIN_API_RESTS
-              value: >-
-                http://localhost:1313,http://localhost:1317,http://localhost:1318
+              value: http://localhost:1313,http://localhost:1317,http://localhost:1318
             - name: REGISTRY_CHAIN_CLIENT_EXPOSERS
-              value: >-
-                http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:8081,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:8081,http://juno-2-genesis.$(NAMESPACE).svc.cluster.local:8081
+              value: http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:8081,http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:8081,http://juno-2-genesis.$(NAMESPACE).svc.cluster.local:8081
+            - name: REGISTRY_CHAIN_REGISTRY
+              value: /chains
           volumeMounts:
-            - name: chain-osmosis-1
+            - name: registry-osmosis-1
               mountPath: /chains/osmosis-1
-            - name: chain-cosmoshub-4
+            - name: registry-cosmoshub-4
               mountPath: /chains/cosmoshub-4
-            - name: chain-juno-2
+            - name: registry-juno-2
               mountPath: /chains/juno-2
           resources:
             limits:
@@ -61,24 +105,22 @@ spec:
               cpu: '0.2'
               memory: 200M
           readinessProbe:
-            httpGet:
-              path: /health
-              port: '8080'
+            tcpSocket:
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /health
-              port: '8080'
+            tcpSocket:
+              port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
       volumes:
-        - name: chain-osmosis-1
+        - name: registry-osmosis-1
           configMap:
-            name: chain-osmosis-1
-        - name: chain-cosmoshub-4
+            name: registry-osmosis-1
+        - name: registry-cosmoshub-4
           configMap:
-            name: chain-cosmoshub-4
-        - name: chain-juno-2
+            name: registry-cosmoshub-4
+        - name: registry-juno-2
           configMap:
-            name: chain-juno-2
+            name: registry-juno-2

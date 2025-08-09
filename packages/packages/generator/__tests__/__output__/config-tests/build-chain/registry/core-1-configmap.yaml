@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-core-1
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry-core-1
+data:
+  chain.json: |-
+    {
+      "$schema": "../chain.schema.json",
+      "chain_name": "persistencecore",
+      "status": "live",
+      "network_type": "devnet",
+      "chain_id": "core-1",
+      "pretty_name": "Persistence Devnet",
+      "bech32_prefix": "persistence",
+      "daemon_name": "persistenceCore",
+      "node_home": "/root/.persistenceCore",
+      "key_algos": [
+        "secp256k1"
+      ],
+      "slip44": "118",
+      "fees": {
+        "fee_tokens": [
+          {
+            "denom": "uxprt",
+            "fixed_min_gas_price": 0,
+            "low_gas_price": 0,
+            "average_gas_price": 0.025,
+            "high_gas_price": 0.04
+          }
+        ]
+      },
+      "staking": {
+        "staking_tokens": [
+          {
+            "denom": "uxprt"
+          }
+        ],
+        "lock_duration": {
+          "time": "1209600s"
+        }
+      },
+      "codebase": {
+        "git_repo": "https://github.com/persistenceOne/persistenceCore",
+        "compatible_versions": [],
+        "binaries": {},
+        "ics_enabled": [],
+        "versions": [],
+        "consensus": {
+          "type": "tendermint"
+        }
+      },
+      "peers": {
+        "seeds": [],
+        "persistent_peers": []
+      }
+    }
+  assetlist.json: |-
+    {
+      "$schema": "../assetlist.schema.json",
+      "chain_name": "persistencecore",
+      "assets": [
+        {
+          "description": "The denom for token uxprt",
+          "base": "uxprt",
+          "name": "uxprt",
+          "display": "uxprt",
+          "symbol": "UXPRT",
+          "denom_units": [
+            {
+              "denom": "uxprt",
+              "exponent": 0
+            },
+            {
+              "denom": "uxprt",
+              "exponent": 6
+            }
+          ],
+          "coingecko_id": "persistencecore"
+        }
+      ]
+    }

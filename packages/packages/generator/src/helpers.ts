@@ -141,12 +141,7 @@ export function getNodeResources(
     return getResourceObject(chain.resources);
   }
 
-  return getResourceObject(
-    context.resources?.node || {
-      cpu: '0.5',
-      memory: '500M'
-    }
-  );
+  return getResourceObject(context.resources?.node);
 }
 
 /**
@@ -154,13 +149,12 @@ export function getNodeResources(
  */
 export function getPortMap(): Record<string, number> {
   return {
-    p2p: 26656,
     address: 26658,
     grpc: 9090,
     'grpc-web': 9091,
+    p2p: 26656,
     rest: 1317,
     rpc: 26657,
-    metrics: 26660,
     exposer: 8081,
     faucet: 8000
   };
@@ -293,11 +287,11 @@ export function generateWaitInitContainer(
   const waitScript = chainIDs
     .map(
       (chainID) => `
-      while [ $(curl -sw '%{http_code}' http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
-        echo "Genesis validator does not seem to be ready for: ${chainID}. Waiting for it to start..."
-        echo "Checking: http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
-        sleep 10;
-      done`
+while [ $(curl -sw '%{http_code}' http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: ${chainID}. Waiting for it to start..."
+  echo "Checking: http://${getChainName(String(chainID))}-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done`
     )
     .join('\n');
 

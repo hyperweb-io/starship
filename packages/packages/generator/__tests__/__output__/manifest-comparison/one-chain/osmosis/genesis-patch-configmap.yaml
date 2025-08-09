@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: patch-osmosis-1
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: chain
+    app.kubernetes.io/name: osmosis
+    app.kubernetes.io/part-of: osmosis-1
+    app.kubernetes.io/role: genesis-patch
+    starship.io/chain-name: osmosis
+    starship.io/chain-id: osmosis-1
+data:
+  genesis.json: |-
+    {
+      "app_state": {
+        "staking": {
+          "params": {
+            "unbonding_time": "5s"
+          }
+        },
+        "gamm": {
+          "params": {
+            "pool_creation_fee": [
+              {
+                "amount": "500000",
+                "denom": "uosmo"
+              }
+            ]
+          }
+        }
+      }
+    }

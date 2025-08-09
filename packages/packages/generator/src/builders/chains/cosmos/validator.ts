@@ -31,7 +31,7 @@ export class CosmosValidatorStatefulSetGenerator implements IGenerator {
       'app.kubernetes.io/component': 'chain',
       'app.kubernetes.io/part-of': helpers.getChainId(processedChain),
       'app.kubernetes.io/id': helpers.getChainId(processedChain),
-      'app.kubernetes.io/name': `${helpers.getHostname(processedChain)}-validator`,
+      'app.kubernetes.io/name': `${helpers.getChainId(processedChain)}-validator`,
       'app.kubernetes.io/type': `${helpers.getChainId(processedChain)}-statefulset`,
       'app.kubernetes.io/role': 'validator',
       'starship.io/chain-name': processedChain.name

@@ -486,10 +486,10 @@ describe('RelayerBuilder', () => {
 
       // Verify RPC endpoints
       expect(configToml).toContain(
-        'rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"'
+        'rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"'
       );
       expect(configToml).toContain(
-        'rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"'
+        'rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"'
       );
 
       // Snapshot test for configuration content

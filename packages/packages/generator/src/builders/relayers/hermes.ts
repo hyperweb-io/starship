@@ -116,14 +116,14 @@ id = "${chainId}"
 type = "CosmosSdk"
 key_name = "${chainId}"
 ${chain.ics?.enabled ? 'ccv_consumer_chain = true' : ''}
-rpc_addr = "http://${chainName}-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://${chainName}-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:9090"
 ${
   eventSourceConfig.mode === 'pull'
     ? `event_source = { mode = 'pull', interval = '${
         eventSourceConfig.interval || '500ms'
       }' }`
-    : `event_source = { mode = 'push', url = "ws://${chainName}-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '${
+    : `event_source = { mode = 'push', url = "ws://${chainName}-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '${
         eventSourceConfig.batch_delay || '500ms'
       }' }`
 }
@@ -295,28 +295,15 @@ export class HermesStatefulSetGenerator implements IGenerator {
       volumeMounts: [{ mountPath: '/exposer', name: 'exposer' }]
     });
 
-    // Add wait init containers for all chains
-    this.relayer.chains.forEach((chainId) => {
-      const chain = this.config.chains.find((c) => String(c.id) === chainId);
-      if (!chain) return;
-
-      const chainName = helpers.getChainName(String(chain.id));
-      initContainers.push({
-        name: `init-${chainName}`,
-        image: 'ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0',
-        imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
-        command: ['bash', '-c'],
-        args: [
-          `echo "Waiting for ${chainName} service..."\nwait-for-service ${chainName}-genesis.$(NAMESPACE).svc.cluster.local:26657`
-        ],
-        env: [
-          {
-            name: 'NAMESPACE',
-            valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } }
-          }
-        ]
-      });
-    });
+    // Add single wait init container for all chains
+    const exposerPort = this.config.exposer?.ports?.rest || 8081;
+    initContainers.push(
+      helpers.generateWaitInitContainer(
+        this.relayer.chains,
+        exposerPort,
+        this.config
+      )
+    );
 
     // Add hermes init container
     initContainers.push(this.generateHermesInitContainer());
@@ -367,7 +354,13 @@ export class HermesStatefulSetGenerator implements IGenerator {
       image:
         this.relayer.image || 'ghcr.io/cosmology-tech/starship/hermes:1.10.0',
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
-      env: [{ name: 'RELAYER_DIR', value: '/root/.hermes' }],
+      env: [
+        { name: 'RELAYER_DIR', value: '/root/.hermes' },
+        {
+          name: 'NAMESPACE',
+          valueFrom: { fieldRef: { fieldPath: 'metadata.namespace' } }
+        }
+      ],
       command: ['bash', '-c'],
       args: [
         'RLY_INDEX=${HOSTNAME##*-}\necho "Relayer Index: $RLY_INDEX"\nhermes start'
@@ -388,8 +381,7 @@ export class HermesStatefulSetGenerator implements IGenerator {
     // Exposer container
     containers.push({
       name: 'exposer',
-      image:
-        this.relayer.image || 'ghcr.io/cosmology-tech/starship/hermes:1.10.0',
+      image: this.relayer.image,
       imagePullPolicy: this.config.images?.imagePullPolicy || 'IfNotPresent',
       env: [
         { name: 'EXPOSER_HTTP_PORT', value: '8081' },
@@ -437,6 +429,10 @@ mkdir -p $RELAYER_DIR
 cp /configs/config.toml $RELAYER_DIR/config.toml
 cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
 
+# Replace namespace placeholder with actual namespace environment variable
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
+
 MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
 echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
 MNEMONIC_CLI=$(jq -r ".relayers_cli[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
@@ -444,20 +440,22 @@ echo $MNEMONIC_CLI > $RELAYER_DIR/mnemonic-cli.txt
 
 `;
 
-    // Add key creation and funding for each chain
+    // Add key creation and funding for each chain (both regular and CLI keys)
     this.relayer.chains.forEach((chainId) => {
       const chain = this.config.chains.find((c) => String(c.id) === chainId);
       if (!chain) return;
 
       const chainName = helpers.getChainName(String(chain.id));
+      const hdPath = chain.hdPath || "m/44'/118'/0'/0/0";
+
+      // Create regular key
       command += `
 echo "Creating key for ${chainId}..."
 hermes keys add \\
   --chain ${chainId} \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name ${chainId} \\
-  --hd-path "${chain.hdPath || "m/44'/118'/0'/0/0"}"
-
+  --hd-path "${hdPath}"
 DENOM="${chain.denom}"
 RLY_ADDR=$(hermes --json keys list --chain ${chainId} | tail -1 | jq -r '.result."${chainId}".account')
 
@@ -466,31 +464,47 @@ bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
   $DENOM \\
   http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
-  "${chain.faucet?.enabled || false}" || true
+  "${chain.faucet?.enabled}" || true
+
+echo "Creating key for ${chainId}-cli..."
+hermes keys add \\
+  --chain ${chainId} \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name ${chainId}-cli \\
+  --hd-path "${hdPath}"
+RLY_ADDR_CLI=$(hermes --json keys list --chain ${chainId} | tail -1 | jq -r '.result."${chainId}-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
+  $DENOM \\
+  http://${chainName}-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "${chain.faucet?.enabled}" || true
 `;
     });
 
     // Add channel creation if specified
     if (this.relayer.channels && this.relayer.channels.length > 0) {
       this.relayer.channels.forEach((channel) => {
+        // Build command arguments array and filter out empty values
+        const args = [
+          'hermes create channel',
+          channel['new-connection'] ? '--new-client-connection --yes' : '',
+          channel['b-chain'] ? `--b-chain ${channel['b-chain']}` : '',
+          channel['a-connection']
+            ? `--a-connection ${channel['a-connection']}`
+            : '',
+          channel['channel-version']
+            ? `--channel-version ${channel['channel-version']}`
+            : '',
+          channel.order ? `--order ${channel.order}` : '',
+          `--a-chain ${channel['a-chain']}`,
+          `--a-port ${channel['a-port']}`,
+          `--b-port ${channel['b-port']}`
+        ].filter((arg) => arg.trim() !== ''); // Remove empty arguments
+
         command += `
-hermes create channel \\
-  ${channel['new-connection'] ? '--new-client-connection --yes \\' : ''}
-  ${channel['b-chain'] ? `--b-chain ${channel['b-chain']} \\` : ''}
-  ${
-    channel['a-connection']
-      ? `--a-connection ${channel['a-connection']} \\`
-      : ''
-  }
-  ${
-    channel['channel-version']
-      ? `--channel-version ${channel['channel-version']} \\`
-      : ''
-  }
-  ${channel.order ? `--order ${channel.order} \\` : ''}
-  --a-chain ${channel['a-chain']} \\
-  --a-port ${channel['a-port']} \\
-  --b-port ${channel['b-port']}
+${args.join(' \\\n  ')}
 `;
       });
     }

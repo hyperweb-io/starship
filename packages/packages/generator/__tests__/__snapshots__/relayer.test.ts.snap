@@ -43,9 +43,9 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1-cli"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
-event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
+event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
 default_gas = 500000000
@@ -67,9 +67,9 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4-cli"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
-event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
+event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
 default_gas = 500000000
@@ -124,9 +124,9 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
-event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
+event_source = { mode = 'push', url = "ws://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
 default_gas = 500000000
@@ -148,9 +148,9 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
-event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657/websocket", batch_delay = '500ms' }
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
+event_source = { mode = 'push', url = "ws://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657/websocket", batch_delay = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
 default_gas = 500000000
@@ -278,6 +278,14 @@ hermes start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.hermes",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/hermes:1.10.0",
               "imagePullPolicy": "IfNotPresent",
@@ -325,7 +333,7 @@ hermes start",
                   "value": "9099",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/hermes:1.10.0",
+              "image": undefined,
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
@@ -390,15 +398,29 @@ chmod +x /exposer/exposer",
               ],
             },
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -408,32 +430,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -445,6 +454,10 @@ echo "Relayer Index: $RLY_INDEX"
 mkdir -p $RELAYER_DIR
 cp /configs/config.toml $RELAYER_DIR/config.toml
 cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
+
+# Replace namespace placeholder with actual namespace environment variable
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
 
 MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
 echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
@@ -458,7 +471,6 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name osmosis-1 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1".account')
 
@@ -467,7 +479,22 @@ bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
   $DENOM \\
   http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
-  "false" || true
+  "undefined" || true
+
+echo "Creating key for osmosis-1-cli..."
+hermes keys add \\
+  --chain osmosis-1 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name osmosis-1-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
+  $DENOM \\
+  http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "undefined" || true
 
 echo "Creating key for cosmoshub-4..."
 hermes keys add \\
@@ -475,13 +502,27 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name cosmoshub-4 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4".account')
 
 echo "Transfer tokens to address $RLY_ADDR"
 bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
+  $DENOM \\
+  http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "false" || true
+
+echo "Creating key for cosmoshub-4-cli..."
+hermes keys add \\
+  --chain cosmoshub-4 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name cosmoshub-4-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
   $DENOM \\
   http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
   "false" || true
@@ -716,6 +757,14 @@ rly start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.relayer",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1",
               "imagePullPolicy": "IfNotPresent",
@@ -748,15 +797,29 @@ rly start",
           ],
           "initContainers": [
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -766,32 +829,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -1152,6 +1202,14 @@ ts-relayer start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.ts-relayer",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/ts-relayer:0.9.0",
               "imagePullPolicy": "IfNotPresent",
@@ -1184,15 +1242,29 @@ ts-relayer start",
           ],
           "initContainers": [
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: neutron-1. Waiting for it to start..."
+  echo "Checking: http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -1202,32 +1274,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for neutron-1 service..."
-wait-for-service neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-neutron-1",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -1560,15 +1619,29 @@ neutron-query-relayer start --config /configs/config.json",
           ],
           "initContainers": [
             {
-              "args": [
-                "echo "Waiting for neutron-1 service..."
-wait-for-service neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: neutron-1. Waiting for it to start..."
+  echo "Checking: http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -1578,32 +1651,19 @@ wait-for-service neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-neutron-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -1782,8 +1842,8 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1-cli"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -1806,8 +1866,8 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4-cli"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -1863,8 +1923,8 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -1887,8 +1947,8 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -2017,6 +2077,14 @@ hermes start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.hermes",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/hermes:1.10.0",
               "imagePullPolicy": "IfNotPresent",
@@ -2064,7 +2132,7 @@ hermes start",
                   "value": "9099",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/hermes:1.10.0",
+              "image": undefined,
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
@@ -2129,15 +2197,29 @@ chmod +x /exposer/exposer",
               ],
             },
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -2147,32 +2229,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -2184,6 +2253,10 @@ echo "Relayer Index: $RLY_INDEX"
 mkdir -p $RELAYER_DIR
 cp /configs/config.toml $RELAYER_DIR/config.toml
 cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
+
+# Replace namespace placeholder with actual namespace environment variable
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
 
 MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
 echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
@@ -2197,7 +2270,6 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name osmosis-1 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1".account')
 
@@ -2206,7 +2278,22 @@ bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
   $DENOM \\
   http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
-  "false" || true
+  "undefined" || true
+
+echo "Creating key for osmosis-1-cli..."
+hermes keys add \\
+  --chain osmosis-1 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name osmosis-1-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
+  $DENOM \\
+  http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "undefined" || true
 
 echo "Creating key for cosmoshub-4..."
 hermes keys add \\
@@ -2214,13 +2301,27 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name cosmoshub-4 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4".account')
 
 echo "Transfer tokens to address $RLY_ADDR"
 bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
+  $DENOM \\
+  http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "false" || true
+
+echo "Creating key for cosmoshub-4-cli..."
+hermes keys add \\
+  --chain cosmoshub-4 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name cosmoshub-4-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
   $DENOM \\
   http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
   "false" || true
@@ -2455,6 +2556,14 @@ rly start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.relayer",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1",
               "imagePullPolicy": "IfNotPresent",
@@ -2487,15 +2596,29 @@ rly start",
           ],
           "initContainers": [
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -2505,32 +2628,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -2713,8 +2823,8 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1-cli"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -2737,8 +2847,8 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4-cli"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -2794,8 +2904,8 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -2818,8 +2928,8 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -2948,6 +3058,14 @@ hermes start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.hermes",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "custom/hermes:latest",
               "imagePullPolicy": "IfNotPresent",
@@ -3060,15 +3178,29 @@ chmod +x /exposer/exposer",
               ],
             },
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -3078,32 +3210,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -3115,6 +3234,10 @@ echo "Relayer Index: $RLY_INDEX"
 mkdir -p $RELAYER_DIR
 cp /configs/config.toml $RELAYER_DIR/config.toml
 cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
+
+# Replace namespace placeholder with actual namespace environment variable
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
 
 MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
 echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
@@ -3128,7 +3251,6 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name osmosis-1 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1".account')
 
@@ -3137,7 +3259,22 @@ bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
   $DENOM \\
   http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
-  "false" || true
+  "undefined" || true
+
+echo "Creating key for osmosis-1-cli..."
+hermes keys add \\
+  --chain osmosis-1 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name osmosis-1-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
+  $DENOM \\
+  http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "undefined" || true
 
 echo "Creating key for cosmoshub-4..."
 hermes keys add \\
@@ -3145,13 +3282,27 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name cosmoshub-4 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4".account')
 
 echo "Transfer tokens to address $RLY_ADDR"
 bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
+  $DENOM \\
+  http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "false" || true
+
+echo "Creating key for cosmoshub-4-cli..."
+hermes keys add \\
+  --chain cosmoshub-4 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name cosmoshub-4-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
   $DENOM \\
   http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
   "false" || true
@@ -3391,6 +3542,14 @@ rly start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.relayer",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1",
               "imagePullPolicy": "IfNotPresent",
@@ -3423,15 +3582,29 @@ rly start",
           ],
           "initContainers": [
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -3441,32 +3614,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -3649,8 +3809,8 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1-cli"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -3673,8 +3833,8 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4-cli"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -3730,8 +3890,8 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -3754,8 +3914,8 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -3884,6 +4044,14 @@ hermes start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.hermes",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/hermes:1.10.0",
               "imagePullPolicy": "IfNotPresent",
@@ -3931,7 +4099,7 @@ hermes start",
                   "value": "9099",
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/hermes:1.10.0",
+              "image": undefined,
               "imagePullPolicy": "IfNotPresent",
               "name": "exposer",
               "resources": {
@@ -3996,15 +4164,29 @@ chmod +x /exposer/exposer",
               ],
             },
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -4014,32 +4196,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -4051,6 +4220,10 @@ echo "Relayer Index: $RLY_INDEX"
 mkdir -p $RELAYER_DIR
 cp /configs/config.toml $RELAYER_DIR/config.toml
 cp /configs/config-cli.toml $RELAYER_DIR/config-cli.toml
+
+# Replace namespace placeholder with actual namespace environment variable
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config.toml
+sed -i "s|\\$NAMESPACE|$NAMESPACE|g" $RELAYER_DIR/config-cli.toml
 
 MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
 echo $MNEMONIC > $RELAYER_DIR/mnemonic.txt
@@ -4064,7 +4237,6 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name osmosis-1 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1".account')
 
@@ -4073,7 +4245,22 @@ bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
   $DENOM \\
   http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
-  "false" || true
+  "undefined" || true
+
+echo "Creating key for osmosis-1-cli..."
+hermes keys add \\
+  --chain osmosis-1 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name osmosis-1-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain osmosis-1 | tail -1 | jq -r '.result."osmosis-1-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
+  $DENOM \\
+  http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "undefined" || true
 
 echo "Creating key for cosmoshub-4..."
 hermes keys add \\
@@ -4081,13 +4268,27 @@ hermes keys add \\
   --mnemonic-file $RELAYER_DIR/mnemonic.txt \\
   --key-name cosmoshub-4 \\
   --hd-path "m/44'/118'/0'/0/0"
-
 DENOM="undefined"
 RLY_ADDR=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4".account')
 
 echo "Transfer tokens to address $RLY_ADDR"
 bash -e /scripts/transfer-tokens.sh \\
   $RLY_ADDR \\
+  $DENOM \\
+  http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
+  "false" || true
+
+echo "Creating key for cosmoshub-4-cli..."
+hermes keys add \\
+  --chain cosmoshub-4 \\
+  --mnemonic-file $RELAYER_DIR/mnemonic-cli.txt \\
+  --key-name cosmoshub-4-cli \\
+  --hd-path "m/44'/118'/0'/0/0"
+RLY_ADDR_CLI=$(hermes --json keys list --chain cosmoshub-4 | tail -1 | jq -r '.result."cosmoshub-4-cli".account')
+
+echo "Transfer tokens to address $RLY_ADDR_CLI"
+bash -e /scripts/transfer-tokens.sh \\
+  $RLY_ADDR_CLI \\
   $DENOM \\
   http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:8000/credit \\
   "false" || true
@@ -4392,15 +4593,29 @@ neutron-query-relayer start --config /configs/config.json",
           ],
           "initContainers": [
             {
-              "args": [
-                "echo "Waiting for neutron-1 service..."
-wait-for-service neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: neutron-1. Waiting for it to start..."
+  echo "Checking: http://neutron-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -4410,32 +4625,19 @@ wait-for-service neutron-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-neutron-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -4792,6 +4994,14 @@ ts-relayer start",
                   "name": "RELAYER_DIR",
                   "value": "/root/.ts-relayer",
                 },
+                {
+                  "name": "NAMESPACE",
+                  "valueFrom": {
+                    "fieldRef": {
+                      "fieldPath": "metadata.namespace",
+                    },
+                  },
+                },
               ],
               "image": "ghcr.io/cosmology-tech/starship/ts-relayer:0.9.0",
               "imagePullPolicy": "IfNotPresent",
@@ -4824,15 +5034,29 @@ ts-relayer start",
           ],
           "initContainers": [
             {
-              "args": [
-                "echo "Waiting for osmosis-1 service..."
-wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
               "command": [
-                "bash",
+                "/bin/sh",
                 "-c",
+                "
+while [ $(curl -sw '%{http_code}' http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: osmosis-1. Waiting for it to start..."
+  echo "Checking: http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+
+while [ $(curl -sw '%{http_code}' http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+  echo "Genesis validator does not seem to be ready for: cosmoshub-4. Waiting for it to start..."
+  echo "Checking: http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+  sleep 10;
+done
+echo "Ready to start"
+exit 0",
               ],
               "env": [
+                {
+                  "name": "GENESIS_PORT",
+                  "value": "8081",
+                },
                 {
                   "name": "NAMESPACE",
                   "valueFrom": {
@@ -4842,32 +5066,19 @@ wait-for-service osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657",
                   },
                 },
               ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
+              "image": "curlimages/curl:latest",
               "imagePullPolicy": "IfNotPresent",
-              "name": "init-osmosis-1",
-            },
-            {
-              "args": [
-                "echo "Waiting for cosmoshub-4 service..."
-wait-for-service cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657",
-              ],
-              "command": [
-                "bash",
-                "-c",
-              ],
-              "env": [
-                {
-                  "name": "NAMESPACE",
-                  "valueFrom": {
-                    "fieldRef": {
-                      "fieldPath": "metadata.namespace",
-                    },
-                  },
+              "name": "wait-for-chains",
+              "resources": {
+                "limits": {
+                  "cpu": "0.1",
+                  "memory": "128M",
                 },
-              ],
-              "image": "ghcr.io/cosmology-tech/starship/wait-for-service:v0.1.0",
-              "imagePullPolicy": "IfNotPresent",
-              "name": "init-cosmoshub-4",
+                "requests": {
+                  "cpu": "0.1",
+                  "memory": "128M",
+                },
+              },
             },
             {
               "args": [
@@ -5072,8 +5283,8 @@ id = "osmosis-1"
 type = "CosmosSdk"
 key_name = "osmosis-1"
 
-rpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://osmosis-1-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://osmosis-1-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -5096,8 +5307,8 @@ id = "cosmoshub-4"
 type = "CosmosSdk"
 key_name = "cosmoshub-4"
 
-rpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:26657"
-grpc_addr = "http://cosmoshub-4-genesis.$(NAMESPACE).svc.cluster.local:9090"
+rpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:26657"
+grpc_addr = "http://cosmoshub-4-genesis.$NAMESPACE.svc.cluster.local:9090"
 event_source = { mode = 'pull', interval = '500ms' }
 trusted_node = false
 account_prefix = "undefined"
@@ -5121,7 +5332,7 @@ exports[`RelayerBuilder Resource Validation should generate correct container co
 {
   "containerCount": 2,
   "hasExposerContainer": true,
-  "initContainerCount": 4,
+  "initContainerCount": 3,
   "relayerContainerImage": "ghcr.io/cosmology-tech/starship/hermes:1.10.0",
 }
 `;

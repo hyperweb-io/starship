@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  labels:
+    starship.io/name: starship-e2e-tests
+    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/managed-by: starship
+    app.kubernetes.io/component: registry
+    app.kubernetes.io/part-of: starship
+    app.kubernetes.io/name: registry
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: registry
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        starship.io/name: starship-e2e-tests
+        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/managed-by: starship
+        app.kubernetes.io/component: registry
+        app.kubernetes.io/part-of: starship
+        app.kubernetes.io/name: registry
+    spec:
+      initContainers:
+        - name: wait-for-chains
+          image: curlimages/curl:latest
+          imagePullPolicy: Always
+          env:
+            - name: GENESIS_PORT
+              value: '8081'
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - '-c'
+            - |-
+
+              while [ $(curl -sw '%{http_code}' http://test-hyperweb-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id -o /dev/null) -ne 200 ]; do
+                echo "Genesis validator does not seem to be ready for: test-hyperweb-1. Waiting for it to start..."
+                echo "Checking: http://test-hyperweb-1-genesis.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id"
+                sleep 10;
+              done
+              echo "Ready to start"
+              exit 0
+          resources:
+            limits:
+              cpu: '0.1'
+              memory: 100M
+            requests:
+              cpu: '0.1'
+              memory: 100M
+      containers:
+        - name: registry
+          image: ghcr.io/hyperweb-io/starship/registry:20250205-544757d
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: REGISTRY_CHAIN_CLIENT_IDS
+              value: test-hyperweb-1
+            - name: REGISTRY_CHAIN_CLIENT_NAMES
+              value: hyperweb
+            - name: REGISTRY_CHAIN_CLIENT_RPCS
+              value: http://test-hyperweb-1-genesis.$(NAMESPACE).svc.cluster.local:26657
+            - name: REGISTRY_CHAIN_API_RPCS
+              value: http://localhost:26657
+            - name: REGISTRY_CHAIN_API_GRPCS
+              value: http://test-hyperweb-1-genesis.$(NAMESPACE).svc.cluster.local:9091
+            - name: REGISTRY_CHAIN_API_RESTS
+              value: http://localhost:1317
+            - name: REGISTRY_CHAIN_CLIENT_EXPOSERS
+              value: http://test-hyperweb-1-genesis.$(NAMESPACE).svc.cluster.local:8081
+            - name: REGISTRY_CHAIN_REGISTRY
+              value: /chains
+          volumeMounts:
+            - name: registry-test-hyperweb-1
+              mountPath: /chains/test-hyperweb-1
+          resources:
+            limits:
+              cpu: '0.2'
+              memory: 200M
+            requests:
+              cpu: '0.2'
+              memory: 200M
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: registry-test-hyperweb-1
+          configMap:
+            name: registry-test-hyperweb-1
