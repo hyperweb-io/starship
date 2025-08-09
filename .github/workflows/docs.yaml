@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - v1
+      - release/*
     paths:
       - "docs/**"
       - "learn/**"

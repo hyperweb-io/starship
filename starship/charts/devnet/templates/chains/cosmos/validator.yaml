@@ -57,6 +57,8 @@ spec:
               UPGRADE_NAME=genesis CODE_TAG={{ $chain.build.source }} bash -e /scripts/build-chain.sh
               {{- end }}
           env:
+            {{ include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{ include "devnet.envVars" $chain | indent 12 }}
             - name: CODE_REF
               value: {{ $chain.repo }}
             - name: UPGRADE_DIR
@@ -65,7 +67,6 @@ spec:
               value: /go/bin
             - name: CHAIN_NAME
               value: {{ $chain.id }}
-                    {{ include "devnet.defaultEvnVars" $chain | indent 12 }}
           resources: {{- include "devnet.node.resources" ( dict "node" $chain "context" $ ) | trim | nindent 12 }}
           volumeMounts:
             - mountPath: {{ $chain.home }}
@@ -80,8 +81,8 @@ spec:
           image: {{ $chain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             {{- include "devnet.timeoutVars" $.Values | indent 12 }}
             {{- include "devnet.genesisVars" $dataExposer | indent 12 }}
             - name: KEYS_CONFIG
@@ -131,8 +132,8 @@ spec:
           image: {{ $chain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             {{- include "devnet.timeoutVars" $.Values | indent 12 }}
             {{- include "devnet.genesisVars" $dataExposer | indent 12 }}
             - name: KEYS_CONFIG
@@ -153,6 +154,7 @@ spec:
               bash -e /scripts/update-config.sh
               
               curl -s http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id
+              echo
               NODE_ID=$(curl -s http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:$GENESIS_PORT/node_id | jq -r ".node_id")
               if [[ $NODE_ID == "" ]]; then
                 echo "Node ID is null, exiting early"
@@ -179,8 +181,8 @@ spec:
           image: {{ $icsChain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -215,17 +217,13 @@ spec:
           image: {{ $chain.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             {{- include "devnet.genesisVars" $dataExposer | indent 12}}
             - name: KEYS_CONFIG
               value: /configs/keys.json
             - name: SLOGFILE
               value: "slog.slog"
-            {{- range $env := $chain.env }}
-            - name: {{ $env.name }}
-              value: {{ $env.value | quote }}
-            {{- end }}
           command:
             - bash
             - "-c"
@@ -253,22 +251,24 @@ spec:
                   - "-c"
                   - "-e"
                   - |
-                    until bash -e /scripts/chain-rpc-ready.sh http://localhost:26657; do
-                      sleep 10
-                    done
-
                     set -eux
                     export
                     VAL_INDEX=${HOSTNAME##*-}
                     VAL_NAME="$(jq -r ".validators[0].name" $KEYS_CONFIG)-$VAL_INDEX"
                     echo "Validator Index: $VAL_INDEX, Key name: $VAL_NAME. Chain bin $CHAIN_BIN"
 
+                    genesis_host="$GENESIS_HOST.$NAMESPACE.svc.cluster.local"
+                    echo "Waiting for RPC on http://$genesis_host:26657 to be ready..."
+                    until bash -e /scripts/chain-rpc-ready.sh http://$genesis_host:26657; do
+                      sleep 10
+                    done
+
                     VAL_ADDR=$($CHAIN_BIN keys show $VAL_NAME -a --keyring-backend="test")
                     echo "Transfer tokens to address $VAL_ADDR before trying to create validator. Best effort"
                     bash -e /scripts/transfer-tokens.sh \
                       $VAL_ADDR \
                       $DENOM \
-                      http://$GENESIS_HOST.$NAMESPACE.svc.cluster.local:8000/credit \
+                      http://$genesis_host:8000/credit \
                       "{{ $chain.faucet.enabled }}" || true
 
                     $CHAIN_BIN keys list --keyring-backend test | jq
@@ -302,8 +302,8 @@ spec:
           image: {{ $.Values.exposer.image }}
           imagePullPolicy: {{ $.Values.images.imagePullPolicy }}
           env:
-            {{- include "devnet.defaultEvnVars" $chain | indent 12 }}
-            {{- include "devnet.evnVars" $chain | indent 12 }}
+            {{- include "devnet.defaultEnvVars" $chain | indent 12 }}
+            {{- include "devnet.envVars" $chain | indent 12 }}
             {{- include "devnet.genesisVars" $dataExposer | indent 12}}
             - name: EXPOSER_HTTP_PORT
               value: "8081"

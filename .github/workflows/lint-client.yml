@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - v1
       - release/*
     paths:
       - "packages/**"
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches:
       - main
+      - v1
     paths:
       - "packages/**"
       - ".github/workflows/lint-client.yml"
