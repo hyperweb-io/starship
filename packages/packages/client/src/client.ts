@@ -81,7 +81,9 @@ const defaultPorts: PodPorts = {
       rest: 1317,
       exposer: 8081,
       faucet: 8000,
-      cometmock: 22331
+      cometmock: 22331,
+      'evm-rpc': 8545,
+      'evm-ws': 8546
     }
   },
   relayers: {
