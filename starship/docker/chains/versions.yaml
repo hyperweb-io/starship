@@ -151,6 +151,7 @@ chains:
     file: Dockerfile.xpla
     tags:
       - main
+      - v1.8.0-rc0
   - name: solana
     base: solanalabs/solana
     file: Dockerfile.solana
