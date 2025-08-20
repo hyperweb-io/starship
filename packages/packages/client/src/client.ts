@@ -74,6 +74,12 @@ const defaultPorts: PodPorts = {
       rest: 8545,
       ws: 8546
     },
+    solana: {
+      rpc: 8899,
+      ws: 8900,
+      exposer: 8081,
+      faucet: 9900
+    },
     defaultPorts: {
       rpc: 26657,
       grpc: 9090,

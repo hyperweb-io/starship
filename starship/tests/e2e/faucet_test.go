@@ -34,6 +34,9 @@ func (s *TestSuite) TestFaucet_Status() {
 			if chain.Ports.Faucet == 0 {
 				s.T().Skip("faucet not exposed via ports")
 			}
+			if chain.Name == "solana" {
+				s.T().Skip("skipping /status test since solana faucet is not supported")
+			}
 
 			req, err := http.NewRequest(http.MethodGet, "/status", nil)
 			s.Require().NoError(err)
@@ -157,6 +160,9 @@ func (s *TestSuite) TestFaucet_Credit() {
 			if chain.Ports.Faucet == 0 {
 				s.T().Skip("faucet not exposed via ports")
 			}
+			if chain.Name == "solana" {
+				s.T().Skip("skipping /credit test since solana faucet is not supported")
+			}
 
 			// fetch denom and address from an account on chain
 			denom := s.getChainDenoms(chain)
@@ -185,6 +191,9 @@ func (s *TestSuite) TestFaucet_Credit_MultipleRequests() {
 		s.Run(fmt.Sprintf("multiple faucet requests test for: %s", chain.ID), func() {
 			if chain.Ports.Faucet == 0 {
 				s.T().Skip("faucet not exposed via ports")
+			}
+			if chain.Name == "solana" {
+				s.T().Skip("skipping /credit test since solana faucet is not supported")
 			}
 
 			// fetch denom and address from an account on chain

@@ -53,7 +53,8 @@
           "type": "string",
           "enum": [
             "cosmjs",
-            "starship"
+            "starship",
+            "solana-faucet"
           ]
         },
         "image": {
@@ -148,7 +149,8 @@
               "hyperweb",
               "noble",
               "xpla",
-              "ethereum"
+              "ethereum",
+              "solana"
             ]
           },
           "numValidators": {

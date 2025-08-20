@@ -1,0 +1,16 @@
+{{- range $chain := .Values.chains }}
+{{- if eq $chain.name "solana" }}
+{{ $defaultFile := $.Files.Get "defaults.yaml" | fromYaml }}
+{{ $chain := include "devnet.fullchain" (dict "name" $chain.id "file" $defaultFile "context" $) | fromJson }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: setup-scripts-{{ $chain.hostname }}
+data:
+  {{- range $path, $_ := $.Files.Glob "scripts/solana/*" }}
+  {{ base $path }}: |-
+    {{- $.Files.Get $path | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }} 

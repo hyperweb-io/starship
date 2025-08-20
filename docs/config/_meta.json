@@ -3,5 +3,6 @@
   "chains": "Chains Directive Syntax",
   "relayers": "Relayers Directive Syntax",
   "features": "Feature Toggles",
-  "ethereum": "Ethereum"
+  "ethereum": "Ethereum",
+  "solana": "Solana"
 }

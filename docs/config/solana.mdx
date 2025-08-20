@@ -1,0 +1,175 @@
+# Solana Chain Configuration in Starship
+
+Solana support in Starship allows users to deploy Solana validator nodes using simple configurations.
+This section details how to configure Solana-based chains within Starship.
+
+## Solana Chain
+
+The Solana chain runs a Solana validator node that can handle transactions and maintain the blockchain state.
+
+### Basic Config
+```yaml
+chains:
+  - id: solana
+    name: solana
+    numValidators: 2
+    ports:
+      rpc: 8899
+      ws: 8900
+      exposer: 8001
+      faucet: 9900
+    resources:
+      cpu: 2000m
+      memory: 2048Mi
+```
+
+### Lite Configuration (CI/Testing)
+
+For CI environments or testing scenarios where you need minimal resource usage, you can use the lite configuration:
+
+```yaml
+chains:
+  - id: solana
+    name: solana
+    numValidators: 1
+    ports:
+      rpc: 8899
+      ws: 8900
+      exposer: 8001
+      faucet: 9900
+    resources:
+      cpu: 1500m
+      memory: 1500Mi
+
+exposer:
+  resources:
+    cpu: 100m
+    memory: 100Mi
+
+faucet:
+  resources:
+    cpu: 200m
+    memory: 200Mi
+```
+
+## Configuration Options
+
+### Chain Properties
+
+- **id**: The chain identifier (can be string or number)
+- **name**: Must be `"solana"` for Solana chains
+- **numValidators**: Number of validator nodes to deploy (minimum: 1)
+
+### Ports
+
+- **rpc**: JSON RPC port (default: 8899)
+- **ws**: WebSocket port (default: 8900) 
+- **exposer**: Exposer service port for chain information
+- **faucet**: Faucet service port for requesting test tokens
+
+### Resources
+
+You can specify CPU and memory resources for the Solana validators:
+
+```yaml
+resources:
+  cpu: 2000m      # 2 CPU cores
+  memory: 2048Mi  # 2GB RAM
+```
+
+For lighter deployments (like CI), you can reduce these requirements:
+
+```yaml
+resources:
+  cpu: 1500m      # 1.5 CPU cores  
+  memory: 1500Mi  # 1.5GB RAM
+```
+
+## Default Configuration
+
+Starship uses the following defaults for Solana chains:
+
+- **Image**: `ghcr.io/hyperweb-io/starship/solana-agave:v2.3.4`
+- **Binary**: `solana-validator`
+- **Home Directory**: `/root/.solana`
+- **Denomination**: `lamports` (base unit), `sol` (display unit)
+- **HD Path**: `m/44'/501'/0'/0'`
+- **Coin Type**: 501
+- **Faucet**: Enabled by default with Solana-specific faucet
+
+## Registry Integration
+
+When using the registry service, Solana chains are automatically registered with the following asset information:
+
+```yaml
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+  resources:
+    cpu: "0.1"
+    memory: "100M"
+```
+
+## Usage Examples
+
+### Full Development Environment
+
+For a complete development setup with multiple validators:
+
+```yaml
+name: solana-dev
+version: 1.10.0
+
+chains:
+  - id: solana
+    name: solana
+    numValidators: 2
+    ports:
+      rpc: 8899
+      ws: 8900
+      exposer: 8001
+      faucet: 9900
+    resources:
+      cpu: 2000m
+      memory: 2048Mi
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+```
+
+### CI/Testing Environment
+
+For continuous integration or testing environments where resources are limited:
+
+```yaml
+name: solana-ci
+version: 1.10.0
+
+chains:
+  - id: solana
+    name: solana
+    numValidators: 1
+    ports:
+      rpc: 8899
+      ws: 8900
+      exposer: 8001
+      faucet: 9900
+    resources:
+      cpu: 1500m
+      memory: 1500Mi
+
+exposer:
+  resources:
+    cpu: 100m
+    memory: 100Mi
+
+faucet:
+  resources:
+    cpu: 200m
+    memory: 200Mi
+```
+
+This lite configuration is perfect for CI pipelines where you need to test Solana functionality with minimal resource overhead.

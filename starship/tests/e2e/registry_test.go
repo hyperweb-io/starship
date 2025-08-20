@@ -46,6 +46,9 @@ func (s *TestSuite) TestRegistry_ListChains() {
 	if s.config.Registry == nil || !s.config.Registry.Enabled {
 		s.T().Skip("registry not enabled")
 	}
+	if s.config.Chains[0].Name == "solana" {
+		s.T().Skip("skipping /chains test since solana registry is not supported")
+	}
 	s.T().Log("running test for /chains endpoint for registry")
 
 	req, err := http.NewRequest(http.MethodGet, "/chains", nil)
@@ -72,6 +75,9 @@ func (s *TestSuite) TestRegistry_ListChains() {
 func (s *TestSuite) TestRegistry_GetChain() {
 	if s.config.Registry == nil || !s.config.Registry.Enabled {
 		s.T().Skip("registry not enabled")
+	}
+	if s.config.Chains[0].Name == "solana" {
+		s.T().Skip("skipping /chains test since solana registry is not supported")
 	}
 	s.T().Log("running test for /chains/{chain} endpoint for registry")
 
@@ -109,6 +115,9 @@ func (s *TestSuite) TestRegistry_ListChainPeers() {
 	if s.config.Registry == nil || !s.config.Registry.Enabled {
 		s.T().Skip("registry not enabled")
 	}
+	if s.config.Chains[0].Name == "solana" {
+		s.T().Skip("skipping /chains/{chain}/peers test since solana registry is not supported")
+	}
 	s.T().Log("running test for /chains/{chain}/peers endpoint for registry")
 
 	for _, chain := range s.config.Chains {
@@ -126,6 +135,9 @@ func (s *TestSuite) TestRegistry_ListChainPeers() {
 func (s *TestSuite) TestRegistry_ListChainApis() {
 	if s.config.Registry == nil || !s.config.Registry.Enabled {
 		s.T().Skip("registry not enabled")
+	}
+	if s.config.Chains[0].Name == "solana" {
+		s.T().Skip("skipping /chains/{chain}/apis test since solana registry is not supported")
 	}
 	s.T().Log("running test for /chains/{chain}/apis endpoint for registry")
 
@@ -154,6 +166,9 @@ func (s *TestSuite) TestRegistry_ListChainApis() {
 func (s *TestSuite) TestRegistry_GetChainAssets() {
 	if s.config.Registry == nil || !s.config.Registry.Enabled {
 		s.T().Skip("registry not enabled")
+	}
+	if s.config.Chains[0].Name == "solana" {
+		s.T().Skip("skipping /chains/{chain}/assets test since solana registry is not supported")
 	}
 	s.T().Log("running test for /chains/{chain}/assets endpoint for registry")
 
@@ -301,6 +316,9 @@ func (s *TestSuite) TestRegistry_ListIBC() {
 func (s *TestSuite) TestRegistry_GetChainKeys() {
 	if s.config.Registry == nil || !s.config.Registry.Enabled {
 		s.T().Skip("registry not enabled")
+	}
+	if s.config.Chains[0].Name == "solana" {
+		s.T().Skip("skipping /chains/{chain}/keys test since solana registry is not supported")
 	}
 	s.T().Log("running test for /chains/{chain}/keys endpoint for registry")
 

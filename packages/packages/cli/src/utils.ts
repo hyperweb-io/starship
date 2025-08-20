@@ -36,7 +36,8 @@ export const params: string[] = [
   'repoUrl',
   'chart',
   'namespace',
-  'timeout'
+  'timeout',
+  'restartThreshold'
 ];
 
 export const loadConfig = (argv: any): Config => {

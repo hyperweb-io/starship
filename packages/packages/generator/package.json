@@ -21,7 +21,8 @@
   },
   "scripts": {
     "copy": "copyfiles -f ../../LICENSE README.md package.json dist",
-    "clean": "del dist/**; del __tests__/__output__/**",
+    "clean": "del dist/**",
+    "clean:test": "del __tests__/__output__/**",
     "prepare": "npm run build",
     "build": "npm run clean; tsc; tsc -p tsconfig.esm.json; npm run copy",
     "dev": "ts-node src/index",

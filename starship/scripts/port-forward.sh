@@ -27,6 +27,10 @@ CHAIN_GRPCWEB_PORT=9091
 CHAIN_LCD_PORT=1317
 CHAIN_EXPOSER_PORT=8081
 CHAIN_FAUCET_PORT=8000
+SOLANA_RPC_PORT=8899
+SOLANA_WS_PORT=8900
+SOLANA_FAUCET_PORT=9900
+SOLANA_EXPOSER_PORT=8001
 ETHEREUM_REST_PORT=8545
 ETHEREUM_RPC_PORT=8551
 RELAYER_REST_PORT=3000
@@ -73,6 +77,22 @@ if [[ $num_chains -gt -1 ]]; then
       color yellow "    Forwarding RPC: http://localhost:$localrpc"
       kubectl port-forward pods/$chain_name-$chain-0 $localrest:$ETHEREUM_REST_PORT > /dev/null 2>&1 &
       kubectl port-forward pods/$chain_name-$chain-0 $localrpc:$ETHEREUM_RPC_PORT > /dev/null 2>&1 &
+    elif [[ "$chain_name" == *"solana"* ]]; then
+      localrpc=$(yq -r ".chains[$i].ports.rpc" ${CONFIGFILE} )
+      localws=$(yq -r ".chains[$i].ports.ws" ${CONFIGFILE} )
+      localfaucet=$(yq -r ".chains[$i].ports.faucet" ${CONFIGFILE} )
+      localexposer=$(yq -r ".chains[$i].ports.exposer" ${CONFIGFILE} )
+      color yellow "Solana chain detected: $chain"
+      color yellow "    Forwarding RPC: http://localhost:$localrpc"
+      color yellow "    Forwarding WS: http://localhost:$localws"
+      color yellow "    Forwarding Faucet: http://localhost:$localfaucet"
+      color yellow "    Forwarding Exposer: http://localhost:$localexposer"
+      # For Solana, use the genesis pod for RPC and faucet
+      kubectl port-forward pods/$chain-genesis-0 $localrpc:$SOLANA_RPC_PORT > /dev/null 2>&1 &
+      kubectl port-forward pods/$chain-genesis-0 $localws:$SOLANA_WS_PORT > /dev/null 2>&1 &
+      kubectl port-forward pods/$chain-genesis-0 $localfaucet:$SOLANA_FAUCET_PORT > /dev/null 2>&1 &
+      kubectl port-forward pods/$chain-genesis-0 $localexposer:$SOLANA_EXPOSER_PORT > /dev/null 2>&1 &
+      sleep 1
     else
       localrpc=$(yq -r ".chains[$i].ports.rpc" ${CONFIGFILE} )
       localgrpc=$(yq -r ".chains[$i].ports.grpc" ${CONFIGFILE} )

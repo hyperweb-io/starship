@@ -48,8 +48,11 @@ func (s *TestSuite) TestExposer_GetGenesisFile() {
 	s.T().Log("running test for /genesis endpoint for exposer")
 
 	chain := s.config.Chains[0]
-	if chain.Ports.Exposer == 0 {
+	if chain.Ports.Exposer == 0{
 		s.T().Skip("skipping /node_id test since no exposer")
+	}
+	if chain.Name == "solana" {
+		s.T().Skip("skipping /genesis test since solana exposer is not supported")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, "/genesis", nil)
@@ -74,6 +77,9 @@ func (s *TestSuite) TestExposer_GetPubKey() {
 	if chain.Cometmock != nil && chain.Cometmock.Enabled {
 		s.T().Skip("skipping tests for cometmock enabled chain")
 	}
+	if chain.Name == "solana" {
+		s.T().Skip("skipping /genesis test since solana exposer is not supported")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/pub_key", nil)
 	s.Require().NoError(err)
@@ -93,6 +99,9 @@ func (s *TestSuite) TestExposer_GetPrivKey() {
 	chain := s.config.Chains[0]
 	if chain.Ports.Exposer == 0 {
 		s.T().Skip("skipping /node_id test since no exposer")
+	}
+	if chain.Name == "solana" {
+		s.T().Skip("skipping /genesis test since solana exposer is not supported")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, "/priv_keys", nil)
@@ -114,6 +123,9 @@ func (s *TestSuite) TestExposer_GetPrivValState() {
 	if chain.Ports.Exposer == 0 {
 		s.T().Skip("skipping /node_id test since no exposer")
 	}
+	if chain.Name == "solana" {
+		s.T().Skip("skipping /genesis test since solana exposer is not supported")
+	}
 
 	req, err := http.NewRequest(http.MethodGet, "/priv_validator_state", nil)
 	s.Require().NoError(err)
@@ -131,7 +143,7 @@ func (s *TestSuite) TestExposer_GetNodeKey() {
 
 	chain := s.config.Chains[0]
 	if chain.Ports.Exposer == 0 {
-		s.T().Skip("skipping /node_id test since no exposer")
+		s.T().Skip("skipping /node_key test since no exposer")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, "/node_key", nil)
@@ -151,6 +163,9 @@ func (s *TestSuite) TestExposer_GetKeys() {
 	chain := s.config.Chains[0]
 	if chain.Ports.Exposer == 0 {
 		s.T().Skip("skipping /node_id test since no exposer")
+	}
+	if chain.Name == "solana" {
+		s.T().Skip("skipping /genesis test since solana exposer is not supported")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, "/keys", nil)
