@@ -12,6 +12,8 @@ export interface Ports {
   grafana?: number;
   cometmock?: number;
   ws?: number;
+  'evm-rpc'?: number;
+  'evm-ws'?: number;
 }
 
 export interface Resources {
