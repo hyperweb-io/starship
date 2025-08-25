@@ -165,6 +165,12 @@ chains:
       - v2.3.3
       - v2.2.20
       - v2.2.19
+  - name: solana-agave-noavx
+    base: rust:1.75-bullseye
+    file: Dockerfile.solana-noavx
+    tags:
+      - v2.3.4
+      - v2.3.3
   - name: ethereum/client-go
     base: ethereum/client-go
     file: Dockerfile.base
