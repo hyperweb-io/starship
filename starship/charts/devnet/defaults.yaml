@@ -805,7 +805,7 @@ defaultChains:
         coingecko_id: xpla
   solana:
     type: solana
-    image: ghcr.io/hyperweb-io/starship/solana-agave-noavx:v2.3.4
+    image: ghcr.io/hyperweb-io/starship/solana-agave:v2.3.4
     home: /root/.solana
     binary: solana-validator
     prefix: sol

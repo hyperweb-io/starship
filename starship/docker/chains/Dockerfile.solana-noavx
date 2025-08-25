@@ -23,7 +23,8 @@ RUN git clone https://github.com/anza-xyz/agave.git /opt/agave && \
     cd /opt/agave && \
     git checkout ${VERSION} && \
     # Set Rust flags to disable AVX and build for generic x86_64
-    export RUSTFLAGS="-C target-cpu=generic" && \
+    # This prevents the runtime AVX check from aborting the process
+    export RUSTFLAGS="-C target-cpu=generic -C target-feature=-avx -C target-feature=-avx2" && \
     # Build Solana without AVX optimizations
     cargo build --release --bin agave-validator && \
     cargo build --release --bin solana && \
@@ -40,9 +41,6 @@ RUN git clone https://github.com/anza-xyz/agave.git /opt/agave && \
     cp target/release/agave-ledger-tool /usr/local/bin/ && \
     cp target/release/solana-genesis /usr/local/bin/ && \
     cp target/release/solana-gossip /usr/local/bin/ && \
-    # Create compatibility symlinks
-    ln -sf /usr/local/bin/agave-validator /usr/local/bin/solana-validator && \
-    ln -sf /usr/local/bin/agave-ledger-tool /usr/local/bin/solana-ledger-tool && \
     # Clean up to reduce image size
     cd / && rm -rf /opt/agave
 
