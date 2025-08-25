@@ -1,6 +1,6 @@
 {
   "name": "@starship-ci/client",
-  "version": "4.0.0-alpha.0",
+  "version": "4.0.0-alpha.1",
   "author": "Dan Lynch <pyramation@gmail.com>",
   "description": "Starship CI Client",
   "main": "index.js",
@@ -47,7 +47,7 @@
     "interchain"
   ],
   "dependencies": {
-    "@starship-ci/types": "^4.0.0-alpha.0",
+    "@starship-ci/types": "^4.0.0-alpha.1",
     "axios": "^1.6.7",
     "chalk": "^4.1.0",
     "deepmerge": "^4.3.1",

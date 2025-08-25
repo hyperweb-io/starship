@@ -2,9 +2,13 @@
   "lerna": "6",
   "conventionalCommits": true,
   "npmClient": "yarn",
-  "npmClientArgs": ["--no-lockfile"],
-  "packages": ["packages/*"],
-  "version": "4.0.0-alpha.0",
+  "npmClientArgs": [
+    "--no-lockfile"
+  ],
+  "packages": [
+    "packages/*"
+  ],
+  "version": "4.0.0-alpha.1",
   "registry": "https://registry.npmjs.org",
   "command": {
     "create": {
@@ -13,7 +17,10 @@
       "access": "restricted"
     },
     "publish": {
-      "allowBranch": ["main", "v2"],
+      "allowBranch": [
+        "main",
+        "v2"
+      ],
       "message": "chore(release): publish"
     }
   }

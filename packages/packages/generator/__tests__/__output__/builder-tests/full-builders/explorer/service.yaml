@@ -4,7 +4,7 @@ metadata:
   name: explorer
   labels:
     starship.io/name: full-testnet
-    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/version: 4.0.0-alpha.1
     app.kubernetes.io/managed-by: starship
     app.kubernetes.io/component: explorer
     app.kubernetes.io/part-of: starship

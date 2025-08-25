@@ -4,7 +4,7 @@ metadata:
   name: registry
   labels:
     starship.io/name: starship-e2e-tests
-    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/version: 4.0.0-alpha.1
     app.kubernetes.io/managed-by: starship
     app.kubernetes.io/component: registry
     app.kubernetes.io/part-of: starship
@@ -19,7 +19,7 @@ spec:
       labels:
         app: registry
         starship.io/name: starship-e2e-tests
-        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/version: 4.0.0-alpha.1
         app.kubernetes.io/managed-by: starship
     spec:
       containers:

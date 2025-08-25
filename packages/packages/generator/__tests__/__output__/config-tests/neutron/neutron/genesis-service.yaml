@@ -4,7 +4,7 @@ metadata:
   name: neutron-1-genesis
   labels:
     starship.io/name: starship-e2e-tests
-    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/version: 4.0.0-alpha.1
     app.kubernetes.io/managed-by: starship
     app.kubernetes.io/component: chain
     app.kubernetes.io/name: neutron-1-genesis

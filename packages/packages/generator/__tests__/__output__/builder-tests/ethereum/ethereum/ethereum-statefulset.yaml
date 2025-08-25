@@ -4,7 +4,7 @@ metadata:
   name: ethereum-1337
   labels:
     starship.io/name: starship-generator-test
-    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/version: 4.0.0-alpha.1
     app.kubernetes.io/managed-by: starship
     app: ethereum-1337
     app.kubernetes.io/component: chain

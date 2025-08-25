@@ -4,7 +4,7 @@ metadata:
   name: osmosis-1-genesis
   labels:
     starship.io/name: starship-generator-test
-    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/version: 4.0.0-alpha.1
     app.kubernetes.io/managed-by: starship
     app.kubernetes.io/component: chain
     app.kubernetes.io/part-of: osmosis-1
@@ -33,7 +33,7 @@ spec:
         app.kubernetes.io/type: osmosis-1
         app.kubernetes.io/name: osmosis-1-genesis
         app.kubernetes.io/rawname: osmosis-1
-        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/version: 4.0.0-alpha.1
         app.kubernetes.io/role: genesis
     spec:
       initContainers:

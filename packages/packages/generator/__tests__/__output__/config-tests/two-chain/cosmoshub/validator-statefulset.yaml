@@ -4,7 +4,7 @@ metadata:
   name: cosmoshub-4-validator
   labels:
     starship.io/name: starship-e2e-tests
-    app.kubernetes.io/version: 4.0.0-alpha.0
+    app.kubernetes.io/version: 4.0.0-alpha.1
     app.kubernetes.io/managed-by: starship
     app.kubernetes.io/component: chain
     app.kubernetes.io/part-of: cosmoshub-4
@@ -33,7 +33,7 @@ spec:
         app.kubernetes.io/instance: starship-e2e-tests
         app.kubernetes.io/type: cosmoshub-4
         app.kubernetes.io/name: cosmoshub-4-validator
-        app.kubernetes.io/version: 4.0.0-alpha.0
+        app.kubernetes.io/version: 4.0.0-alpha.1
         app.kubernetes.io/role: validator
     spec:
       initContainers:
