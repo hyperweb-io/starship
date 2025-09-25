@@ -112,7 +112,7 @@ chains: []
   #   numValidators: 2
   #   # genesis override local to genesis.json
   #   # this genesis directive is converted to a patch.json file
-  #   # then then `jq -s '.[0] * .[1]' genesis.json patch.json > genesis.json` is run
+  #   # then `jq -s '.[0] * .[1]' genesis.json patch.json > genesis.json` is run
   #   genesis:
   #     auth: ...
   # - id: osmosis-2

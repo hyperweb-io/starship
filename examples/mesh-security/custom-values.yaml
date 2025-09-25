@@ -1,4 +1,4 @@
-# Example values.yaml file will will create 2 chains with 4 validators,
+# Example values.yaml file will create 2 chains with 4 validators,
 # a ts-relayer between them and the explorer
 chains:
   - id: osmosis-1
