@@ -90,7 +90,7 @@ Topology:
 Details of each of arguments in the config file can be found [here](https://docs.cosmology.zone/starship/config/chains)
 
 ## Dir Structure
-* `configs/`: Holds all the various config files and custom scripts for infra intitialization
+* `configs/`: Holds all the various config files and custom scripts for infra initialization
   * `configs/*.yaml`: Various config files as described above
   * `configs/scripts/`: Custom scripts used by the config file for setup. More details [here](https://docs.cosmology.zone/starship/config/chains#scripts-optional)
 * `scripts/`: Handy scripts for dealing with starship setup and running

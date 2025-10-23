@@ -15,7 +15,7 @@ describe("Pool testing over IBC tokens", () => {
   let chainClients;
   let chain;
   
-  // Variables used accross testcases
+  // Variables used across testcases
   let poolId;
   let pool;
 

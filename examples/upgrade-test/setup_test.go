@@ -36,7 +36,7 @@ func (s *TestSuite) TestChainTokenTransfer() {
 
 	s.TransferTokens(chain1, address, 2345000, denom)
 
-	// Verify the address recived the token
+	// Verify the address received the token
 	balance, err := chain1.Client.QueryBalanceWithDenomTraces(context.Background(), sdk.MustAccAddressFromBech32(address), nil)
 	s.Require().NoError(err)
 
@@ -61,7 +61,7 @@ func (s *TestSuite) TestChainIBCTransfer() {
 	// Tranfer atom to persistence chain
 	s.IBCTransferTokens(chain2, chain1, address, 12345000)
 
-	// Verify the address recived the token
+	// Verify the address received the token
 	balance, err := chain1.Client.QueryBalanceWithDenomTraces(context.Background(), sdk.AccAddress(address), nil)
 	s.Require().NoError(err)
 

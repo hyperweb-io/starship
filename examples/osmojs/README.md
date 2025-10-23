@@ -58,7 +58,7 @@ npm run e2e:test
 ```
 
 ## 5. Stop the infra
-The tests should be ideompotent, so the tests can be run multiple times (which is recommeded), since the time to spinup is still high (around 5 to 10 mins).
+The tests should be ideompotent, so the tests can be run multiple times (which is recommended), since the time to spinup is still high (around 5 to 10 mins).
 
 Once the state of the mini-cosmos is corrupted, you can stop the deployments with
 ```bash

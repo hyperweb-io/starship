@@ -16,7 +16,7 @@ describe("Governance tests for osmosis", () => {
   let chainClients;
   let chain;
   
-  // Variables used accross testcases
+  // Variables used across testcases
   let queryClient;
   let proposalId;
   

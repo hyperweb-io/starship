@@ -14,7 +14,7 @@ describe("Staking tokens testing", () => {
   let chainClients;
   let chain;
   
-  // Variables used accross testcases
+  // Variables used across testcases
   let queryClient;
   let validatorAddress;
   let delegationAmount;
