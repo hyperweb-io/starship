@@ -26,7 +26,7 @@ chains:
 relayers:
   - name: neutron-cosmos
     type: hermes
-    image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
+    image: ghcr.io/hyperweb-io/starship/hermes:1.10.0
     replicas: 1
     chains:
       - neutron-1
