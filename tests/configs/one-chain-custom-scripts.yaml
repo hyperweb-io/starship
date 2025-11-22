@@ -1,0 +1,42 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: osmosis-1
+    name: osmosis
+    numValidators: 1
+    ports:
+      rest: 1313
+      rpc: 26653
+      exposer: 38083
+      faucet: 8003
+    resources:
+      cpu: "0.5"
+      memory: 500M
+    faucet:
+      concurrency: 2
+    scripts:
+      createGenesis:
+        file: scripts/create-custom-genesis.sh
+      updateGenesis:
+        file: scripts/update-custom-genesis.sh
+      updateConfig:
+        file: scripts/update-custom-config.sh
+      createValidator:
+        file: scripts/create-custom-validator.sh
+      transferTokens:
+        file: scripts/transfer-custom-tokens.sh
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
+  resources:
+    cpu: "0.1"
+    memory: 100M
+
+resources:
+  wait:
+    cpu: "0.1"
+    memory: 100M
