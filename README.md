@@ -6,7 +6,7 @@
 
 <p align="center" width="100%">
    <a href="https://github.com/hyperweb-io/starship/blob/main/LICENSE"><img height="20" src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
-   <a href="https://github.com/hyperweb-io/starship/releases/latest"><img height="20" src="https://github.com/hyperweb-io/starship/actions/workflows/release.yaml/badge.svg" alt="Release" /></a>
+   <a href="https://github.com/hyperweb-io/starship/releases/latest"><img height="20" src="https://img.shields.io/github/v/release/hyperweb-io/starship" alt="Release" /></a>
    <a href="https://github.com/hyperweb-io/starship/actions/workflows/build.yaml"><img height="20" src="https://github.com/hyperweb-io/starship/actions/workflows/build.yaml/badge.svg" alt="Build" /></a>
    <a href="https://github.com/hyperweb-io/starship/actions/workflows/pr-tests.yaml"><img height="20" src="https://github.com/hyperweb-io/starship/actions/workflows/pr-tests.yaml/badge.svg" alt="PR Tests" /></a>
    <a href="https://github.com/hyperweb-io/starship/actions/workflows/docs.yaml"><img height="20" src="https://github.com/hyperweb-io/starship/actions/workflows/docs.yaml/badge.svg" alt="Docs" /></a>
