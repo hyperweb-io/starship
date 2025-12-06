@@ -89,9 +89,26 @@ resources:
 
 Starship uses the following defaults for Solana chains:
 
-- **Image**: `ghcr.io/hyperweb-io/starship/solana-agave:v2.3.4`
+- **Image**: `ghcr.io/hyperweb-io/starship/solana-agave-noavx:v2.3.4`
 - **Binary**: `solana-validator`
 - **Home Directory**: `/root/.solana`
+
+## Docker Desktop / Virtualization Compatibility
+
+Starship uses a custom-built Solana image (`solana-agave-noavx`) that compiles Solana from source without AVX (Advanced Vector Extensions) requirements. This ensures compatibility with:
+
+- Docker Desktop on macOS (including Apple Silicon)
+- Virtualized environments that don't support AVX instructions
+- Kubernetes clusters running on virtual nodes
+
+The no-AVX image provides the same functionality as the standard image but with broader hardware compatibility. If you're running on bare metal with AVX support and want maximum performance, you can override the image:
+
+```yaml
+chains:
+  - id: solana
+    name: solana
+    image: ghcr.io/hyperweb-io/starship/solana-agave:v2.3.4  # Standard AVX-optimized image
+```
 - **Denomination**: `lamports` (base unit), `sol` (display unit)
 - **HD Path**: `m/44'/501'/0'/0'`
 - **Coin Type**: 501
