@@ -1,7 +1,7 @@
 {
   "name": "@starship-ci/cli",
   "version": "4.0.0-alpha.1",
-  "author": "Dan Lynch <pyramation@gmail.com>",
+  "author": "Constructive <developers@constructive.io>",
   "description": "Starship CLI",
   "main": "index.js",
   "module": "esm/index.js",

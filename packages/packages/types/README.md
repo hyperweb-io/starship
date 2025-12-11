@@ -64,4 +64,4 @@ const config: StarshipConfig = {
 
 ## Credits
 
-🛠 Built by [Interweb](https://interweb.co) — if you like our tools, please checkout and contribute [https://interweb.co](https://interweb.co)
+🛠 Built by the [Constructive](https://constructive.io) team — makers of [Hyperweb](https://hyperweb.io)
