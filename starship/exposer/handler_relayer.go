@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 
 	pb "github.com/hyperweb-io/starship/exposer/exposer"
+	"go.uber.org/zap"
 )
 
 // CreateChannel function runs the hermes command to create a channel between 2 given chains

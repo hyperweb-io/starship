@@ -1,10 +1,10 @@
 package main
 
 import (
-	"gopkg.in/yaml.v3"
 	"os"
 
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/cli"
 )
 
