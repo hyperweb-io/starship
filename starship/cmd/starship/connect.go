@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
+
+	"go.uber.org/zap"
 )
 
 // File responsible for having functions that will perform kubectl port-froward.

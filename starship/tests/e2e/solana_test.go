@@ -31,15 +31,15 @@ type VoteAccount struct {
 
 // ClusterNode represents a cluster node
 type ClusterNode struct {
-	Pubkey     string `json:"pubkey"`
-	Gossip     string `json:"gossip"`
-	TPU        string `json:"tpu"`
-	TPUForwards string `json:"tpuForwards"`
-	TVU        string `json:"tvu"`
-	RPC        string `json:"rpc"`
-	Pubsub     string `json:"pubsub"`
-	Version    string `json:"version"`
-	FeatureSet uint32 `json:"featureSet"`
+	Pubkey       string `json:"pubkey"`
+	Gossip       string `json:"gossip"`
+	TPU          string `json:"tpu"`
+	TPUForwards  string `json:"tpuForwards"`
+	TVU          string `json:"tvu"`
+	RPC          string `json:"rpc"`
+	Pubsub       string `json:"pubsub"`
+	Version      string `json:"version"`
+	FeatureSet   uint32 `json:"featureSet"`
 	ShredVersion uint16 `json:"shredVersion"`
 }
 
@@ -57,7 +57,7 @@ func (s *TestSuite) MakeSolanaRPCRequest(method string, params []interface{}, re
 			break
 		}
 	}
-	
+
 	if solanaChain == nil {
 		s.T().Skip("Solana chain not found in config")
 	}
@@ -93,7 +93,7 @@ func (s *TestSuite) MakeSolanaExposerRequest(endpoint string, response interface
 			break
 		}
 	}
-	
+
 	if solanaChain == nil {
 		s.T().Skip("Solana chain not found in config")
 	}
@@ -118,7 +118,7 @@ func (s *TestSuite) TestSolana_Status() {
 			break
 		}
 	}
-	
+
 	if solanaChain == nil {
 		s.T().Skip("Solana chain not found in config")
 	}
@@ -175,14 +175,14 @@ func (s *TestSuite) TestSolana_VoteAccounts() {
 	// Parse the result
 	result := response.Result.(map[string]interface{})
 	current := result["current"].([]interface{})
-	
+
 	// Assert that we have at least one vote account (bootstrap validator)
 	s.Require().GreaterOrEqual(len(current), 1, "Should have at least one active vote account")
 
 	// Log vote account details
 	for i, account := range current {
 		acc := account.(map[string]interface{})
-		s.T().Logf("Vote Account %d: %s (Node: %s, Stake: %v)", 
+		s.T().Logf("Vote Account %d: %s (Node: %s, Stake: %v)",
 			i+1, acc["votePubkey"], acc["nodePubkey"], acc["activatedStake"])
 	}
 }
@@ -200,14 +200,14 @@ func (s *TestSuite) TestSolana_ClusterNodes() {
 
 	// Parse the result
 	nodes := response.Result.([]interface{})
-	
+
 	// Assert that we have at least one node
 	s.Require().GreaterOrEqual(len(nodes), 1, "Should have at least one cluster node")
 
 	// Log cluster node details
 	for i, node := range nodes {
 		n := node.(map[string]interface{})
-		s.T().Logf("Cluster Node %d: %s (Gossip: %s, RPC: %s, Version: %s)", 
+		s.T().Logf("Cluster Node %d: %s (Gossip: %s, RPC: %s, Version: %s)",
 			i+1, n["pubkey"], n["gossip"], n["rpc"], n["version"])
 	}
 }
@@ -244,7 +244,7 @@ func (s *TestSuite) TestSolana_Faucet() {
 	s.Require().Nil(balanceResponse.Error, "RPC should not return error")
 	s.Require().Equal("2.0", balanceResponse.JSONRPC)
 	s.Require().Equal(1, balanceResponse.ID)
-	
+
 	// Parse balance result
 	balanceResult := balanceResponse.Result.(map[string]interface{})
 	balance := balanceResult["value"].(float64)
@@ -289,7 +289,7 @@ func (s *TestSuite) TestSolana_ValidatorCount() {
 	result := response.Result.(map[string]interface{})
 	current := result["current"].([]interface{})
 	delinquent := result["delinquent"].([]interface{})
-	
+
 	currentValidators := len(current)
 	delinquentValidators := len(delinquent)
 	totalValidators := currentValidators + delinquentValidators
@@ -300,7 +300,7 @@ func (s *TestSuite) TestSolana_ValidatorCount() {
 
 	// Assert that we have at least the bootstrap validator
 	s.Require().GreaterOrEqual(currentValidators, 1, "Should have at least one current validator (bootstrap)")
-	
+
 	// If you have multiple validators configured, check for them
 	var solanaChain *Chain
 	for _, chain := range s.config.Chains {
@@ -309,10 +309,10 @@ func (s *TestSuite) TestSolana_ValidatorCount() {
 			break
 		}
 	}
-	
+
 	if solanaChain != nil && solanaChain.NumValidators > 1 {
 		expectedValidators := solanaChain.NumValidators
-		s.Require().GreaterOrEqual(totalValidators, expectedValidators, 
+		s.Require().GreaterOrEqual(totalValidators, expectedValidators,
 			fmt.Sprintf("Should have at least %d validators", expectedValidators))
 	}
 }
@@ -344,4 +344,4 @@ func (s *TestSuite) TestSolana_NetworkHealth() {
 			s.Require().NotNil(response.Result, fmt.Sprintf("%s should return result", test.name))
 		})
 	}
-} 
+}
