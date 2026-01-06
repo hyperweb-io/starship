@@ -1,0 +1,51 @@
+# Custom Dockerfile for Solana without AVX requirements
+# This builds Solana from source to be compatible with Docker Desktop and virtualized environments
+
+FROM rust:1.75-bullseye
+
+LABEL org.opencontainers.image.source="https://github.com/hyperweb-io/starship"
+
+# Set up dependencies
+ENV PACKAGES curl make bash jq sed git build-essential pkg-config libssl-dev libudev-dev
+
+# Install minimum necessary dependencies
+RUN apt-get update --yes && \
+    apt-get install $PACKAGES --no-install-recommends --yes && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root
+
+ARG VERSION
+
+# Clone and build Solana from source without AVX requirements
+RUN git clone https://github.com/anza-xyz/agave.git /opt/agave && \
+    cd /opt/agave && \
+    git checkout ${VERSION} && \
+    # Set Rust flags to disable AVX and build for generic x86_64
+    # This prevents the runtime AVX check from aborting the process
+    export RUSTFLAGS="-C target-cpu=generic -C target-feature=-avx -C target-feature=-avx2" && \
+    # Build Solana without AVX optimizations
+    cargo build --release --bin agave-validator && \
+    cargo build --release --bin solana && \
+    cargo build --release --bin solana-keygen && \
+    cargo build --release --bin solana-faucet && \
+    cargo build --release --bin agave-ledger-tool && \
+    cargo build --release --bin solana-genesis && \
+    cargo build --release --bin solana-gossip && \
+    # Install binaries to /usr/local/bin
+    cp target/release/agave-validator /usr/local/bin/ && \
+    cp target/release/solana /usr/local/bin/ && \
+    cp target/release/solana-keygen /usr/local/bin/ && \
+    cp target/release/solana-faucet /usr/local/bin/ && \
+    cp target/release/agave-ledger-tool /usr/local/bin/ && \
+    cp target/release/solana-genesis /usr/local/bin/ && \
+    cp target/release/solana-gossip /usr/local/bin/ && \
+    # Clean up to reduce image size
+    cd / && rm -rf /opt/agave
+
+# Verify installation
+RUN solana --version && agave-validator --version
+
+# Set the default command
+CMD ["bash"]
