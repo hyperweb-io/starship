@@ -72,7 +72,7 @@ func (s *TestSuite) WaitForTx(chain *starship.ChainClient, txHex string) {
 		},
 		300*time.Second,
 		time.Second,
-		"waited for too long, still txn not successfull",
+		"waited for too long, still txn not successful",
 	)
 	s.Require().NotNil(tx)
 }
