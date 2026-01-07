@@ -78,7 +78,7 @@ func (s *TestSuite) TestChainUpgrade() {
 		}
 	}
 	s.Require().NotZerof(proposalID, "proposal id not found in tx events")
-	s.T().Logf("upgrade: software upgrade proposal submited, proposal id: %d", proposalID)
+	s.T().Logf("upgrade: software upgrade proposal submitted, proposal id: %d", proposalID)
 
 	// Vote on the proposal to pass it
 	vote := &gov.MsgVote{ProposalId: uint64(proposalID), Voter: chain.Address, Option: gov.OptionYes}
@@ -95,7 +95,7 @@ func (s *TestSuite) TestChainUpgrade() {
 	s.Require().NotNil(propRes)
 	s.Require().Equal(propRes.Proposal.ProposalId, uint64(proposalID))
 	s.Require().Equal(propRes.Proposal.Status, gov.StatusVotingPeriod)
-	s.T().Logf("upgrade: quieried the proposal which is in voting period")
+	s.T().Logf("upgrade: queried the proposal which is in voting period")
 
 	// Wait for upgrade height and fetch propsal again
 	curHeight, err = chain.GetHeight()
@@ -124,7 +124,7 @@ func (s *TestSuite) TestChainUpgrade() {
 	s.Require().Len(balance, 1)
 	s.Require().Equal(balance.Denoms(), []string{denom})
 	s.Require().Equal(balance[0].Amount, sdk.NewInt(12312300))
-	s.T().Logf("post-upgrade: verifed balance of address after upgrade")
+	s.T().Logf("post-upgrade: verified balance of address after upgrade")
 
 	// transfer some more tokens to address
 	s.TransferTokens(chain, address, 12312300, denom)

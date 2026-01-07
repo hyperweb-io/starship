@@ -58,7 +58,7 @@ func (s *TestSuite) TestChainIBCTransfer() {
 	address, err := chain1.CreateRandWallet(keyName)
 	s.Require().NoError(err)
 
-	// Tranfer atom to persistence chain
+	// Transfer atom to persistence chain
 	s.IBCTransferTokens(chain2, chain1, address, 12345000)
 
 	// Verify the address received the token
