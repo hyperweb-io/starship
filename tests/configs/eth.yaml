@@ -1,0 +1,10 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: 1337
+    name: ethereum
+    numValidators: 1
+    ports:
+      rest: 8545
+      rpc: 8551
