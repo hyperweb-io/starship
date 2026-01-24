@@ -35,7 +35,7 @@ spec:
       initContainers:
         {{- if $chain.toBuild }}
         - name: init-build-images
-          image: ghcr.io/cosmology-tech/starship/builder:latest
+          image: ghcr.io/hyperweb-io/starship/builder:latest
           imagePullPolicy: IfNotPresent
           command:
             - bash

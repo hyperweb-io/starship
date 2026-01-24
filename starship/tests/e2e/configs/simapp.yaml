@@ -9,7 +9,7 @@ images:
 chains:
   - id: simapp
     name: simapp
-    image: ghcr.io/cosmology-tech/starship/simapp:v0.47.3
+    image: ghcr.io/hyperweb-io/starship/simapp:v0.47.3
     numValidators: 2
     ports:
       rest: 1317

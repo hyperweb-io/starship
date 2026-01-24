@@ -212,7 +212,7 @@ explorer:
   # Flag to enable explorer for cluster
   enabled: false
   type: ping-pub
-  image: ghcr.io/cosmology-tech/starship/ping-pub:6b7b0d096946b6bcd75d15350c7345da0d4576db
+  image: ghcr.io/hyperweb-io/starship/ping-pub:6b7b0d096946b6bcd75d15350c7345da0d4576db
   localhost: true
   ports:
     rest: 8080
