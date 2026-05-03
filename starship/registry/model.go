@@ -1,9 +1,10 @@
 package main
 
 import (
-	pb "github.com/hyperweb-io/starship/registry/registry"
 	"sort"
 	"strings"
+
+	pb "github.com/hyperweb-io/starship/registry/registry"
 )
 
 type ChannelPort struct {

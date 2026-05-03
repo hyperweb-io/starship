@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 	"net/http"
 	urlpkg "net/url"
 
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	pb "github.com/hyperweb-io/starship/exposer/exposer"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func (s *TestSuite) MakeExposerRequest(chain *Chain, req *http.Request, unmarshal proto.Message) {
@@ -48,7 +48,7 @@ func (s *TestSuite) TestExposer_GetGenesisFile() {
 	s.T().Log("running test for /genesis endpoint for exposer")
 
 	chain := s.config.Chains[0]
-	if chain.Ports.Exposer == 0{
+	if chain.Ports.Exposer == 0 {
 		s.T().Skip("skipping /node_id test since no exposer")
 	}
 	if chain.Name == "solana" {
