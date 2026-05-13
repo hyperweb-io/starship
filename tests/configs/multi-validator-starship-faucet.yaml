@@ -1,0 +1,44 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: osmosis-1
+    name: osmosis
+    numValidators: 2
+    ports:
+      rest: 1313
+      rpc: 26653
+      exposer: 38083
+      faucet: 8000
+    resources:
+      limits:
+        cpu: "0.4"
+        memory: 1Gi
+      requests:
+        cpu: "0.2"
+        memory: 600M
+    faucet:
+      type: starship
+      concurrency: 2
+      resources:
+        cpu: "0.1"
+        memory: "200M"
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
+  resources:
+    cpu: "0.1"
+    memory: 100M
+
+resources:
+  wait:
+    cpu: "0.1"
+    memory: 100M
+
+exposer:
+  resources:
+    cpu: "0.1"
+    memory: 100M

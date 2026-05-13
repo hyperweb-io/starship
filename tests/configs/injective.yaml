@@ -1,0 +1,34 @@
+name: starship-e2e-tests
+version: 1.7.0
+
+chains:
+  - id: injective-1
+    name: injective
+    numValidators: 2
+    ports:
+      rest: 1313
+      rpc: 26653
+      exposer: 38083
+      faucet: 8003
+  - id: cosmoshub-4
+    name: cosmoshub
+    numValidators: 1
+    ports:
+      rest: 1317
+      rpc: 26657
+      exposer: 38087
+      faucet: 8007
+
+relayers:
+  - name: injective-cosmos
+    type: hermes
+    replicas: 1
+    chains:
+      - injective-1
+      - cosmoshub-4
+
+registry:
+  enabled: true
+  ports:
+    rest: 8081
+    grpc: 9091
