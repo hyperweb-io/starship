@@ -4,7 +4,7 @@
 # Note: Order of `coins` matters, since we take the first one as part of gentx
 defaultChains:
   osmosis:
-    image: ghcr.io/cosmology-tech/starship/osmosis:v25.0.0
+    image: ghcr.io/hyperweb-io/starship/osmosis:v25.0.0
     home: /root/.osmosisd
     binary: osmosisd
     prefix: osmo
@@ -45,7 +45,7 @@ defaultChains:
         coingecko_id: ion
         keywords: ["memecoin"]
   juno:
-    image: ghcr.io/cosmology-tech/starship/juno:v18.0.0
+    image: ghcr.io/hyperweb-io/starship/juno:v18.0.0
     home: /root/.juno
     binary: junod
     prefix: juno
@@ -82,7 +82,7 @@ defaultChains:
     coinType: 118
     repo: https://github.com/CosmWasm/wasmd
   cosmoshub:
-    image: ghcr.io/cosmology-tech/starship/gaia:v18.0.0
+    image: ghcr.io/hyperweb-io/starship/gaia:v18.0.0
     home: /root/.gaia
     binary: gaiad
     prefix: cosmos
@@ -108,7 +108,7 @@ defaultChains:
             exponent: 6
         coingecko_id: atom
   simapp:
-    image: ghcr.io/cosmology-tech/starship/simapp:v0.47.3
+    image: ghcr.io/hyperweb-io/starship/simapp:v0.47.3
     home: /root/.simapp
     binary: simd
     prefix: cosmos
@@ -130,7 +130,7 @@ defaultChains:
     coinType: 118
     repo: https://github.com/persistenceOne/persistenceCore
   stride:
-    image: ghcr.io/cosmology-tech/starship/stride:v9.2.1
+    image: ghcr.io/hyperweb-io/starship/stride:v9.2.1
     home: /root/.stride
     binary: strided
     prefix: stride
@@ -175,7 +175,7 @@ defaultChains:
           svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/stride/images/statom.svg
         coingecko_id: stride-staked-atom
   injective:
-    image: ghcr.io/cosmology-tech/starship/injective:v1.11.6
+    image: ghcr.io/hyperweb-io/starship/injective:v1.11.6
     home: /root/.injectived
     binary: injectived
     prefix: inj
@@ -210,7 +210,7 @@ defaultChains:
           svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/injective/images/inj.svg
         coingecko_id: injective-protocol
   ics:
-    image: ghcr.io/cosmology-tech/starship/ics:v0.1.0
+    image: ghcr.io/hyperweb-io/starship/ics:v0.1.0
     home: /root/.ics
     binary: interchain-security-pd
     prefix: cosmos
@@ -221,7 +221,7 @@ defaultChains:
     coinType: 118
     repo: https://github.com/cosmos/interchain-security
   cronos:
-    image: ghcr.io/cosmology-tech/starship/cronos:v1.0.4
+    image: ghcr.io/hyperweb-io/starship/cronos:v1.0.4
     home: /root/.cronos
     binary: cronosd
     prefix: crc
@@ -247,7 +247,7 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/cronos/images/cronos.png
         coingecko_id: crypto-com-chain
   cryptoorgchain:
-    image: ghcr.io/cosmology-tech/starship/cryptoorgchain:v4.1.2
+    image: ghcr.io/hyperweb-io/starship/cryptoorgchain:v4.1.2
     home: /root/.cryptoorgchain
     binary: chain-maind
     prefix: cro
@@ -273,7 +273,7 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/cronos/images/cronos.png
         coingecko_id: crypto-com-chain
   evmos:
-    image: ghcr.io/cosmology-tech/starship/evmos:v13.0.1
+    image: ghcr.io/hyperweb-io/starship/evmos:v13.0.1
     home: /root/.evmosd
     binary: evmosd
     prefix: evmos
@@ -301,7 +301,7 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/evmos/images/evmos.png
         coingecko_id: evmos
   regen:
-    image: ghcr.io/cosmology-tech/starship/regen:v5.0.0
+    image: ghcr.io/hyperweb-io/starship/regen:v5.0.0
     home: /root/.regen
     binary: regen
     prefix: regen
@@ -343,7 +343,7 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/regen/images/nct.png
         coingecko_id: toucan-protocol-nature-carbon-tonne
   quasar:
-    image: ghcr.io/cosmology-tech/starship/quasar:v0.1.1
+    image: ghcr.io/hyperweb-io/starship/quasar:v0.1.1
     home: /root/.quasarnode
     binary: quasarnoded
     prefix: quasar
@@ -367,7 +367,7 @@ defaultChains:
         logo_URIs:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/quasar/images/quasar.png
   quicksilver:
-    image: ghcr.io/cosmology-tech/starship/quicksilver:v0.6.6
+    image: ghcr.io/hyperweb-io/starship/quicksilver:v0.6.6
     home: /root/.quicksilverd
     binary: quicksilverd
     prefix: quick
@@ -436,7 +436,7 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/quicksilver/images/qatom.png
           svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/quicksilver/images/qatom.svg
   sei:
-    image: ghcr.io/cosmology-tech/starship/sei:2.0.46beta
+    image: ghcr.io/hyperweb-io/starship/sei:2.0.46beta
     home: /root/.seid
     binary: seid
     prefix: sei
@@ -462,7 +462,7 @@ defaultChains:
           svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/sei/images/sei.svg
         coingecko_id: sei-network
   sommelier:
-    image: ghcr.io/cosmology-tech/starship/sommelier:v6.0.0
+    image: ghcr.io/hyperweb-io/starship/sommelier:v6.0.0
     home: /root/.sommelier
     binary: sommelier
     prefix: somm
@@ -494,7 +494,7 @@ defaultChains:
           svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/sommelier/images/somm.svg
         coingecko_id: sommelier
   stargaze:
-    image: ghcr.io/cosmology-tech/starship/stargaze:v10.0.1
+    image: ghcr.io/hyperweb-io/starship/stargaze:v10.0.1
     home: /root/.starsd
     binary: starsd
     prefix: stars
@@ -520,7 +520,7 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/stargaze/images/stars.png
         coingecko_id: stargaze
   umee:
-    image: ghcr.io/cosmology-tech/starship/umee:v3.1.0
+    image: ghcr.io/hyperweb-io/starship/umee:v3.1.0
     home: /root/.umee
     binary: umeed
     prefix: umee
@@ -546,7 +546,7 @@ defaultChains:
           png: https://raw.githubusercontent.com/cosmos/chain-registry/master/umee/images/umee.png
         coingecko_id: umee
   cheqd:
-    image: ghcr.io/cosmology-tech/starship/cheqd:v1.4.4
+    image: ghcr.io/hyperweb-io/starship/cheqd:v1.4.4
     home: /root/.cheqdnode
     binary: cheqd-noded
     prefix: cheqd
@@ -572,7 +572,7 @@ defaultChains:
           svg: https://raw.githubusercontent.com/cosmos/chain-registry/master/cheqd/images/cheq.svg
         coingecko_id: cheqd-network
   neutron:
-    image: ghcr.io/cosmology-tech/starship/neutron:v3.0.5
+    image: ghcr.io/hyperweb-io/starship/neutron:v3.0.5
     home: /root/.neutrond
     binary: neutrond
     prefix: neutron
@@ -674,7 +674,7 @@ defaultChains:
         coingecko_id: inter-stable-token
         keywords: [ "inter-stable-token" ]
   kujira:
-    image: ghcr.io/cosmology-tech/starship/kujira:v1.1.0
+    image: ghcr.io/hyperweb-io/starship/kujira:v1.1.0
     home: /root/.kujira
     binary: kujirad
     prefix: kujira
@@ -728,7 +728,7 @@ defaultChains:
         coingecko_id: hyper
         keywords: [ "hyper" ]
   noble:
-    image: ghcr.io/cosmology-tech/starship/noble:v7.0.0
+    image: ghcr.io/hyperweb-io/starship/noble:v7.0.0
     home: /root/.noble
     binary: nobled
     prefix: noble
@@ -949,9 +949,9 @@ defaultChains:
 
 defaultRelayers:
   ts-relayer:
-    image: ghcr.io/cosmology-tech/starship/ts-relayer:0.9.0
+    image: ghcr.io/hyperweb-io/starship/ts-relayer:0.9.0
   hermes:
-    image: ghcr.io/cosmology-tech/starship/hermes:1.10.0
+    image: ghcr.io/hyperweb-io/starship/hermes:1.10.0
     config:
       global:
         log_level: "info"
@@ -981,9 +981,9 @@ defaultRelayers:
       event_source:
         mode: push # allowed values: push, pull. Valid only for 1.6.0+
   go-relayer:
-    image: ghcr.io/cosmology-tech/starship/go-relayer:v2.4.1
+    image: ghcr.io/hyperweb-io/starship/go-relayer:v2.4.1
   neutron-query-relayer:
-    image: ghcr.io/cosmology-tech/starship/neutron-query-relayer:v0.2.0
+    image: ghcr.io/hyperweb-io/starship/neutron-query-relayer:v0.2.0
     config:
       RELAYER_NEUTRON_CHAIN_TIMEOUT: 1000s
       RELAYER_NEUTRON_CHAIN_GAS_PRICES: 0.5untrn
@@ -1034,7 +1034,7 @@ defaultScripts:
 
 defaultFaucet:
   cosmjs:
-    image: ghcr.io/cosmology-tech/starship/cosmjs-faucet:v0.31.1
+    image: ghcr.io/hyperweb-io/starship/cosmjs-faucet:v0.31.1
     concurrency: 5
   starship:
     image: ghcr.io/hyperweb-io/starship/faucet:20250325-2207109

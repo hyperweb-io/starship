@@ -4,7 +4,7 @@ version: 1.7.0
 chains:
   - id: evmos_9000-1
     name: evmos
-    image: ghcr.io/cosmology-tech/starship/evmos:v13.0.2
+    image: ghcr.io/hyperweb-io/starship/evmos:v13.0.2
     numValidators: 2
     ports:
       rest: 1313
