@@ -37,6 +37,7 @@ stake_tokens() {
     --keyring-backend="test" \
     --gas auto --gas-adjustment 2 \
     --output json \
+    --fees 1000$DENOM \
     --yes
   sleep 5
 }
@@ -69,6 +70,7 @@ submit_proposal() {
     --keyring-backend="test" \
     --gas auto --gas-adjustment 2 \
     --output json \
+    --fees 1000$DENOM \
     --yes)
   echo $PROPOSAL_TX
 
@@ -108,6 +110,7 @@ vote_proposal() {
     --keyring-backend="test" \
     --gas auto --gas-adjustment 2 \
     --output json \
+    --fees 1000$DENOM \
     --yes
   sleep 5
 }
